@@ -1,0 +1,9822 @@
+[
+ {
+  "id": "SYS-001",
+  "cat": "system",
+  "path": "/actuator/health",
+  "method": "GET",
+  "expect": {
+   "http": 200,
+   "contains": [
+    "\"status\":\"UP\""
+   ]
+  }
+ },
+ {
+  "id": "SYS-002",
+  "cat": "system",
+  "path": "/actuator/health",
+  "method": "GET",
+  "expect": {
+   "http": 200,
+   "contains": [
+    "\"status\":\"UP\""
+   ]
+  }
+ },
+ {
+  "id": "SYS-003",
+  "cat": "system",
+  "path": "/actuator/health",
+  "method": "GET",
+  "expect": {
+   "http": 200,
+   "contains": [
+    "\"status\":\"UP\""
+   ]
+  }
+ },
+ {
+  "id": "SYS-004",
+  "cat": "system",
+  "path": "/actuator/health",
+  "method": "GET",
+  "expect": {
+   "http": 200,
+   "contains": [
+    "\"status\":\"UP\""
+   ]
+  }
+ },
+ {
+  "id": "SYS-005",
+  "cat": "system",
+  "path": "/actuator/health",
+  "method": "GET",
+  "expect": {
+   "http": 200,
+   "contains": [
+    "\"status\":\"UP\""
+   ]
+  }
+ },
+ {
+  "id": "SYS-006",
+  "cat": "system",
+  "path": "/actuator/health",
+  "method": "GET",
+  "expect": {
+   "http": 200,
+   "contains": [
+    "\"status\":\"UP\""
+   ]
+  }
+ },
+ {
+  "id": "SYS-007",
+  "cat": "system",
+  "path": "/actuator/health",
+  "method": "GET",
+  "expect": {
+   "http": 200,
+   "contains": [
+    "\"status\":\"UP\""
+   ]
+  }
+ },
+ {
+  "id": "SYS-008",
+  "cat": "system",
+  "path": "/actuator/health",
+  "method": "GET",
+  "expect": {
+   "http": 200,
+   "contains": [
+    "\"status\":\"UP\""
+   ]
+  }
+ },
+ {
+  "id": "SYS-009",
+  "cat": "system",
+  "path": "/actuator/health",
+  "method": "GET",
+  "expect": {
+   "http": 200,
+   "contains": [
+    "\"status\":\"UP\""
+   ]
+  }
+ },
+ {
+  "id": "SYS-010",
+  "cat": "system",
+  "path": "/actuator/health",
+  "method": "GET",
+  "expect": {
+   "http": 200,
+   "contains": [
+    "\"status\":\"UP\""
+   ]
+  }
+ },
+ {
+  "id": "SYS-011",
+  "cat": "system",
+  "path": "/actuator/prometheus",
+  "method": "GET",
+  "expect": {
+   "http": 200,
+   "contains": [
+    "jvm_memory_used_bytes"
+   ]
+  }
+ },
+ {
+  "id": "SYS-012",
+  "cat": "system",
+  "path": "/actuator/prometheus",
+  "method": "GET",
+  "expect": {
+   "http": 200,
+   "contains": [
+    "jvm_memory_committed_bytes"
+   ]
+  }
+ },
+ {
+  "id": "SYS-013",
+  "cat": "system",
+  "path": "/actuator/prometheus",
+  "method": "GET",
+  "expect": {
+   "http": 200,
+   "contains": [
+    "jvm_threads_live_threads"
+   ]
+  }
+ },
+ {
+  "id": "SYS-014",
+  "cat": "system",
+  "path": "/actuator/prometheus",
+  "method": "GET",
+  "expect": {
+   "http": 200,
+   "contains": [
+    "jvm_threads_daemon_threads"
+   ]
+  }
+ },
+ {
+  "id": "SYS-015",
+  "cat": "system",
+  "path": "/actuator/prometheus",
+  "method": "GET",
+  "expect": {
+   "http": 200,
+   "contains": [
+    "jvm_classes_loaded_classes"
+   ]
+  }
+ },
+ {
+  "id": "SYS-016",
+  "cat": "system",
+  "path": "/actuator/prometheus",
+  "method": "GET",
+  "expect": {
+   "http": 200,
+   "contains": [
+    "process_cpu_usage"
+   ]
+  }
+ },
+ {
+  "id": "SYS-017",
+  "cat": "system",
+  "path": "/actuator/prometheus",
+  "method": "GET",
+  "expect": {
+   "http": 200,
+   "contains": [
+    "process_uptime_seconds"
+   ]
+  }
+ },
+ {
+  "id": "SYS-018",
+  "cat": "system",
+  "path": "/actuator/prometheus",
+  "method": "GET",
+  "expect": {
+   "http": 200,
+   "contains": [
+    "system_cpu_count"
+   ]
+  }
+ },
+ {
+  "id": "SYS-019",
+  "cat": "system",
+  "path": "/actuator/prometheus",
+  "method": "GET",
+  "expect": {
+   "http": 200,
+   "contains": [
+    "http_server_requests_seconds_count"
+   ]
+  }
+ },
+ {
+  "id": "SYS-020",
+  "cat": "system",
+  "path": "/actuator/prometheus",
+  "method": "GET",
+  "expect": {
+   "http": 200,
+   "contains": [
+    "http_server_requests_seconds_sum"
+   ]
+  }
+ },
+ {
+  "id": "SYS-021",
+  "cat": "system",
+  "path": "/actuator/prometheus",
+  "method": "GET",
+  "expect": {
+   "http": 200,
+   "contains": [
+    "jvm_memory_used_bytes"
+   ]
+  }
+ },
+ {
+  "id": "SYS-022",
+  "cat": "system",
+  "path": "/actuator/prometheus",
+  "method": "GET",
+  "expect": {
+   "http": 200,
+   "contains": [
+    "jvm_memory_committed_bytes"
+   ]
+  }
+ },
+ {
+  "id": "SYS-023",
+  "cat": "system",
+  "path": "/actuator/prometheus",
+  "method": "GET",
+  "expect": {
+   "http": 200,
+   "contains": [
+    "jvm_threads_live_threads"
+   ]
+  }
+ },
+ {
+  "id": "SYS-024",
+  "cat": "system",
+  "path": "/actuator/prometheus",
+  "method": "GET",
+  "expect": {
+   "http": 200,
+   "contains": [
+    "jvm_threads_daemon_threads"
+   ]
+  }
+ },
+ {
+  "id": "SYS-025",
+  "cat": "system",
+  "path": "/actuator/prometheus",
+  "method": "GET",
+  "expect": {
+   "http": 200,
+   "contains": [
+    "jvm_classes_loaded_classes"
+   ]
+  }
+ },
+ {
+  "id": "SYS-026",
+  "cat": "system",
+  "path": "/actuator/prometheus",
+  "method": "GET",
+  "expect": {
+   "http": 200,
+   "contains": [
+    "process_cpu_usage"
+   ]
+  }
+ },
+ {
+  "id": "SYS-027",
+  "cat": "system",
+  "path": "/actuator/prometheus",
+  "method": "GET",
+  "expect": {
+   "http": 200,
+   "contains": [
+    "process_uptime_seconds"
+   ]
+  }
+ },
+ {
+  "id": "SYS-028",
+  "cat": "system",
+  "path": "/actuator/prometheus",
+  "method": "GET",
+  "expect": {
+   "http": 200,
+   "contains": [
+    "system_cpu_count"
+   ]
+  }
+ },
+ {
+  "id": "SYS-029",
+  "cat": "system",
+  "path": "/actuator/prometheus",
+  "method": "GET",
+  "expect": {
+   "http": 200,
+   "contains": [
+    "http_server_requests_seconds_count"
+   ]
+  }
+ },
+ {
+  "id": "SYS-030",
+  "cat": "system",
+  "path": "/actuator/prometheus",
+  "method": "GET",
+  "expect": {
+   "http": 200,
+   "contains": [
+    "http_server_requests_seconds_sum"
+   ]
+  }
+ },
+ {
+  "id": "SYS-031",
+  "cat": "system",
+  "path": "/actuator/prometheus",
+  "method": "GET",
+  "expect": {
+   "http": 200,
+   "contains": [
+    "jvm_memory_used_bytes"
+   ]
+  }
+ },
+ {
+  "id": "SYS-032",
+  "cat": "system",
+  "path": "/actuator/prometheus",
+  "method": "GET",
+  "expect": {
+   "http": 200,
+   "contains": [
+    "jvm_memory_committed_bytes"
+   ]
+  }
+ },
+ {
+  "id": "SYS-033",
+  "cat": "system",
+  "path": "/actuator/prometheus",
+  "method": "GET",
+  "expect": {
+   "http": 200,
+   "contains": [
+    "jvm_threads_live_threads"
+   ]
+  }
+ },
+ {
+  "id": "SYS-034",
+  "cat": "system",
+  "path": "/actuator/prometheus",
+  "method": "GET",
+  "expect": {
+   "http": 200,
+   "contains": [
+    "jvm_threads_daemon_threads"
+   ]
+  }
+ },
+ {
+  "id": "SYS-035",
+  "cat": "system",
+  "path": "/actuator/prometheus",
+  "method": "GET",
+  "expect": {
+   "http": 200,
+   "contains": [
+    "jvm_classes_loaded_classes"
+   ]
+  }
+ },
+ {
+  "id": "SYS-036",
+  "cat": "system",
+  "path": "/actuator/prometheus",
+  "method": "GET",
+  "expect": {
+   "http": 200,
+   "contains": [
+    "process_cpu_usage"
+   ]
+  }
+ },
+ {
+  "id": "SYS-037",
+  "cat": "system",
+  "path": "/actuator/prometheus",
+  "method": "GET",
+  "expect": {
+   "http": 200,
+   "contains": [
+    "process_uptime_seconds"
+   ]
+  }
+ },
+ {
+  "id": "SYS-038",
+  "cat": "system",
+  "path": "/actuator/prometheus",
+  "method": "GET",
+  "expect": {
+   "http": 200,
+   "contains": [
+    "system_cpu_count"
+   ]
+  }
+ },
+ {
+  "id": "SYS-039",
+  "cat": "system",
+  "path": "/actuator/prometheus",
+  "method": "GET",
+  "expect": {
+   "http": 200,
+   "contains": [
+    "http_server_requests_seconds_count"
+   ]
+  }
+ },
+ {
+  "id": "SYS-040",
+  "cat": "system",
+  "path": "/actuator/prometheus",
+  "method": "GET",
+  "expect": {
+   "http": 200,
+   "contains": [
+    "http_server_requests_seconds_sum"
+   ]
+  }
+ },
+ {
+  "id": "SYS-041",
+  "cat": "system",
+  "path": "/v1/models",
+  "method": "GET",
+  "expect": {
+   "http": 200,
+   "contains": [
+    "\"id\":\"qwen-72b\""
+   ]
+  }
+ },
+ {
+  "id": "SYS-042",
+  "cat": "system",
+  "path": "/v1/models",
+  "method": "GET",
+  "expect": {
+   "http": 200,
+   "contains": [
+    "\"id\":\"qwen-lite\""
+   ]
+  }
+ },
+ {
+  "id": "SYS-043",
+  "cat": "system",
+  "path": "/v1/models",
+  "method": "GET",
+  "expect": {
+   "http": 200,
+   "contains": [
+    "\"object\":\"list\""
+   ]
+  }
+ },
+ {
+  "id": "SYS-044",
+  "cat": "system",
+  "path": "/v1/models",
+  "method": "GET",
+  "expect": {
+   "http": 200,
+   "contains": [
+    "\"id\":\"qwen-72b\"",
+    "\"id\":\"qwen-lite\""
+   ]
+  }
+ },
+ {
+  "id": "SYS-045",
+  "cat": "system",
+  "path": "/v1/models",
+  "method": "GET",
+  "expect": {
+   "http": 200,
+   "excludes": [
+    "\"id\":\"bge-m3\""
+   ]
+  }
+ },
+ {
+  "id": "SYS-046",
+  "cat": "system",
+  "path": "/v1/models",
+  "method": "GET",
+  "expect": {
+   "http": 200,
+   "contains": [
+    "\"data\""
+   ]
+  }
+ },
+ {
+  "id": "SYS-047",
+  "cat": "system",
+  "path": "/v1/models",
+  "method": "GET",
+  "expect": {
+   "http": 200,
+   "contains": [
+    "\"id\":\"qwen-72b\""
+   ]
+  }
+ },
+ {
+  "id": "SYS-048",
+  "cat": "system",
+  "path": "/v1/models",
+  "method": "GET",
+  "expect": {
+   "http": 200,
+   "contains": [
+    "\"id\":\"qwen-lite\""
+   ]
+  }
+ },
+ {
+  "id": "SYS-049",
+  "cat": "system",
+  "path": "/v1/models",
+  "method": "GET",
+  "expect": {
+   "http": 200,
+   "contains": [
+    "\"object\":\"list\""
+   ]
+  }
+ },
+ {
+  "id": "SYS-050",
+  "cat": "system",
+  "path": "/v1/models",
+  "method": "GET",
+  "expect": {
+   "http": 200,
+   "contains": [
+    "\"id\":\"qwen-72b\"",
+    "\"id\":\"qwen-lite\""
+   ]
+  }
+ },
+ {
+  "id": "SYS-051",
+  "cat": "system",
+  "path": "/v1/models",
+  "method": "GET",
+  "expect": {
+   "http": 200,
+   "excludes": [
+    "\"id\":\"bge-m3\""
+   ]
+  }
+ },
+ {
+  "id": "SYS-052",
+  "cat": "system",
+  "path": "/v1/models",
+  "method": "GET",
+  "expect": {
+   "http": 200,
+   "contains": [
+    "\"data\""
+   ]
+  }
+ },
+ {
+  "id": "SYS-053",
+  "cat": "system",
+  "path": "/v1/models",
+  "method": "GET",
+  "expect": {
+   "http": 200,
+   "contains": [
+    "\"id\":\"qwen-72b\""
+   ]
+  }
+ },
+ {
+  "id": "SYS-054",
+  "cat": "system",
+  "path": "/v1/models",
+  "method": "GET",
+  "expect": {
+   "http": 200,
+   "contains": [
+    "\"id\":\"qwen-lite\""
+   ]
+  }
+ },
+ {
+  "id": "SYS-055",
+  "cat": "system",
+  "path": "/v1/models",
+  "method": "GET",
+  "expect": {
+   "http": 200,
+   "contains": [
+    "\"object\":\"list\""
+   ]
+  }
+ },
+ {
+  "id": "SYS-056",
+  "cat": "system",
+  "path": "/v1/models",
+  "method": "GET",
+  "expect": {
+   "http": 200,
+   "contains": [
+    "\"id\":\"qwen-72b\"",
+    "\"id\":\"qwen-lite\""
+   ]
+  }
+ },
+ {
+  "id": "SYS-057",
+  "cat": "system",
+  "path": "/v1/models",
+  "method": "GET",
+  "expect": {
+   "http": 200,
+   "excludes": [
+    "\"id\":\"bge-m3\""
+   ]
+  }
+ },
+ {
+  "id": "SYS-058",
+  "cat": "system",
+  "path": "/v1/models",
+  "method": "GET",
+  "expect": {
+   "http": 200,
+   "contains": [
+    "\"data\""
+   ]
+  }
+ },
+ {
+  "id": "SYS-059",
+  "cat": "system",
+  "path": "/v1/models",
+  "method": "GET",
+  "expect": {
+   "http": 200,
+   "contains": [
+    "\"id\":\"qwen-72b\""
+   ]
+  }
+ },
+ {
+  "id": "SYS-060",
+  "cat": "system",
+  "path": "/v1/models",
+  "method": "GET",
+  "expect": {
+   "http": 200,
+   "contains": [
+    "\"id\":\"qwen-lite\""
+   ]
+  }
+ },
+ {
+  "id": "SYS-061",
+  "cat": "system",
+  "path": "/v1/models",
+  "method": "GET",
+  "expect": {
+   "http": 200,
+   "contains": [
+    "\"object\":\"list\""
+   ]
+  }
+ },
+ {
+  "id": "SYS-062",
+  "cat": "system",
+  "path": "/v1/models",
+  "method": "GET",
+  "expect": {
+   "http": 200,
+   "contains": [
+    "\"id\":\"qwen-72b\"",
+    "\"id\":\"qwen-lite\""
+   ]
+  }
+ },
+ {
+  "id": "SYS-063",
+  "cat": "system",
+  "path": "/v1/models",
+  "method": "GET",
+  "expect": {
+   "http": 200,
+   "excludes": [
+    "\"id\":\"bge-m3\""
+   ]
+  }
+ },
+ {
+  "id": "SYS-064",
+  "cat": "system",
+  "path": "/v1/models",
+  "method": "GET",
+  "expect": {
+   "http": 200,
+   "contains": [
+    "\"data\""
+   ]
+  }
+ },
+ {
+  "id": "SYS-065",
+  "cat": "system",
+  "path": "/v1/models",
+  "method": "GET",
+  "expect": {
+   "http": 200,
+   "contains": [
+    "\"id\":\"qwen-72b\""
+   ]
+  }
+ },
+ {
+  "id": "SYS-066",
+  "cat": "system",
+  "path": "/v1/models",
+  "method": "GET",
+  "expect": {
+   "http": 200,
+   "contains": [
+    "\"id\":\"qwen-lite\""
+   ]
+  }
+ },
+ {
+  "id": "SYS-067",
+  "cat": "system",
+  "path": "/v1/models",
+  "method": "GET",
+  "expect": {
+   "http": 200,
+   "contains": [
+    "\"object\":\"list\""
+   ]
+  }
+ },
+ {
+  "id": "SYS-068",
+  "cat": "system",
+  "path": "/v1/models",
+  "method": "GET",
+  "expect": {
+   "http": 200,
+   "contains": [
+    "\"id\":\"qwen-72b\"",
+    "\"id\":\"qwen-lite\""
+   ]
+  }
+ },
+ {
+  "id": "SYS-069",
+  "cat": "system",
+  "path": "/v1/models",
+  "method": "GET",
+  "expect": {
+   "http": 200,
+   "excludes": [
+    "\"id\":\"bge-m3\""
+   ]
+  }
+ },
+ {
+  "id": "SYS-070",
+  "cat": "system",
+  "path": "/v1/models",
+  "method": "GET",
+  "expect": {
+   "http": 200,
+   "contains": [
+    "\"data\""
+   ]
+  }
+ },
+ {
+  "id": "SYS-071",
+  "cat": "system",
+  "model": "qwen-lite",
+  "prompt": "链路追踪用例：请用一个词描述序号0的测试",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "trace_len": 32
+  }
+ },
+ {
+  "id": "SYS-072",
+  "cat": "system",
+  "model": "qwen-lite",
+  "prompt": "链路追踪用例：请用一个词描述序号1的测试",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "trace_len": 32
+  }
+ },
+ {
+  "id": "SYS-073",
+  "cat": "system",
+  "model": "qwen-lite",
+  "prompt": "链路追踪用例：请用一个词描述序号2的测试",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "trace_len": 32
+  }
+ },
+ {
+  "id": "SYS-074",
+  "cat": "system",
+  "model": "qwen-lite",
+  "prompt": "链路追踪用例：请用一个词描述序号3的测试",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "trace_len": 32
+  }
+ },
+ {
+  "id": "SYS-075",
+  "cat": "system",
+  "model": "qwen-lite",
+  "prompt": "链路追踪用例：请用一个词描述序号4的测试",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "trace_len": 32
+  }
+ },
+ {
+  "id": "SYS-076",
+  "cat": "system",
+  "model": "qwen-lite",
+  "prompt": "链路追踪用例：请用一个词描述序号5的测试",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "trace_len": 32
+  }
+ },
+ {
+  "id": "SYS-077",
+  "cat": "system",
+  "model": "qwen-lite",
+  "prompt": "链路追踪用例：请用一个词描述序号6的测试",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "trace_len": 32
+  }
+ },
+ {
+  "id": "SYS-078",
+  "cat": "system",
+  "model": "qwen-lite",
+  "prompt": "链路追踪用例：请用一个词描述序号7的测试",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "trace_len": 32
+  }
+ },
+ {
+  "id": "SYS-079",
+  "cat": "system",
+  "model": "qwen-lite",
+  "prompt": "链路追踪用例：请用一个词描述序号8的测试",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "trace_len": 32
+  }
+ },
+ {
+  "id": "SYS-080",
+  "cat": "system",
+  "model": "qwen-lite",
+  "prompt": "链路追踪用例：请用一个词描述序号9的测试",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "trace_len": 32
+  }
+ },
+ {
+  "id": "SYS-081",
+  "cat": "system",
+  "model": "qwen-lite",
+  "prompt": "链路追踪用例：请用一个词描述序号10的测试",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "trace_len": 32
+  }
+ },
+ {
+  "id": "SYS-082",
+  "cat": "system",
+  "model": "qwen-lite",
+  "prompt": "链路追踪用例：请用一个词描述序号11的测试",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "trace_len": 32
+  }
+ },
+ {
+  "id": "SYS-083",
+  "cat": "system",
+  "model": "qwen-lite",
+  "prompt": "链路追踪用例：请用一个词描述序号12的测试",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "trace_len": 32
+  }
+ },
+ {
+  "id": "SYS-084",
+  "cat": "system",
+  "model": "qwen-lite",
+  "prompt": "链路追踪用例：请用一个词描述序号13的测试",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "trace_len": 32
+  }
+ },
+ {
+  "id": "SYS-085",
+  "cat": "system",
+  "model": "qwen-lite",
+  "prompt": "链路追踪用例：请用一个词描述序号14的测试",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "trace_len": 32
+  }
+ },
+ {
+  "id": "SYS-086",
+  "cat": "system",
+  "model": "qwen-lite",
+  "prompt": "链路追踪用例：请用一个词描述序号15的测试",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "trace_len": 32
+  }
+ },
+ {
+  "id": "SYS-087",
+  "cat": "system",
+  "model": "qwen-lite",
+  "prompt": "链路追踪用例：请用一个词描述序号16的测试",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "trace_len": 32
+  }
+ },
+ {
+  "id": "SYS-088",
+  "cat": "system",
+  "model": "qwen-lite",
+  "prompt": "链路追踪用例：请用一个词描述序号17的测试",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "trace_len": 32
+  }
+ },
+ {
+  "id": "SYS-089",
+  "cat": "system",
+  "model": "qwen-lite",
+  "prompt": "链路追踪用例：请用一个词描述序号18的测试",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "trace_len": 32
+  }
+ },
+ {
+  "id": "SYS-090",
+  "cat": "system",
+  "model": "qwen-lite",
+  "prompt": "链路追踪用例：请用一个词描述序号19的测试",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "trace_len": 32
+  }
+ },
+ {
+  "id": "SYS-091",
+  "cat": "system",
+  "model": "qwen-lite",
+  "prompt": "链路追踪用例：请用一个词描述序号20的测试",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "trace_len": 32
+  }
+ },
+ {
+  "id": "SYS-092",
+  "cat": "system",
+  "model": "qwen-lite",
+  "prompt": "链路追踪用例：请用一个词描述序号21的测试",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "trace_len": 32
+  }
+ },
+ {
+  "id": "SYS-093",
+  "cat": "system",
+  "model": "qwen-lite",
+  "prompt": "链路追踪用例：请用一个词描述序号22的测试",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "trace_len": 32
+  }
+ },
+ {
+  "id": "SYS-094",
+  "cat": "system",
+  "model": "qwen-lite",
+  "prompt": "链路追踪用例：请用一个词描述序号23的测试",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "trace_len": 32
+  }
+ },
+ {
+  "id": "SYS-095",
+  "cat": "system",
+  "model": "qwen-lite",
+  "prompt": "链路追踪用例：请用一个词描述序号24的测试",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "trace_len": 32
+  }
+ },
+ {
+  "id": "SYS-096",
+  "cat": "system",
+  "model": "qwen-lite",
+  "prompt": "链路追踪用例：请用一个词描述序号25的测试",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "trace_len": 32
+  }
+ },
+ {
+  "id": "SYS-097",
+  "cat": "system",
+  "model": "qwen-lite",
+  "prompt": "链路追踪用例：请用一个词描述序号26的测试",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "trace_len": 32
+  }
+ },
+ {
+  "id": "SYS-098",
+  "cat": "system",
+  "model": "qwen-lite",
+  "prompt": "链路追踪用例：请用一个词描述序号27的测试",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "trace_len": 32
+  }
+ },
+ {
+  "id": "SYS-099",
+  "cat": "system",
+  "model": "qwen-lite",
+  "prompt": "链路追踪用例：请用一个词描述序号28的测试",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "trace_len": 32
+  }
+ },
+ {
+  "id": "SYS-100",
+  "cat": "system",
+  "model": "qwen-lite",
+  "prompt": "链路追踪用例：请用一个词描述序号29的测试",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "trace_len": 32
+  }
+ },
+ {
+  "id": "EMB-001",
+  "cat": "embedding",
+  "prompt": "嵌入用例：今天天气怎么样？",
+  "expect": {
+   "http": 200,
+   "embedding_dim": 1024
+  }
+ },
+ {
+  "id": "EMB-002",
+  "cat": "embedding",
+  "prompt": "嵌入用例：北京是哪个国家的首都？",
+  "expect": {
+   "http": 200,
+   "embedding_dim": 1024
+  }
+ },
+ {
+  "id": "EMB-003",
+  "cat": "embedding",
+  "prompt": "嵌入用例：一周有几天？",
+  "expect": {
+   "http": 200,
+   "embedding_dim": 1024
+  }
+ },
+ {
+  "id": "EMB-004",
+  "cat": "embedding",
+  "prompt": "嵌入用例：水的化学式是什么？",
+  "expect": {
+   "http": 200,
+   "embedding_dim": 1024
+  }
+ },
+ {
+  "id": "EMB-005",
+  "cat": "embedding",
+  "prompt": "嵌入用例：是谁发明了电灯泡？",
+  "expect": {
+   "http": 200,
+   "embedding_dim": 1024
+  }
+ },
+ {
+  "id": "EMB-006",
+  "cat": "embedding",
+  "prompt": "嵌入用例：现在几点了？",
+  "expect": {
+   "http": 200,
+   "embedding_dim": 1024
+  }
+ },
+ {
+  "id": "EMB-007",
+  "cat": "embedding",
+  "prompt": "嵌入用例：你好，介绍一下你自己",
+  "expect": {
+   "http": 200,
+   "embedding_dim": 1024
+  }
+ },
+ {
+  "id": "EMB-008",
+  "cat": "embedding",
+  "prompt": "嵌入用例：明天是星期几？",
+  "expect": {
+   "http": 200,
+   "embedding_dim": 1024
+  }
+ },
+ {
+  "id": "EMB-009",
+  "cat": "embedding",
+  "prompt": "嵌入用例：一年有多少个月？",
+  "expect": {
+   "http": 200,
+   "embedding_dim": 1024
+  }
+ },
+ {
+  "id": "EMB-010",
+  "cat": "embedding",
+  "prompt": "嵌入用例：中国的首都在哪里？",
+  "expect": {
+   "http": 200,
+   "embedding_dim": 1024
+  }
+ },
+ {
+  "id": "EMB-011",
+  "cat": "embedding",
+  "prompt": "嵌入用例：这本书多少钱？",
+  "expect": {
+   "http": 200,
+   "embedding_dim": 1024
+  }
+ },
+ {
+  "id": "EMB-012",
+  "cat": "embedding",
+  "prompt": "嵌入用例：帮我翻译这句话：good morning",
+  "expect": {
+   "http": 200,
+   "embedding_dim": 1024
+  }
+ },
+ {
+  "id": "EMB-013",
+  "cat": "embedding",
+  "prompt": "嵌入用例：地球是圆的吗？",
+  "expect": {
+   "http": 200,
+   "embedding_dim": 1024
+  }
+ },
+ {
+  "id": "EMB-014",
+  "cat": "embedding",
+  "prompt": "嵌入用例：猫的英文怎么说？",
+  "expect": {
+   "http": 200,
+   "embedding_dim": 1024
+  }
+ },
+ {
+  "id": "EMB-015",
+  "cat": "embedding",
+  "prompt": "嵌入用例：1加1等于几？",
+  "expect": {
+   "http": 200,
+   "embedding_dim": 1024
+  }
+ },
+ {
+  "id": "EMB-016",
+  "cat": "embedding",
+  "prompt": "嵌入用例：你喜欢什么颜色？",
+  "expect": {
+   "http": 200,
+   "embedding_dim": 1024
+  }
+ },
+ {
+  "id": "EMB-017",
+  "cat": "embedding",
+  "prompt": "嵌入用例：怎么打电话给客服？",
+  "expect": {
+   "http": 200,
+   "embedding_dim": 1024
+  }
+ },
+ {
+  "id": "EMB-018",
+  "cat": "embedding",
+  "prompt": "嵌入用例：米饭的热量是多少？",
+  "expect": {
+   "http": 200,
+   "embedding_dim": 1024
+  }
+ },
+ {
+  "id": "EMB-019",
+  "cat": "embedding",
+  "prompt": "嵌入用例：上海在北京的哪个方向？",
+  "expect": {
+   "http": 200,
+   "embedding_dim": 1024
+  }
+ },
+ {
+  "id": "EMB-020",
+  "cat": "embedding",
+  "prompt": "嵌入用例：今天限行尾号是多少？",
+  "expect": {
+   "http": 200,
+   "embedding_dim": 1024
+  }
+ },
+ {
+  "id": "EMB-021",
+  "cat": "embedding",
+  "prompt": "嵌入用例：太阳从哪边升起？",
+  "expect": {
+   "http": 200,
+   "embedding_dim": 1024
+  }
+ },
+ {
+  "id": "EMB-022",
+  "cat": "embedding",
+  "prompt": "嵌入用例：一年有几个季节？",
+  "expect": {
+   "http": 200,
+   "embedding_dim": 1024
+  }
+ },
+ {
+  "id": "EMB-023",
+  "cat": "embedding",
+  "prompt": "嵌入用例：彩虹有几种颜色？",
+  "expect": {
+   "http": 200,
+   "embedding_dim": 1024
+  }
+ },
+ {
+  "id": "EMB-024",
+  "cat": "embedding",
+  "prompt": "嵌入用例：最大的海洋是哪个？",
+  "expect": {
+   "http": 200,
+   "embedding_dim": 1024
+  }
+ },
+ {
+  "id": "EMB-025",
+  "cat": "embedding",
+  "prompt": "嵌入用例：熊猫主要吃什么？",
+  "expect": {
+   "http": 200,
+   "embedding_dim": 1024
+  }
+ },
+ {
+  "id": "EMB-026",
+  "cat": "embedding",
+  "prompt": "嵌入用例：长城在哪个国家？",
+  "expect": {
+   "http": 200,
+   "embedding_dim": 1024
+  }
+ },
+ {
+  "id": "EMB-027",
+  "cat": "embedding",
+  "prompt": "嵌入用例：一天有多少小时？",
+  "expect": {
+   "http": 200,
+   "embedding_dim": 1024
+  }
+ },
+ {
+  "id": "EMB-028",
+  "cat": "embedding",
+  "prompt": "嵌入用例：冰是什么状态的？",
+  "expect": {
+   "http": 200,
+   "embedding_dim": 1024
+  }
+ },
+ {
+  "id": "EMB-029",
+  "cat": "embedding",
+  "prompt": "嵌入用例：自行车有几个轮子？",
+  "expect": {
+   "http": 200,
+   "embedding_dim": 1024
+  }
+ },
+ {
+  "id": "EMB-030",
+  "cat": "embedding",
+  "prompt": "嵌入用例：春节是几月份？",
+  "expect": {
+   "http": 200,
+   "embedding_dim": 1024
+  }
+ },
+ {
+  "id": "EMB-031",
+  "cat": "embedding",
+  "prompt": "Embedding case 0: the quick brown fox number 0.",
+  "expect": {
+   "http": 200,
+   "embedding_dim": 1024
+  }
+ },
+ {
+  "id": "EMB-032",
+  "cat": "embedding",
+  "prompt": "Embedding case 1: the quick brown fox number 1.",
+  "expect": {
+   "http": 200,
+   "embedding_dim": 1024
+  }
+ },
+ {
+  "id": "EMB-033",
+  "cat": "embedding",
+  "prompt": "Embedding case 2: the quick brown fox number 2.",
+  "expect": {
+   "http": 200,
+   "embedding_dim": 1024
+  }
+ },
+ {
+  "id": "EMB-034",
+  "cat": "embedding",
+  "prompt": "Embedding case 3: the quick brown fox number 3.",
+  "expect": {
+   "http": 200,
+   "embedding_dim": 1024
+  }
+ },
+ {
+  "id": "EMB-035",
+  "cat": "embedding",
+  "prompt": "Embedding case 4: the quick brown fox number 4.",
+  "expect": {
+   "http": 200,
+   "embedding_dim": 1024
+  }
+ },
+ {
+  "id": "EMB-036",
+  "cat": "embedding",
+  "prompt": "Embedding case 5: the quick brown fox number 5.",
+  "expect": {
+   "http": 200,
+   "embedding_dim": 1024
+  }
+ },
+ {
+  "id": "EMB-037",
+  "cat": "embedding",
+  "prompt": "Embedding case 6: the quick brown fox number 6.",
+  "expect": {
+   "http": 200,
+   "embedding_dim": 1024
+  }
+ },
+ {
+  "id": "EMB-038",
+  "cat": "embedding",
+  "prompt": "Embedding case 7: the quick brown fox number 7.",
+  "expect": {
+   "http": 200,
+   "embedding_dim": 1024
+  }
+ },
+ {
+  "id": "EMB-039",
+  "cat": "embedding",
+  "prompt": "Embedding case 8: the quick brown fox number 8.",
+  "expect": {
+   "http": 200,
+   "embedding_dim": 1024
+  }
+ },
+ {
+  "id": "EMB-040",
+  "cat": "embedding",
+  "prompt": "Embedding case 9: the quick brown fox number 9.",
+  "expect": {
+   "http": 200,
+   "embedding_dim": 1024
+  }
+ },
+ {
+  "id": "EMB-041",
+  "cat": "embedding",
+  "prompt": "Embedding case 10: the quick brown fox number 10.",
+  "expect": {
+   "http": 200,
+   "embedding_dim": 1024
+  }
+ },
+ {
+  "id": "EMB-042",
+  "cat": "embedding",
+  "prompt": "Embedding case 11: the quick brown fox number 11.",
+  "expect": {
+   "http": 200,
+   "embedding_dim": 1024
+  }
+ },
+ {
+  "id": "EMB-043",
+  "cat": "embedding",
+  "prompt": "Embedding case 12: the quick brown fox number 12.",
+  "expect": {
+   "http": 200,
+   "embedding_dim": 1024
+  }
+ },
+ {
+  "id": "EMB-044",
+  "cat": "embedding",
+  "prompt": "Embedding case 13: the quick brown fox number 13.",
+  "expect": {
+   "http": 200,
+   "embedding_dim": 1024
+  }
+ },
+ {
+  "id": "EMB-045",
+  "cat": "embedding",
+  "prompt": "Embedding case 14: the quick brown fox number 14.",
+  "expect": {
+   "http": 200,
+   "embedding_dim": 1024
+  }
+ },
+ {
+  "id": "EMB-046",
+  "cat": "embedding",
+  "prompt": "Embedding case 15: the quick brown fox number 15.",
+  "expect": {
+   "http": 200,
+   "embedding_dim": 1024
+  }
+ },
+ {
+  "id": "EMB-047",
+  "cat": "embedding",
+  "prompt": "Embedding case 16: the quick brown fox number 16.",
+  "expect": {
+   "http": 200,
+   "embedding_dim": 1024
+  }
+ },
+ {
+  "id": "EMB-048",
+  "cat": "embedding",
+  "prompt": "Embedding case 17: the quick brown fox number 17.",
+  "expect": {
+   "http": 200,
+   "embedding_dim": 1024
+  }
+ },
+ {
+  "id": "EMB-049",
+  "cat": "embedding",
+  "prompt": "Embedding case 18: the quick brown fox number 18.",
+  "expect": {
+   "http": 200,
+   "embedding_dim": 1024
+  }
+ },
+ {
+  "id": "EMB-050",
+  "cat": "embedding",
+  "prompt": "Embedding case 19: the quick brown fox number 19.",
+  "expect": {
+   "http": 200,
+   "embedding_dim": 1024
+  }
+ },
+ {
+  "id": "EMB-051",
+  "cat": "embedding",
+  "prompt": "中英混合嵌入用例 mixed text 0 号",
+  "expect": {
+   "http": 200,
+   "embedding_dim": 1024
+  }
+ },
+ {
+  "id": "EMB-052",
+  "cat": "embedding",
+  "prompt": "中英混合嵌入用例 mixed text 1 号",
+  "expect": {
+   "http": 200,
+   "embedding_dim": 1024
+  }
+ },
+ {
+  "id": "EMB-053",
+  "cat": "embedding",
+  "prompt": "中英混合嵌入用例 mixed text 2 号",
+  "expect": {
+   "http": 200,
+   "embedding_dim": 1024
+  }
+ },
+ {
+  "id": "EMB-054",
+  "cat": "embedding",
+  "prompt": "中英混合嵌入用例 mixed text 3 号",
+  "expect": {
+   "http": 200,
+   "embedding_dim": 1024
+  }
+ },
+ {
+  "id": "EMB-055",
+  "cat": "embedding",
+  "prompt": "中英混合嵌入用例 mixed text 4 号",
+  "expect": {
+   "http": 200,
+   "embedding_dim": 1024
+  }
+ },
+ {
+  "id": "EMB-056",
+  "cat": "embedding",
+  "prompt": "中英混合嵌入用例 mixed text 5 号",
+  "expect": {
+   "http": 200,
+   "embedding_dim": 1024
+  }
+ },
+ {
+  "id": "EMB-057",
+  "cat": "embedding",
+  "prompt": "中英混合嵌入用例 mixed text 6 号",
+  "expect": {
+   "http": 200,
+   "embedding_dim": 1024
+  }
+ },
+ {
+  "id": "EMB-058",
+  "cat": "embedding",
+  "prompt": "中英混合嵌入用例 mixed text 7 号",
+  "expect": {
+   "http": 200,
+   "embedding_dim": 1024
+  }
+ },
+ {
+  "id": "EMB-059",
+  "cat": "embedding",
+  "prompt": "中英混合嵌入用例 mixed text 8 号",
+  "expect": {
+   "http": 200,
+   "embedding_dim": 1024
+  }
+ },
+ {
+  "id": "EMB-060",
+  "cat": "embedding",
+  "prompt": "中英混合嵌入用例 mixed text 9 号",
+  "expect": {
+   "http": 200,
+   "embedding_dim": 1024
+  }
+ },
+ {
+  "id": "EMB-061",
+  "cat": "embedding",
+  "prompt": "中英混合嵌入用例 mixed text 10 号",
+  "expect": {
+   "http": 200,
+   "embedding_dim": 1024
+  }
+ },
+ {
+  "id": "EMB-062",
+  "cat": "embedding",
+  "prompt": "中英混合嵌入用例 mixed text 11 号",
+  "expect": {
+   "http": 200,
+   "embedding_dim": 1024
+  }
+ },
+ {
+  "id": "EMB-063",
+  "cat": "embedding",
+  "prompt": "中英混合嵌入用例 mixed text 12 号",
+  "expect": {
+   "http": 200,
+   "embedding_dim": 1024
+  }
+ },
+ {
+  "id": "EMB-064",
+  "cat": "embedding",
+  "prompt": "中英混合嵌入用例 mixed text 13 号",
+  "expect": {
+   "http": 200,
+   "embedding_dim": 1024
+  }
+ },
+ {
+  "id": "EMB-065",
+  "cat": "embedding",
+  "prompt": "中英混合嵌入用例 mixed text 14 号",
+  "expect": {
+   "http": 200,
+   "embedding_dim": 1024
+  }
+ },
+ {
+  "id": "EMB-066",
+  "cat": "embedding",
+  "prompt": "数字与符号序列 0 0 0 + - × ÷ = ≠",
+  "expect": {
+   "http": 200,
+   "embedding_dim": 1024
+  }
+ },
+ {
+  "id": "EMB-067",
+  "cat": "embedding",
+  "prompt": "数字与符号序列 1 7 13 + - × ÷ = ≠",
+  "expect": {
+   "http": 200,
+   "embedding_dim": 1024
+  }
+ },
+ {
+  "id": "EMB-068",
+  "cat": "embedding",
+  "prompt": "数字与符号序列 2 14 26 + - × ÷ = ≠",
+  "expect": {
+   "http": 200,
+   "embedding_dim": 1024
+  }
+ },
+ {
+  "id": "EMB-069",
+  "cat": "embedding",
+  "prompt": "数字与符号序列 3 21 39 + - × ÷ = ≠",
+  "expect": {
+   "http": 200,
+   "embedding_dim": 1024
+  }
+ },
+ {
+  "id": "EMB-070",
+  "cat": "embedding",
+  "prompt": "数字与符号序列 4 28 52 + - × ÷ = ≠",
+  "expect": {
+   "http": 200,
+   "embedding_dim": 1024
+  }
+ },
+ {
+  "id": "EMB-071",
+  "cat": "embedding",
+  "prompt": "数字与符号序列 5 35 65 + - × ÷ = ≠",
+  "expect": {
+   "http": 200,
+   "embedding_dim": 1024
+  }
+ },
+ {
+  "id": "EMB-072",
+  "cat": "embedding",
+  "prompt": "数字与符号序列 6 42 78 + - × ÷ = ≠",
+  "expect": {
+   "http": 200,
+   "embedding_dim": 1024
+  }
+ },
+ {
+  "id": "EMB-073",
+  "cat": "embedding",
+  "prompt": "数字与符号序列 7 49 91 + - × ÷ = ≠",
+  "expect": {
+   "http": 200,
+   "embedding_dim": 1024
+  }
+ },
+ {
+  "id": "EMB-074",
+  "cat": "embedding",
+  "prompt": "数字与符号序列 8 56 104 + - × ÷ = ≠",
+  "expect": {
+   "http": 200,
+   "embedding_dim": 1024
+  }
+ },
+ {
+  "id": "EMB-075",
+  "cat": "embedding",
+  "prompt": "数字与符号序列 9 63 117 + - × ÷ = ≠",
+  "expect": {
+   "http": 200,
+   "embedding_dim": 1024
+  }
+ },
+ {
+  "id": "EMB-076",
+  "cat": "embedding",
+  "prompt": "代码嵌入用例：def f0(x): return x * 0",
+  "expect": {
+   "http": 200,
+   "embedding_dim": 1024
+  }
+ },
+ {
+  "id": "EMB-077",
+  "cat": "embedding",
+  "prompt": "代码嵌入用例：def f1(x): return x * 1",
+  "expect": {
+   "http": 200,
+   "embedding_dim": 1024
+  }
+ },
+ {
+  "id": "EMB-078",
+  "cat": "embedding",
+  "prompt": "代码嵌入用例：def f2(x): return x * 2",
+  "expect": {
+   "http": 200,
+   "embedding_dim": 1024
+  }
+ },
+ {
+  "id": "EMB-079",
+  "cat": "embedding",
+  "prompt": "代码嵌入用例：def f3(x): return x * 3",
+  "expect": {
+   "http": 200,
+   "embedding_dim": 1024
+  }
+ },
+ {
+  "id": "EMB-080",
+  "cat": "embedding",
+  "prompt": "代码嵌入用例：def f4(x): return x * 4",
+  "expect": {
+   "http": 200,
+   "embedding_dim": 1024
+  }
+ },
+ {
+  "id": "EMB-081",
+  "cat": "embedding",
+  "prompt": "代码嵌入用例：def f5(x): return x * 5",
+  "expect": {
+   "http": 200,
+   "embedding_dim": 1024
+  }
+ },
+ {
+  "id": "EMB-082",
+  "cat": "embedding",
+  "prompt": "代码嵌入用例：def f6(x): return x * 6",
+  "expect": {
+   "http": 200,
+   "embedding_dim": 1024
+  }
+ },
+ {
+  "id": "EMB-083",
+  "cat": "embedding",
+  "prompt": "代码嵌入用例：def f7(x): return x * 7",
+  "expect": {
+   "http": 200,
+   "embedding_dim": 1024
+  }
+ },
+ {
+  "id": "EMB-084",
+  "cat": "embedding",
+  "prompt": "代码嵌入用例：def f8(x): return x * 8",
+  "expect": {
+   "http": 200,
+   "embedding_dim": 1024
+  }
+ },
+ {
+  "id": "EMB-085",
+  "cat": "embedding",
+  "prompt": "代码嵌入用例：def f9(x): return x * 9",
+  "expect": {
+   "http": 200,
+   "embedding_dim": 1024
+  }
+ },
+ {
+  "id": "EMB-086",
+  "cat": "embedding",
+  "prompt": "长文本嵌入用例第0段。数据中台建设需要统一指标口径、血缘追踪与质量稽核，本段用于验证第0组输入的嵌入稳定性，不包含路由决策语义。",
+  "expect": {
+   "http": 200,
+   "embedding_dim": 1024
+  }
+ },
+ {
+  "id": "EMB-087",
+  "cat": "embedding",
+  "prompt": "长文本嵌入用例第1段。数据中台建设需要统一指标口径、血缘追踪与质量稽核，本段用于验证第1组输入的嵌入稳定性，不包含路由决策语义。",
+  "expect": {
+   "http": 200,
+   "embedding_dim": 1024
+  }
+ },
+ {
+  "id": "EMB-088",
+  "cat": "embedding",
+  "prompt": "长文本嵌入用例第2段。数据中台建设需要统一指标口径、血缘追踪与质量稽核，本段用于验证第2组输入的嵌入稳定性，不包含路由决策语义。",
+  "expect": {
+   "http": 200,
+   "embedding_dim": 1024
+  }
+ },
+ {
+  "id": "EMB-089",
+  "cat": "embedding",
+  "prompt": "长文本嵌入用例第3段。数据中台建设需要统一指标口径、血缘追踪与质量稽核，本段用于验证第3组输入的嵌入稳定性，不包含路由决策语义。",
+  "expect": {
+   "http": 200,
+   "embedding_dim": 1024
+  }
+ },
+ {
+  "id": "EMB-090",
+  "cat": "embedding",
+  "prompt": "长文本嵌入用例第4段。数据中台建设需要统一指标口径、血缘追踪与质量稽核，本段用于验证第4组输入的嵌入稳定性，不包含路由决策语义。",
+  "expect": {
+   "http": 200,
+   "embedding_dim": 1024
+  }
+ },
+ {
+  "id": "EMB-091",
+  "cat": "embedding",
+  "prompt": "长文本嵌入用例第5段。数据中台建设需要统一指标口径、血缘追踪与质量稽核，本段用于验证第5组输入的嵌入稳定性，不包含路由决策语义。",
+  "expect": {
+   "http": 200,
+   "embedding_dim": 1024
+  }
+ },
+ {
+  "id": "EMB-092",
+  "cat": "embedding",
+  "prompt": "长文本嵌入用例第6段。数据中台建设需要统一指标口径、血缘追踪与质量稽核，本段用于验证第6组输入的嵌入稳定性，不包含路由决策语义。",
+  "expect": {
+   "http": 200,
+   "embedding_dim": 1024
+  }
+ },
+ {
+  "id": "EMB-093",
+  "cat": "embedding",
+  "prompt": "长文本嵌入用例第7段。数据中台建设需要统一指标口径、血缘追踪与质量稽核，本段用于验证第7组输入的嵌入稳定性，不包含路由决策语义。",
+  "expect": {
+   "http": 200,
+   "embedding_dim": 1024
+  }
+ },
+ {
+  "id": "EMB-094",
+  "cat": "embedding",
+  "prompt": "长文本嵌入用例第8段。数据中台建设需要统一指标口径、血缘追踪与质量稽核，本段用于验证第8组输入的嵌入稳定性，不包含路由决策语义。",
+  "expect": {
+   "http": 200,
+   "embedding_dim": 1024
+  }
+ },
+ {
+  "id": "EMB-095",
+  "cat": "embedding",
+  "prompt": "长文本嵌入用例第9段。数据中台建设需要统一指标口径、血缘追踪与质量稽核，本段用于验证第9组输入的嵌入稳定性，不包含路由决策语义。",
+  "expect": {
+   "http": 200,
+   "embedding_dim": 1024
+  }
+ },
+ {
+  "id": "EMB-096",
+  "cat": "embedding",
+  "prompt": "长文本嵌入用例第10段。数据中台建设需要统一指标口径、血缘追踪与质量稽核，本段用于验证第10组输入的嵌入稳定性，不包含路由决策语义。",
+  "expect": {
+   "http": 200,
+   "embedding_dim": 1024
+  }
+ },
+ {
+  "id": "EMB-097",
+  "cat": "embedding",
+  "prompt": "长文本嵌入用例第11段。数据中台建设需要统一指标口径、血缘追踪与质量稽核，本段用于验证第11组输入的嵌入稳定性，不包含路由决策语义。",
+  "expect": {
+   "http": 200,
+   "embedding_dim": 1024
+  }
+ },
+ {
+  "id": "EMB-098",
+  "cat": "embedding",
+  "prompt": "长文本嵌入用例第12段。数据中台建设需要统一指标口径、血缘追踪与质量稽核，本段用于验证第12组输入的嵌入稳定性，不包含路由决策语义。",
+  "expect": {
+   "http": 200,
+   "embedding_dim": 1024
+  }
+ },
+ {
+  "id": "EMB-099",
+  "cat": "embedding",
+  "prompt": "长文本嵌入用例第13段。数据中台建设需要统一指标口径、血缘追踪与质量稽核，本段用于验证第13组输入的嵌入稳定性，不包含路由决策语义。",
+  "expect": {
+   "http": 200,
+   "embedding_dim": 1024
+  }
+ },
+ {
+  "id": "EMB-100",
+  "cat": "embedding",
+  "prompt": "长文本嵌入用例第14段。数据中台建设需要统一指标口径、血缘追踪与质量稽核，本段用于验证第14组输入的嵌入稳定性，不包含路由决策语义。",
+  "expect": {
+   "http": 200,
+   "embedding_dim": 1024
+  }
+ },
+ {
+  "id": "DS-001",
+  "cat": "difficulty",
+  "prompt": "今天天气怎么样？",
+  "expect": {
+   "http": 200,
+   "intent": "simple",
+   "difficulty_lt": 0.5,
+   "backend": "qwen2.5:0.5b"
+  }
+ },
+ {
+  "id": "DS-002",
+  "cat": "difficulty",
+  "prompt": "北京是哪个国家的首都？",
+  "expect": {
+   "http": 200,
+   "intent": "simple",
+   "difficulty_lt": 0.5,
+   "backend": "qwen2.5:0.5b"
+  }
+ },
+ {
+  "id": "DS-003",
+  "cat": "difficulty",
+  "prompt": "一周有几天？",
+  "expect": {
+   "http": 200,
+   "intent": "simple",
+   "difficulty_lt": 0.5,
+   "backend": "qwen2.5:0.5b"
+  }
+ },
+ {
+  "id": "DS-004",
+  "cat": "difficulty",
+  "prompt": "水的化学式是什么？",
+  "expect": {
+   "http": 200,
+   "intent": "simple",
+   "difficulty_lt": 0.5,
+   "backend": "qwen2.5:0.5b"
+  }
+ },
+ {
+  "id": "DS-005",
+  "cat": "difficulty",
+  "prompt": "是谁发明了电灯泡？",
+  "expect": {
+   "http": 200,
+   "intent": "simple",
+   "difficulty_lt": 0.5,
+   "backend": "qwen2.5:0.5b"
+  }
+ },
+ {
+  "id": "DS-006",
+  "cat": "difficulty",
+  "prompt": "现在几点了？",
+  "expect": {
+   "http": 200,
+   "intent": "simple",
+   "difficulty_lt": 0.5,
+   "backend": "qwen2.5:0.5b"
+  }
+ },
+ {
+  "id": "DS-007",
+  "cat": "difficulty",
+  "prompt": "你好，介绍一下你自己",
+  "expect": {
+   "http": 200,
+   "intent": "simple",
+   "difficulty_lt": 0.5,
+   "backend": "qwen2.5:0.5b"
+  }
+ },
+ {
+  "id": "DS-008",
+  "cat": "difficulty",
+  "prompt": "明天是星期几？",
+  "expect": {
+   "http": 200,
+   "intent": "simple",
+   "difficulty_lt": 0.5,
+   "backend": "qwen2.5:0.5b"
+  }
+ },
+ {
+  "id": "DS-009",
+  "cat": "difficulty",
+  "prompt": "一年有多少个月？",
+  "expect": {
+   "http": 200,
+   "intent": "simple",
+   "difficulty_lt": 0.5,
+   "backend": "qwen2.5:0.5b"
+  }
+ },
+ {
+  "id": "DS-010",
+  "cat": "difficulty",
+  "prompt": "中国的首都在哪里？",
+  "expect": {
+   "http": 200,
+   "intent": "simple",
+   "difficulty_lt": 0.5,
+   "backend": "qwen2.5:0.5b"
+  }
+ },
+ {
+  "id": "DS-011",
+  "cat": "difficulty",
+  "prompt": "这本书多少钱？",
+  "expect": {
+   "http": 200,
+   "intent": "simple",
+   "difficulty_lt": 0.5,
+   "backend": "qwen2.5:0.5b"
+  }
+ },
+ {
+  "id": "DS-012",
+  "cat": "difficulty",
+  "prompt": "帮我翻译这句话：good morning",
+  "expect": {
+   "http": 200,
+   "intent": "simple",
+   "difficulty_lt": 0.5,
+   "backend": "qwen2.5:0.5b"
+  }
+ },
+ {
+  "id": "DS-013",
+  "cat": "difficulty",
+  "prompt": "地球是圆的吗？",
+  "expect": {
+   "http": 200,
+   "intent": "simple",
+   "difficulty_lt": 0.5,
+   "backend": "qwen2.5:0.5b"
+  }
+ },
+ {
+  "id": "DS-014",
+  "cat": "difficulty",
+  "prompt": "猫的英文怎么说？",
+  "expect": {
+   "http": 200,
+   "intent": "simple",
+   "difficulty_lt": 0.5,
+   "backend": "qwen2.5:0.5b"
+  }
+ },
+ {
+  "id": "DS-015",
+  "cat": "difficulty",
+  "prompt": "1加1等于几？",
+  "expect": {
+   "http": 200,
+   "intent": "simple",
+   "difficulty_lt": 0.5,
+   "backend": "qwen2.5:0.5b"
+  }
+ },
+ {
+  "id": "DS-016",
+  "cat": "difficulty",
+  "prompt": "你喜欢什么颜色？",
+  "expect": {
+   "http": 200,
+   "intent": "simple",
+   "difficulty_lt": 0.5,
+   "backend": "qwen2.5:0.5b"
+  }
+ },
+ {
+  "id": "DS-017",
+  "cat": "difficulty",
+  "prompt": "怎么打电话给客服？",
+  "expect": {
+   "http": 200,
+   "intent": "simple",
+   "difficulty_lt": 0.5,
+   "backend": "qwen2.5:0.5b"
+  }
+ },
+ {
+  "id": "DS-018",
+  "cat": "difficulty",
+  "prompt": "米饭的热量是多少？",
+  "expect": {
+   "http": 200,
+   "intent": "simple",
+   "difficulty_lt": 0.5,
+   "backend": "qwen2.5:0.5b"
+  }
+ },
+ {
+  "id": "DS-019",
+  "cat": "difficulty",
+  "prompt": "上海在北京的哪个方向？",
+  "expect": {
+   "http": 200,
+   "intent": "simple",
+   "difficulty_lt": 0.5,
+   "backend": "qwen2.5:0.5b"
+  }
+ },
+ {
+  "id": "DS-020",
+  "cat": "difficulty",
+  "prompt": "今天限行尾号是多少？",
+  "expect": {
+   "http": 200,
+   "intent": "simple",
+   "difficulty_lt": 0.5,
+   "backend": "qwen2.5:0.5b"
+  }
+ },
+ {
+  "id": "DS-021",
+  "cat": "difficulty",
+  "prompt": "太阳从哪边升起？",
+  "expect": {
+   "http": 200,
+   "intent": "simple",
+   "difficulty_lt": 0.5,
+   "backend": "qwen2.5:0.5b"
+  }
+ },
+ {
+  "id": "DS-022",
+  "cat": "difficulty",
+  "prompt": "一年有几个季节？",
+  "expect": {
+   "http": 200,
+   "intent": "simple",
+   "difficulty_lt": 0.5,
+   "backend": "qwen2.5:0.5b"
+  }
+ },
+ {
+  "id": "DS-023",
+  "cat": "difficulty",
+  "prompt": "彩虹有几种颜色？",
+  "expect": {
+   "http": 200,
+   "intent": "simple",
+   "difficulty_lt": 0.5,
+   "backend": "qwen2.5:0.5b"
+  }
+ },
+ {
+  "id": "DS-024",
+  "cat": "difficulty",
+  "prompt": "最大的海洋是哪个？",
+  "expect": {
+   "http": 200,
+   "intent": "simple",
+   "difficulty_lt": 0.5,
+   "backend": "qwen2.5:0.5b"
+  }
+ },
+ {
+  "id": "DS-025",
+  "cat": "difficulty",
+  "prompt": "熊猫主要吃什么？",
+  "expect": {
+   "http": 200,
+   "intent": "simple",
+   "difficulty_lt": 0.5,
+   "backend": "qwen2.5:0.5b"
+  }
+ },
+ {
+  "id": "DS-026",
+  "cat": "difficulty",
+  "prompt": "长城在哪个国家？",
+  "expect": {
+   "http": 200,
+   "intent": "simple",
+   "difficulty_lt": 0.5,
+   "backend": "qwen2.5:0.5b"
+  }
+ },
+ {
+  "id": "DS-027",
+  "cat": "difficulty",
+  "prompt": "一天有多少小时？",
+  "expect": {
+   "http": 200,
+   "intent": "simple",
+   "difficulty_lt": 0.5,
+   "backend": "qwen2.5:0.5b"
+  }
+ },
+ {
+  "id": "DS-028",
+  "cat": "difficulty",
+  "prompt": "冰是什么状态的？",
+  "expect": {
+   "http": 200,
+   "intent": "simple",
+   "difficulty_lt": 0.5,
+   "backend": "qwen2.5:0.5b"
+  }
+ },
+ {
+  "id": "DS-029",
+  "cat": "difficulty",
+  "prompt": "自行车有几个轮子？",
+  "expect": {
+   "http": 200,
+   "intent": "simple",
+   "difficulty_lt": 0.5,
+   "backend": "qwen2.5:0.5b"
+  }
+ },
+ {
+  "id": "DS-030",
+  "cat": "difficulty",
+  "prompt": "春节是几月份？",
+  "expect": {
+   "http": 200,
+   "intent": "simple",
+   "difficulty_lt": 0.5,
+   "backend": "qwen2.5:0.5b"
+  }
+ },
+ {
+  "id": "DS-031",
+  "cat": "difficulty",
+  "prompt": "法国的首都是哪里？",
+  "expect": {
+   "http": 200,
+   "intent": "simple",
+   "difficulty_lt": 0.5,
+   "backend": "qwen2.5:0.5b"
+  }
+ },
+ {
+  "id": "DS-032",
+  "cat": "difficulty",
+  "prompt": "日本的货币叫什么？",
+  "expect": {
+   "http": 200,
+   "intent": "simple",
+   "difficulty_lt": 0.5,
+   "backend": "qwen2.5:0.5b"
+  }
+ },
+ {
+  "id": "DS-033",
+  "cat": "difficulty",
+  "prompt": "珠穆朗玛峰高吗？",
+  "expect": {
+   "http": 200,
+   "intent": "simple",
+   "difficulty_lt": 0.5,
+   "backend": "qwen2.5:0.5b"
+  }
+ },
+ {
+  "id": "DS-034",
+  "cat": "difficulty",
+  "prompt": "企鹅会飞吗？",
+  "expect": {
+   "http": 200,
+   "intent": "simple",
+   "difficulty_lt": 0.5,
+   "backend": "qwen2.5:0.5b"
+  }
+ },
+ {
+  "id": "DS-035",
+  "cat": "difficulty",
+  "prompt": "牛奶是什么颜色的？",
+  "expect": {
+   "http": 200,
+   "intent": "simple",
+   "difficulty_lt": 0.5,
+   "backend": "qwen2.5:0.5b"
+  }
+ },
+ {
+  "id": "DS-036",
+  "cat": "difficulty",
+  "prompt": "星期天的后一天是星期几？",
+  "expect": {
+   "http": 200,
+   "intent": "simple",
+   "difficulty_lt": 0.5,
+   "backend": "qwen2.5:0.5b"
+  }
+ },
+ {
+  "id": "DS-037",
+  "cat": "difficulty",
+  "prompt": "汉字是谁发明的？",
+  "expect": {
+   "http": 200,
+   "intent": "simple",
+   "difficulty_lt": 0.5,
+   "backend": "qwen2.5:0.5b"
+  }
+ },
+ {
+  "id": "DS-038",
+  "cat": "difficulty",
+  "prompt": "端午节吃什么？",
+  "expect": {
+   "http": 200,
+   "intent": "simple",
+   "difficulty_lt": 0.5,
+   "backend": "qwen2.5:0.5b"
+  }
+ },
+ {
+  "id": "DS-039",
+  "cat": "difficulty",
+  "prompt": "飞机在哪里起降？",
+  "expect": {
+   "http": 200,
+   "intent": "simple",
+   "difficulty_lt": 0.5,
+   "backend": "qwen2.5:0.5b"
+  }
+ },
+ {
+  "id": "DS-040",
+  "cat": "difficulty",
+  "prompt": "医生在哪里工作？",
+  "expect": {
+   "http": 200,
+   "intent": "simple",
+   "difficulty_lt": 0.5,
+   "backend": "qwen2.5:0.5b"
+  }
+ },
+ {
+  "id": "DS-041",
+  "cat": "difficulty",
+  "prompt": "夏天热还是冬天热？",
+  "expect": {
+   "http": 200,
+   "intent": "simple",
+   "difficulty_lt": 0.5,
+   "backend": "qwen2.5:0.5b"
+  }
+ },
+ {
+  "id": "DS-042",
+  "cat": "difficulty",
+  "prompt": "鱼生活在哪里？",
+  "expect": {
+   "http": 200,
+   "intent": "simple",
+   "difficulty_lt": 0.5,
+   "backend": "qwen2.5:0.5b"
+  }
+ },
+ {
+  "id": "DS-043",
+  "cat": "difficulty",
+  "prompt": "月亮会发光吗？",
+  "expect": {
+   "http": 200,
+   "intent": "simple",
+   "difficulty_lt": 0.5,
+   "backend": "qwen2.5:0.5b"
+  }
+ },
+ {
+  "id": "DS-044",
+  "cat": "difficulty",
+  "prompt": "一小时有多少分钟？",
+  "expect": {
+   "http": 200,
+   "intent": "simple",
+   "difficulty_lt": 0.5,
+   "backend": "qwen2.5:0.5b"
+  }
+ },
+ {
+  "id": "DS-045",
+  "cat": "difficulty",
+  "prompt": "三角形的边数是多少？",
+  "expect": {
+   "http": 200,
+   "intent": "simple",
+   "difficulty_lt": 0.5,
+   "backend": "qwen2.5:0.5b"
+  }
+ },
+ {
+  "id": "DS-046",
+  "cat": "difficulty",
+  "prompt": "谁写了《静夜思》？",
+  "expect": {
+   "http": 200,
+   "intent": "simple",
+   "difficulty_lt": 0.5,
+   "backend": "qwen2.5:0.5b"
+  }
+ },
+ {
+  "id": "DS-047",
+  "cat": "difficulty",
+  "prompt": "巧克力的原料是什么？",
+  "expect": {
+   "http": 200,
+   "intent": "simple",
+   "difficulty_lt": 0.5,
+   "backend": "qwen2.5:0.5b"
+  }
+ },
+ {
+  "id": "DS-048",
+  "cat": "difficulty",
+  "prompt": "足球几个人踢？",
+  "expect": {
+   "http": 200,
+   "intent": "simple",
+   "difficulty_lt": 0.5,
+   "backend": "qwen2.5:0.5b"
+  }
+ },
+ {
+  "id": "DS-049",
+  "cat": "difficulty",
+  "prompt": "地球有几颗卫星？",
+  "expect": {
+   "http": 200,
+   "intent": "simple",
+   "difficulty_lt": 0.5,
+   "backend": "qwen2.5:0.5b"
+  }
+ },
+ {
+  "id": "DS-050",
+  "cat": "difficulty",
+  "prompt": "早餐一般吃什么？",
+  "expect": {
+   "http": 200,
+   "intent": "simple",
+   "difficulty_lt": 0.5,
+   "backend": "qwen2.5:0.5b"
+  }
+ },
+ {
+  "id": "DC-001",
+  "cat": "difficulty",
+  "prompt": "请证明分布式缓存架构，逐步给出多步骤方案。第0组",
+  "expect": {
+   "http": 200,
+   "intent": "complex",
+   "difficulty_ge": 0.5,
+   "backend": "gpt-oss:20b"
+  }
+ },
+ {
+  "id": "DC-002",
+  "cat": "difficulty",
+  "prompt": "请推导消息队列可靠性，对比分析权衡并给出设计方案。第1组",
+  "expect": {
+   "http": 200,
+   "intent": "complex",
+   "difficulty_ge": 0.5,
+   "backend": "gpt-oss:20b"
+  }
+ },
+ {
+  "id": "DC-003",
+  "cat": "difficulty",
+  "prompt": "请设计编译器词法分析，推导原理并给出优化方案。第2组",
+  "expect": {
+   "http": 200,
+   "intent": "complex",
+   "difficulty_ge": 0.5,
+   "backend": "gpt-oss:20b"
+  }
+ },
+ {
+  "id": "DC-004",
+  "cat": "difficulty",
+  "prompt": "请重构分布式事务模式，给出架构评估结论与规划。第3组",
+  "expect": {
+   "http": 200,
+   "intent": "complex",
+   "difficulty_ge": 0.5,
+   "backend": "gpt-oss:20b"
+  }
+ },
+ {
+  "id": "DC-005",
+  "cat": "difficulty",
+  "prompt": "请深入分析数据库索引算法，深入分析原理并规划落地。第4组",
+  "expect": {
+   "http": 200,
+   "intent": "complex",
+   "difficulty_ge": 0.5,
+   "backend": "gpt-oss:20b"
+  }
+ },
+ {
+  "id": "DC-006",
+  "cat": "difficulty",
+  "prompt": "请对比分析推荐系统召回，逐步给出多步骤方案。第5组",
+  "expect": {
+   "http": 200,
+   "intent": "complex",
+   "difficulty_ge": 0.5,
+   "backend": "gpt-oss:20b"
+  }
+ },
+ {
+  "id": "DC-007",
+  "cat": "difficulty",
+  "prompt": "请全面评估并发容器原理，对比分析权衡并给出设计方案。第6组",
+  "expect": {
+   "http": 200,
+   "intent": "complex",
+   "difficulty_ge": 0.5,
+   "backend": "gpt-oss:20b"
+  }
+ },
+ {
+  "id": "DC-008",
+  "cat": "difficulty",
+  "prompt": "实现一个微服务拆分方案，推导原理并给出优化方案。第7组",
+  "expect": {
+   "http": 200,
+   "intent": "complex",
+   "difficulty_ge": 0.5,
+   "backend": "gpt-oss:20b"
+  }
+ },
+ {
+  "id": "DC-009",
+  "cat": "difficulty",
+  "prompt": "设计一个限流降级策略，给出架构评估结论与规划。第8组",
+  "expect": {
+   "http": 200,
+   "intent": "complex",
+   "difficulty_ge": 0.5,
+   "backend": "gpt-oss:20b"
+  }
+ },
+ {
+  "id": "DC-010",
+  "cat": "difficulty",
+  "prompt": "写一篇垃圾回收调优，深入分析原理并规划落地。第9组",
+  "expect": {
+   "http": 200,
+   "intent": "complex",
+   "difficulty_ge": 0.5,
+   "backend": "gpt-oss:20b"
+  }
+ },
+ {
+  "id": "DC-011",
+  "cat": "difficulty",
+  "prompt": "请证明微服务拆分方案，逐步给出多步骤方案。第10组",
+  "expect": {
+   "http": 200,
+   "intent": "complex",
+   "difficulty_ge": 0.5,
+   "backend": "gpt-oss:20b"
+  }
+ },
+ {
+  "id": "DC-012",
+  "cat": "difficulty",
+  "prompt": "请推导限流降级策略，对比分析权衡并给出设计方案。第11组",
+  "expect": {
+   "http": 200,
+   "intent": "complex",
+   "difficulty_ge": 0.5,
+   "backend": "gpt-oss:20b"
+  }
+ },
+ {
+  "id": "DC-013",
+  "cat": "difficulty",
+  "prompt": "请设计垃圾回收调优，推导原理并给出优化方案。第12组",
+  "expect": {
+   "http": 200,
+   "intent": "complex",
+   "difficulty_ge": 0.5,
+   "backend": "gpt-oss:20b"
+  }
+ },
+ {
+  "id": "DC-014",
+  "cat": "difficulty",
+  "prompt": "请重构分布式缓存架构，给出架构评估结论与规划。第13组",
+  "expect": {
+   "http": 200,
+   "intent": "complex",
+   "difficulty_ge": 0.5,
+   "backend": "gpt-oss:20b"
+  }
+ },
+ {
+  "id": "DC-015",
+  "cat": "difficulty",
+  "prompt": "请深入分析消息队列可靠性，深入分析原理并规划落地。第14组",
+  "expect": {
+   "http": 200,
+   "intent": "complex",
+   "difficulty_ge": 0.5,
+   "backend": "gpt-oss:20b"
+  }
+ },
+ {
+  "id": "DC-016",
+  "cat": "difficulty",
+  "prompt": "请对比分析编译器词法分析，逐步给出多步骤方案。第15组",
+  "expect": {
+   "http": 200,
+   "intent": "complex",
+   "difficulty_ge": 0.5,
+   "backend": "gpt-oss:20b"
+  }
+ },
+ {
+  "id": "DC-017",
+  "cat": "difficulty",
+  "prompt": "请全面评估分布式事务模式，对比分析权衡并给出设计方案。第16组",
+  "expect": {
+   "http": 200,
+   "intent": "complex",
+   "difficulty_ge": 0.5,
+   "backend": "gpt-oss:20b"
+  }
+ },
+ {
+  "id": "DC-018",
+  "cat": "difficulty",
+  "prompt": "实现一个数据库索引算法，推导原理并给出优化方案。第17组",
+  "expect": {
+   "http": 200,
+   "intent": "complex",
+   "difficulty_ge": 0.5,
+   "backend": "gpt-oss:20b"
+  }
+ },
+ {
+  "id": "DC-019",
+  "cat": "difficulty",
+  "prompt": "设计一个推荐系统召回，给出架构评估结论与规划。第18组",
+  "expect": {
+   "http": 200,
+   "intent": "complex",
+   "difficulty_ge": 0.5,
+   "backend": "gpt-oss:20b"
+  }
+ },
+ {
+  "id": "DC-020",
+  "cat": "difficulty",
+  "prompt": "写一篇并发容器原理，深入分析原理并规划落地。第19组",
+  "expect": {
+   "http": 200,
+   "intent": "complex",
+   "difficulty_ge": 0.5,
+   "backend": "gpt-oss:20b"
+  }
+ },
+ {
+  "id": "DC-021",
+  "cat": "difficulty",
+  "prompt": "请证明数据库索引算法，逐步给出多步骤方案。第20组",
+  "expect": {
+   "http": 200,
+   "intent": "complex",
+   "difficulty_ge": 0.5,
+   "backend": "gpt-oss:20b"
+  }
+ },
+ {
+  "id": "DC-022",
+  "cat": "difficulty",
+  "prompt": "请推导推荐系统召回，对比分析权衡并给出设计方案。第21组",
+  "expect": {
+   "http": 200,
+   "intent": "complex",
+   "difficulty_ge": 0.5,
+   "backend": "gpt-oss:20b"
+  }
+ },
+ {
+  "id": "DC-023",
+  "cat": "difficulty",
+  "prompt": "请设计并发容器原理，推导原理并给出优化方案。第22组",
+  "expect": {
+   "http": 200,
+   "intent": "complex",
+   "difficulty_ge": 0.5,
+   "backend": "gpt-oss:20b"
+  }
+ },
+ {
+  "id": "DC-024",
+  "cat": "difficulty",
+  "prompt": "请重构微服务拆分方案，给出架构评估结论与规划。第23组",
+  "expect": {
+   "http": 200,
+   "intent": "complex",
+   "difficulty_ge": 0.5,
+   "backend": "gpt-oss:20b"
+  }
+ },
+ {
+  "id": "DC-025",
+  "cat": "difficulty",
+  "prompt": "请深入分析限流降级策略，深入分析原理并规划落地。第24组",
+  "expect": {
+   "http": 200,
+   "intent": "complex",
+   "difficulty_ge": 0.5,
+   "backend": "gpt-oss:20b"
+  }
+ },
+ {
+  "id": "DC-026",
+  "cat": "difficulty",
+  "prompt": "请对比分析垃圾回收调优，逐步给出多步骤方案。第25组",
+  "expect": {
+   "http": 200,
+   "intent": "complex",
+   "difficulty_ge": 0.5,
+   "backend": "gpt-oss:20b"
+  }
+ },
+ {
+  "id": "DC-027",
+  "cat": "difficulty",
+  "prompt": "请全面评估分布式缓存架构，对比分析权衡并给出设计方案。第26组",
+  "expect": {
+   "http": 200,
+   "intent": "complex",
+   "difficulty_ge": 0.5,
+   "backend": "gpt-oss:20b"
+  }
+ },
+ {
+  "id": "DC-028",
+  "cat": "difficulty",
+  "prompt": "实现一个消息队列可靠性，推导原理并给出优化方案。第27组",
+  "expect": {
+   "http": 200,
+   "intent": "complex",
+   "difficulty_ge": 0.5,
+   "backend": "gpt-oss:20b"
+  }
+ },
+ {
+  "id": "DC-029",
+  "cat": "difficulty",
+  "prompt": "设计一个编译器词法分析，给出架构评估结论与规划。第28组",
+  "expect": {
+   "http": 200,
+   "intent": "complex",
+   "difficulty_ge": 0.5,
+   "backend": "gpt-oss:20b"
+  }
+ },
+ {
+  "id": "DC-030",
+  "cat": "difficulty",
+  "prompt": "写一篇分布式事务模式，深入分析原理并规划落地。第29组",
+  "expect": {
+   "http": 200,
+   "intent": "complex",
+   "difficulty_ge": 0.5,
+   "backend": "gpt-oss:20b"
+  }
+ },
+ {
+  "id": "DC-031",
+  "cat": "difficulty",
+  "prompt": "请证明消息队列可靠性，逐步给出多步骤方案。第30组",
+  "expect": {
+   "http": 200,
+   "intent": "complex",
+   "difficulty_ge": 0.5,
+   "backend": "gpt-oss:20b"
+  }
+ },
+ {
+  "id": "DC-032",
+  "cat": "difficulty",
+  "prompt": "请推导编译器词法分析，对比分析权衡并给出设计方案。第31组",
+  "expect": {
+   "http": 200,
+   "intent": "complex",
+   "difficulty_ge": 0.5,
+   "backend": "gpt-oss:20b"
+  }
+ },
+ {
+  "id": "DC-033",
+  "cat": "difficulty",
+  "prompt": "请设计分布式事务模式，推导原理并给出优化方案。第32组",
+  "expect": {
+   "http": 200,
+   "intent": "complex",
+   "difficulty_ge": 0.5,
+   "backend": "gpt-oss:20b"
+  }
+ },
+ {
+  "id": "DC-034",
+  "cat": "difficulty",
+  "prompt": "请重构数据库索引算法，给出架构评估结论与规划。第33组",
+  "expect": {
+   "http": 200,
+   "intent": "complex",
+   "difficulty_ge": 0.5,
+   "backend": "gpt-oss:20b"
+  }
+ },
+ {
+  "id": "DC-035",
+  "cat": "difficulty",
+  "prompt": "请深入分析推荐系统召回，深入分析原理并规划落地。第34组",
+  "expect": {
+   "http": 200,
+   "intent": "complex",
+   "difficulty_ge": 0.5,
+   "backend": "gpt-oss:20b"
+  }
+ },
+ {
+  "id": "DC-036",
+  "cat": "difficulty",
+  "prompt": "请对比分析并发容器原理，逐步给出多步骤方案。第35组",
+  "expect": {
+   "http": 200,
+   "intent": "complex",
+   "difficulty_ge": 0.5,
+   "backend": "gpt-oss:20b"
+  }
+ },
+ {
+  "id": "DC-037",
+  "cat": "difficulty",
+  "prompt": "请全面评估微服务拆分方案，对比分析权衡并给出设计方案。第36组",
+  "expect": {
+   "http": 200,
+   "intent": "complex",
+   "difficulty_ge": 0.5,
+   "backend": "gpt-oss:20b"
+  }
+ },
+ {
+  "id": "DC-038",
+  "cat": "difficulty",
+  "prompt": "实现一个限流降级策略，推导原理并给出优化方案。第37组",
+  "expect": {
+   "http": 200,
+   "intent": "complex",
+   "difficulty_ge": 0.5,
+   "backend": "gpt-oss:20b"
+  }
+ },
+ {
+  "id": "DC-039",
+  "cat": "difficulty",
+  "prompt": "设计一个垃圾回收调优，给出架构评估结论与规划。第38组",
+  "expect": {
+   "http": 200,
+   "intent": "complex",
+   "difficulty_ge": 0.5,
+   "backend": "gpt-oss:20b"
+  }
+ },
+ {
+  "id": "DC-040",
+  "cat": "difficulty",
+  "prompt": "写一篇分布式缓存架构，深入分析原理并规划落地。第39组",
+  "expect": {
+   "http": 200,
+   "intent": "complex",
+   "difficulty_ge": 0.5,
+   "backend": "gpt-oss:20b"
+  }
+ },
+ {
+  "id": "DC-041",
+  "cat": "difficulty",
+  "prompt": "请证明限流降级策略，逐步给出多步骤方案。第40组",
+  "expect": {
+   "http": 200,
+   "intent": "complex",
+   "difficulty_ge": 0.5,
+   "backend": "gpt-oss:20b"
+  }
+ },
+ {
+  "id": "DC-042",
+  "cat": "difficulty",
+  "prompt": "请推导垃圾回收调优，对比分析权衡并给出设计方案。第41组",
+  "expect": {
+   "http": 200,
+   "intent": "complex",
+   "difficulty_ge": 0.5,
+   "backend": "gpt-oss:20b"
+  }
+ },
+ {
+  "id": "DC-043",
+  "cat": "difficulty",
+  "prompt": "请设计分布式缓存架构，推导原理并给出优化方案。第42组",
+  "expect": {
+   "http": 200,
+   "intent": "complex",
+   "difficulty_ge": 0.5,
+   "backend": "gpt-oss:20b"
+  }
+ },
+ {
+  "id": "DC-044",
+  "cat": "difficulty",
+  "prompt": "请重构消息队列可靠性，给出架构评估结论与规划。第43组",
+  "expect": {
+   "http": 200,
+   "intent": "complex",
+   "difficulty_ge": 0.5,
+   "backend": "gpt-oss:20b"
+  }
+ },
+ {
+  "id": "DC-045",
+  "cat": "difficulty",
+  "prompt": "请深入分析编译器词法分析，深入分析原理并规划落地。第44组",
+  "expect": {
+   "http": 200,
+   "intent": "complex",
+   "difficulty_ge": 0.5,
+   "backend": "gpt-oss:20b"
+  }
+ },
+ {
+  "id": "DC-046",
+  "cat": "difficulty",
+  "prompt": "请对比分析分布式事务模式，逐步给出多步骤方案。第45组",
+  "expect": {
+   "http": 200,
+   "intent": "complex",
+   "difficulty_ge": 0.5,
+   "backend": "gpt-oss:20b"
+  }
+ },
+ {
+  "id": "DC-047",
+  "cat": "difficulty",
+  "prompt": "请全面评估数据库索引算法，对比分析权衡并给出设计方案。第46组",
+  "expect": {
+   "http": 200,
+   "intent": "complex",
+   "difficulty_ge": 0.5,
+   "backend": "gpt-oss:20b"
+  }
+ },
+ {
+  "id": "DC-048",
+  "cat": "difficulty",
+  "prompt": "实现一个推荐系统召回，推导原理并给出优化方案。第47组",
+  "expect": {
+   "http": 200,
+   "intent": "complex",
+   "difficulty_ge": 0.5,
+   "backend": "gpt-oss:20b"
+  }
+ },
+ {
+  "id": "DC-049",
+  "cat": "difficulty",
+  "prompt": "设计一个并发容器原理，给出架构评估结论与规划。第48组",
+  "expect": {
+   "http": 200,
+   "intent": "complex",
+   "difficulty_ge": 0.5,
+   "backend": "gpt-oss:20b"
+  }
+ },
+ {
+  "id": "DC-050",
+  "cat": "difficulty",
+  "prompt": "写一篇微服务拆分方案，深入分析原理并规划落地。第49组",
+  "expect": {
+   "http": 200,
+   "intent": "complex",
+   "difficulty_ge": 0.5,
+   "backend": "gpt-oss:20b"
+  }
+ },
+ {
+  "id": "EXP-001",
+  "cat": "explicit",
+  "model": "qwen-lite",
+  "prompt": "显式小模型用例0：今天天气怎么样？",
+  "expect": {
+   "http": 200,
+   "intent": "simple",
+   "backend": "qwen2.5:0.5b"
+  }
+ },
+ {
+  "id": "EXP-002",
+  "cat": "explicit",
+  "model": "qwen-lite",
+  "prompt": "显式小模型用例1：北京是哪个国家的首都？",
+  "expect": {
+   "http": 200,
+   "intent": "simple",
+   "backend": "qwen2.5:0.5b"
+  }
+ },
+ {
+  "id": "EXP-003",
+  "cat": "explicit",
+  "model": "qwen-lite",
+  "prompt": "显式小模型用例2：一周有几天？",
+  "expect": {
+   "http": 200,
+   "intent": "simple",
+   "backend": "qwen2.5:0.5b"
+  }
+ },
+ {
+  "id": "EXP-004",
+  "cat": "explicit",
+  "model": "qwen-lite",
+  "prompt": "显式小模型用例3：水的化学式是什么？",
+  "expect": {
+   "http": 200,
+   "intent": "simple",
+   "backend": "qwen2.5:0.5b"
+  }
+ },
+ {
+  "id": "EXP-005",
+  "cat": "explicit",
+  "model": "qwen-lite",
+  "prompt": "显式小模型用例4：是谁发明了电灯泡？",
+  "expect": {
+   "http": 200,
+   "intent": "simple",
+   "backend": "qwen2.5:0.5b"
+  }
+ },
+ {
+  "id": "EXP-006",
+  "cat": "explicit",
+  "model": "qwen-lite",
+  "prompt": "显式小模型用例5：现在几点了？",
+  "expect": {
+   "http": 200,
+   "intent": "simple",
+   "backend": "qwen2.5:0.5b"
+  }
+ },
+ {
+  "id": "EXP-007",
+  "cat": "explicit",
+  "model": "qwen-lite",
+  "prompt": "显式小模型用例6：你好，介绍一下你自己",
+  "expect": {
+   "http": 200,
+   "intent": "simple",
+   "backend": "qwen2.5:0.5b"
+  }
+ },
+ {
+  "id": "EXP-008",
+  "cat": "explicit",
+  "model": "qwen-lite",
+  "prompt": "显式小模型用例7：明天是星期几？",
+  "expect": {
+   "http": 200,
+   "intent": "simple",
+   "backend": "qwen2.5:0.5b"
+  }
+ },
+ {
+  "id": "EXP-009",
+  "cat": "explicit",
+  "model": "qwen-lite",
+  "prompt": "显式小模型用例8：一年有多少个月？",
+  "expect": {
+   "http": 200,
+   "intent": "simple",
+   "backend": "qwen2.5:0.5b"
+  }
+ },
+ {
+  "id": "EXP-010",
+  "cat": "explicit",
+  "model": "qwen-lite",
+  "prompt": "显式小模型用例9：中国的首都在哪里？",
+  "expect": {
+   "http": 200,
+   "intent": "simple",
+   "backend": "qwen2.5:0.5b"
+  }
+ },
+ {
+  "id": "EXP-011",
+  "cat": "explicit",
+  "model": "qwen-lite",
+  "prompt": "显式小模型用例10：这本书多少钱？",
+  "expect": {
+   "http": 200,
+   "intent": "simple",
+   "backend": "qwen2.5:0.5b"
+  }
+ },
+ {
+  "id": "EXP-012",
+  "cat": "explicit",
+  "model": "qwen-lite",
+  "prompt": "显式小模型用例11：帮我翻译这句话：good morning",
+  "expect": {
+   "http": 200,
+   "intent": "simple",
+   "backend": "qwen2.5:0.5b"
+  }
+ },
+ {
+  "id": "EXP-013",
+  "cat": "explicit",
+  "model": "qwen-lite",
+  "prompt": "显式小模型用例12：地球是圆的吗？",
+  "expect": {
+   "http": 200,
+   "intent": "simple",
+   "backend": "qwen2.5:0.5b"
+  }
+ },
+ {
+  "id": "EXP-014",
+  "cat": "explicit",
+  "model": "qwen-lite",
+  "prompt": "显式小模型用例13：猫的英文怎么说？",
+  "expect": {
+   "http": 200,
+   "intent": "simple",
+   "backend": "qwen2.5:0.5b"
+  }
+ },
+ {
+  "id": "EXP-015",
+  "cat": "explicit",
+  "model": "qwen-lite",
+  "prompt": "显式小模型用例14：1加1等于几？",
+  "expect": {
+   "http": 200,
+   "intent": "simple",
+   "backend": "qwen2.5:0.5b"
+  }
+ },
+ {
+  "id": "EXP-016",
+  "cat": "explicit",
+  "model": "qwen-lite",
+  "prompt": "显式小模型用例15：你喜欢什么颜色？",
+  "expect": {
+   "http": 200,
+   "intent": "simple",
+   "backend": "qwen2.5:0.5b"
+  }
+ },
+ {
+  "id": "EXP-017",
+  "cat": "explicit",
+  "model": "qwen-lite",
+  "prompt": "显式小模型用例16：怎么打电话给客服？",
+  "expect": {
+   "http": 200,
+   "intent": "simple",
+   "backend": "qwen2.5:0.5b"
+  }
+ },
+ {
+  "id": "EXP-018",
+  "cat": "explicit",
+  "model": "qwen-lite",
+  "prompt": "显式小模型用例17：米饭的热量是多少？",
+  "expect": {
+   "http": 200,
+   "intent": "simple",
+   "backend": "qwen2.5:0.5b"
+  }
+ },
+ {
+  "id": "EXP-019",
+  "cat": "explicit",
+  "model": "qwen-lite",
+  "prompt": "显式小模型用例18：上海在北京的哪个方向？",
+  "expect": {
+   "http": 200,
+   "intent": "simple",
+   "backend": "qwen2.5:0.5b"
+  }
+ },
+ {
+  "id": "EXP-020",
+  "cat": "explicit",
+  "model": "qwen-lite",
+  "prompt": "显式小模型用例19：今天限行尾号是多少？",
+  "expect": {
+   "http": 200,
+   "intent": "simple",
+   "backend": "qwen2.5:0.5b"
+  }
+ },
+ {
+  "id": "EXP-021",
+  "cat": "explicit",
+  "model": "qwen-lite",
+  "prompt": "显式小模型用例20：太阳从哪边升起？",
+  "expect": {
+   "http": 200,
+   "intent": "simple",
+   "backend": "qwen2.5:0.5b"
+  }
+ },
+ {
+  "id": "EXP-022",
+  "cat": "explicit",
+  "model": "qwen-lite",
+  "prompt": "显式小模型用例21：一年有几个季节？",
+  "expect": {
+   "http": 200,
+   "intent": "simple",
+   "backend": "qwen2.5:0.5b"
+  }
+ },
+ {
+  "id": "EXP-023",
+  "cat": "explicit",
+  "model": "qwen-lite",
+  "prompt": "显式小模型用例22：彩虹有几种颜色？",
+  "expect": {
+   "http": 200,
+   "intent": "simple",
+   "backend": "qwen2.5:0.5b"
+  }
+ },
+ {
+  "id": "EXP-024",
+  "cat": "explicit",
+  "model": "qwen-lite",
+  "prompt": "显式小模型用例23：最大的海洋是哪个？",
+  "expect": {
+   "http": 200,
+   "intent": "simple",
+   "backend": "qwen2.5:0.5b"
+  }
+ },
+ {
+  "id": "EXP-025",
+  "cat": "explicit",
+  "model": "qwen-lite",
+  "prompt": "显式小模型用例24：熊猫主要吃什么？",
+  "expect": {
+   "http": 200,
+   "intent": "simple",
+   "backend": "qwen2.5:0.5b"
+  }
+ },
+ {
+  "id": "EXP-026",
+  "cat": "explicit",
+  "model": "qwen-lite",
+  "prompt": "显式小模型用例25：长城在哪个国家？",
+  "expect": {
+   "http": 200,
+   "intent": "simple",
+   "backend": "qwen2.5:0.5b"
+  }
+ },
+ {
+  "id": "EXP-027",
+  "cat": "explicit",
+  "model": "qwen-lite",
+  "prompt": "显式小模型用例26：一天有多少小时？",
+  "expect": {
+   "http": 200,
+   "intent": "simple",
+   "backend": "qwen2.5:0.5b"
+  }
+ },
+ {
+  "id": "EXP-028",
+  "cat": "explicit",
+  "model": "qwen-lite",
+  "prompt": "显式小模型用例27：冰是什么状态的？",
+  "expect": {
+   "http": 200,
+   "intent": "simple",
+   "backend": "qwen2.5:0.5b"
+  }
+ },
+ {
+  "id": "EXP-029",
+  "cat": "explicit",
+  "model": "qwen-lite",
+  "prompt": "显式小模型用例28：自行车有几个轮子？",
+  "expect": {
+   "http": 200,
+   "intent": "simple",
+   "backend": "qwen2.5:0.5b"
+  }
+ },
+ {
+  "id": "EXP-030",
+  "cat": "explicit",
+  "model": "qwen-lite",
+  "prompt": "显式小模型用例29：春节是几月份？",
+  "expect": {
+   "http": 200,
+   "intent": "simple",
+   "backend": "qwen2.5:0.5b"
+  }
+ },
+ {
+  "id": "EXP-031",
+  "cat": "explicit",
+  "model": "qwen-lite",
+  "prompt": "显式小模型用例30：法国的首都是哪里？",
+  "expect": {
+   "http": 200,
+   "intent": "simple",
+   "backend": "qwen2.5:0.5b"
+  }
+ },
+ {
+  "id": "EXP-032",
+  "cat": "explicit",
+  "model": "qwen-lite",
+  "prompt": "显式小模型用例31：日本的货币叫什么？",
+  "expect": {
+   "http": 200,
+   "intent": "simple",
+   "backend": "qwen2.5:0.5b"
+  }
+ },
+ {
+  "id": "EXP-033",
+  "cat": "explicit",
+  "model": "qwen-lite",
+  "prompt": "显式小模型用例32：珠穆朗玛峰高吗？",
+  "expect": {
+   "http": 200,
+   "intent": "simple",
+   "backend": "qwen2.5:0.5b"
+  }
+ },
+ {
+  "id": "EXP-034",
+  "cat": "explicit",
+  "model": "qwen-lite",
+  "prompt": "显式小模型用例33：企鹅会飞吗？",
+  "expect": {
+   "http": 200,
+   "intent": "simple",
+   "backend": "qwen2.5:0.5b"
+  }
+ },
+ {
+  "id": "EXP-035",
+  "cat": "explicit",
+  "model": "qwen-lite",
+  "prompt": "显式小模型用例34：牛奶是什么颜色的？",
+  "expect": {
+   "http": 200,
+   "intent": "simple",
+   "backend": "qwen2.5:0.5b"
+  }
+ },
+ {
+  "id": "EXP-036",
+  "cat": "explicit",
+  "model": "qwen-lite",
+  "prompt": "显式小模型用例35：星期天的后一天是星期几？",
+  "expect": {
+   "http": 200,
+   "intent": "simple",
+   "backend": "qwen2.5:0.5b"
+  }
+ },
+ {
+  "id": "EXP-037",
+  "cat": "explicit",
+  "model": "qwen-lite",
+  "prompt": "显式小模型用例36：汉字是谁发明的？",
+  "expect": {
+   "http": 200,
+   "intent": "simple",
+   "backend": "qwen2.5:0.5b"
+  }
+ },
+ {
+  "id": "EXP-038",
+  "cat": "explicit",
+  "model": "qwen-lite",
+  "prompt": "显式小模型用例37：端午节吃什么？",
+  "expect": {
+   "http": 200,
+   "intent": "simple",
+   "backend": "qwen2.5:0.5b"
+  }
+ },
+ {
+  "id": "EXP-039",
+  "cat": "explicit",
+  "model": "qwen-lite",
+  "prompt": "显式小模型用例38：飞机在哪里起降？",
+  "expect": {
+   "http": 200,
+   "intent": "simple",
+   "backend": "qwen2.5:0.5b"
+  }
+ },
+ {
+  "id": "EXP-040",
+  "cat": "explicit",
+  "model": "qwen-lite",
+  "prompt": "显式小模型用例39：医生在哪里工作？",
+  "expect": {
+   "http": 200,
+   "intent": "simple",
+   "backend": "qwen2.5:0.5b"
+  }
+ },
+ {
+  "id": "EXP-041",
+  "cat": "explicit",
+  "model": "qwen-lite",
+  "prompt": "显式小模型用例40：夏天热还是冬天热？",
+  "expect": {
+   "http": 200,
+   "intent": "simple",
+   "backend": "qwen2.5:0.5b"
+  }
+ },
+ {
+  "id": "EXP-042",
+  "cat": "explicit",
+  "model": "qwen-lite",
+  "prompt": "显式小模型用例41：鱼生活在哪里？",
+  "expect": {
+   "http": 200,
+   "intent": "simple",
+   "backend": "qwen2.5:0.5b"
+  }
+ },
+ {
+  "id": "EXP-043",
+  "cat": "explicit",
+  "model": "qwen-lite",
+  "prompt": "显式小模型用例42：月亮会发光吗？",
+  "expect": {
+   "http": 200,
+   "intent": "simple",
+   "backend": "qwen2.5:0.5b"
+  }
+ },
+ {
+  "id": "EXP-044",
+  "cat": "explicit",
+  "model": "qwen-lite",
+  "prompt": "显式小模型用例43：一小时有多少分钟？",
+  "expect": {
+   "http": 200,
+   "intent": "simple",
+   "backend": "qwen2.5:0.5b"
+  }
+ },
+ {
+  "id": "EXP-045",
+  "cat": "explicit",
+  "model": "qwen-lite",
+  "prompt": "显式小模型用例44：三角形的边数是多少？",
+  "expect": {
+   "http": 200,
+   "intent": "simple",
+   "backend": "qwen2.5:0.5b"
+  }
+ },
+ {
+  "id": "EXP-046",
+  "cat": "explicit",
+  "model": "qwen-lite",
+  "prompt": "显式小模型用例45：谁写了《静夜思》？",
+  "expect": {
+   "http": 200,
+   "intent": "simple",
+   "backend": "qwen2.5:0.5b"
+  }
+ },
+ {
+  "id": "EXP-047",
+  "cat": "explicit",
+  "model": "qwen-lite",
+  "prompt": "显式小模型用例46：巧克力的原料是什么？",
+  "expect": {
+   "http": 200,
+   "intent": "simple",
+   "backend": "qwen2.5:0.5b"
+  }
+ },
+ {
+  "id": "EXP-048",
+  "cat": "explicit",
+  "model": "qwen-lite",
+  "prompt": "显式小模型用例47：足球几个人踢？",
+  "expect": {
+   "http": 200,
+   "intent": "simple",
+   "backend": "qwen2.5:0.5b"
+  }
+ },
+ {
+  "id": "EXP-049",
+  "cat": "explicit",
+  "model": "qwen-lite",
+  "prompt": "显式小模型用例48：地球有几颗卫星？",
+  "expect": {
+   "http": 200,
+   "intent": "simple",
+   "backend": "qwen2.5:0.5b"
+  }
+ },
+ {
+  "id": "EXP-050",
+  "cat": "explicit",
+  "model": "qwen-lite",
+  "prompt": "显式小模型用例49：早餐一般吃什么？",
+  "expect": {
+   "http": 200,
+   "intent": "simple",
+   "backend": "qwen2.5:0.5b"
+  }
+ },
+ {
+  "id": "EXP-051",
+  "cat": "explicit",
+  "model": "qwen-72b",
+  "prompt": "显式大模型用例0：米饭的热量是多少？",
+  "expect": {
+   "http": 200,
+   "intent": "complex",
+   "backend": "gpt-oss:20b"
+  }
+ },
+ {
+  "id": "EXP-052",
+  "cat": "explicit",
+  "model": "qwen-72b",
+  "prompt": "显式大模型用例1：上海在北京的哪个方向？",
+  "expect": {
+   "http": 200,
+   "intent": "complex",
+   "backend": "gpt-oss:20b"
+  }
+ },
+ {
+  "id": "EXP-053",
+  "cat": "explicit",
+  "model": "qwen-72b",
+  "prompt": "显式大模型用例2：今天限行尾号是多少？",
+  "expect": {
+   "http": 200,
+   "intent": "complex",
+   "backend": "gpt-oss:20b"
+  }
+ },
+ {
+  "id": "EXP-054",
+  "cat": "explicit",
+  "model": "qwen-72b",
+  "prompt": "显式大模型用例3：太阳从哪边升起？",
+  "expect": {
+   "http": 200,
+   "intent": "complex",
+   "backend": "gpt-oss:20b"
+  }
+ },
+ {
+  "id": "EXP-055",
+  "cat": "explicit",
+  "model": "qwen-72b",
+  "prompt": "显式大模型用例4：一年有几个季节？",
+  "expect": {
+   "http": 200,
+   "intent": "complex",
+   "backend": "gpt-oss:20b"
+  }
+ },
+ {
+  "id": "EXP-056",
+  "cat": "explicit",
+  "model": "qwen-72b",
+  "prompt": "显式大模型用例5：彩虹有几种颜色？",
+  "expect": {
+   "http": 200,
+   "intent": "complex",
+   "backend": "gpt-oss:20b"
+  }
+ },
+ {
+  "id": "EXP-057",
+  "cat": "explicit",
+  "model": "qwen-72b",
+  "prompt": "显式大模型用例6：最大的海洋是哪个？",
+  "expect": {
+   "http": 200,
+   "intent": "complex",
+   "backend": "gpt-oss:20b"
+  }
+ },
+ {
+  "id": "EXP-058",
+  "cat": "explicit",
+  "model": "qwen-72b",
+  "prompt": "显式大模型用例7：熊猫主要吃什么？",
+  "expect": {
+   "http": 200,
+   "intent": "complex",
+   "backend": "gpt-oss:20b"
+  }
+ },
+ {
+  "id": "EXP-059",
+  "cat": "explicit",
+  "model": "qwen-72b",
+  "prompt": "显式大模型用例8：长城在哪个国家？",
+  "expect": {
+   "http": 200,
+   "intent": "complex",
+   "backend": "gpt-oss:20b"
+  }
+ },
+ {
+  "id": "EXP-060",
+  "cat": "explicit",
+  "model": "qwen-72b",
+  "prompt": "显式大模型用例9：一天有多少小时？",
+  "expect": {
+   "http": 200,
+   "intent": "complex",
+   "backend": "gpt-oss:20b"
+  }
+ },
+ {
+  "id": "EXP-061",
+  "cat": "explicit",
+  "model": "qwen-72b",
+  "prompt": "显式大模型用例10：冰是什么状态的？",
+  "expect": {
+   "http": 200,
+   "intent": "complex",
+   "backend": "gpt-oss:20b"
+  }
+ },
+ {
+  "id": "EXP-062",
+  "cat": "explicit",
+  "model": "qwen-72b",
+  "prompt": "显式大模型用例11：自行车有几个轮子？",
+  "expect": {
+   "http": 200,
+   "intent": "complex",
+   "backend": "gpt-oss:20b"
+  }
+ },
+ {
+  "id": "EXP-063",
+  "cat": "explicit",
+  "model": "qwen-72b",
+  "prompt": "显式大模型用例12：春节是几月份？",
+  "expect": {
+   "http": 200,
+   "intent": "complex",
+   "backend": "gpt-oss:20b"
+  }
+ },
+ {
+  "id": "EXP-064",
+  "cat": "explicit",
+  "model": "qwen-72b",
+  "prompt": "显式大模型用例13：法国的首都是哪里？",
+  "expect": {
+   "http": 200,
+   "intent": "complex",
+   "backend": "gpt-oss:20b"
+  }
+ },
+ {
+  "id": "EXP-065",
+  "cat": "explicit",
+  "model": "qwen-72b",
+  "prompt": "显式大模型用例14：日本的货币叫什么？",
+  "expect": {
+   "http": 200,
+   "intent": "complex",
+   "backend": "gpt-oss:20b"
+  }
+ },
+ {
+  "id": "EXP-066",
+  "cat": "explicit",
+  "model": "qwen-72b",
+  "prompt": "显式大模型用例15：珠穆朗玛峰高吗？",
+  "expect": {
+   "http": 200,
+   "intent": "complex",
+   "backend": "gpt-oss:20b"
+  }
+ },
+ {
+  "id": "EXP-067",
+  "cat": "explicit",
+  "model": "qwen-72b",
+  "prompt": "显式大模型用例16：企鹅会飞吗？",
+  "expect": {
+   "http": 200,
+   "intent": "complex",
+   "backend": "gpt-oss:20b"
+  }
+ },
+ {
+  "id": "EXP-068",
+  "cat": "explicit",
+  "model": "qwen-72b",
+  "prompt": "显式大模型用例17：牛奶是什么颜色的？",
+  "expect": {
+   "http": 200,
+   "intent": "complex",
+   "backend": "gpt-oss:20b"
+  }
+ },
+ {
+  "id": "EXP-069",
+  "cat": "explicit",
+  "model": "qwen-72b",
+  "prompt": "显式大模型用例18：星期天的后一天是星期几？",
+  "expect": {
+   "http": 200,
+   "intent": "complex",
+   "backend": "gpt-oss:20b"
+  }
+ },
+ {
+  "id": "EXP-070",
+  "cat": "explicit",
+  "model": "qwen-72b",
+  "prompt": "显式大模型用例19：汉字是谁发明的？",
+  "expect": {
+   "http": 200,
+   "intent": "complex",
+   "backend": "gpt-oss:20b"
+  }
+ },
+ {
+  "id": "EXP-071",
+  "cat": "explicit",
+  "model": "qwen-72b",
+  "prompt": "显式大模型用例20：端午节吃什么？",
+  "expect": {
+   "http": 200,
+   "intent": "complex",
+   "backend": "gpt-oss:20b"
+  }
+ },
+ {
+  "id": "EXP-072",
+  "cat": "explicit",
+  "model": "qwen-72b",
+  "prompt": "显式大模型用例21：飞机在哪里起降？",
+  "expect": {
+   "http": 200,
+   "intent": "complex",
+   "backend": "gpt-oss:20b"
+  }
+ },
+ {
+  "id": "EXP-073",
+  "cat": "explicit",
+  "model": "qwen-72b",
+  "prompt": "显式大模型用例22：医生在哪里工作？",
+  "expect": {
+   "http": 200,
+   "intent": "complex",
+   "backend": "gpt-oss:20b"
+  }
+ },
+ {
+  "id": "EXP-074",
+  "cat": "explicit",
+  "model": "qwen-72b",
+  "prompt": "显式大模型用例23：夏天热还是冬天热？",
+  "expect": {
+   "http": 200,
+   "intent": "complex",
+   "backend": "gpt-oss:20b"
+  }
+ },
+ {
+  "id": "EXP-075",
+  "cat": "explicit",
+  "model": "qwen-72b",
+  "prompt": "显式大模型用例24：鱼生活在哪里？",
+  "expect": {
+   "http": 200,
+   "intent": "complex",
+   "backend": "gpt-oss:20b"
+  }
+ },
+ {
+  "id": "EXP-076",
+  "cat": "explicit",
+  "model": "qwen-72b",
+  "prompt": "显式大模型用例25：月亮会发光吗？",
+  "expect": {
+   "http": 200,
+   "intent": "complex",
+   "backend": "gpt-oss:20b"
+  }
+ },
+ {
+  "id": "EXP-077",
+  "cat": "explicit",
+  "model": "qwen-72b",
+  "prompt": "显式大模型用例26：一小时有多少分钟？",
+  "expect": {
+   "http": 200,
+   "intent": "complex",
+   "backend": "gpt-oss:20b"
+  }
+ },
+ {
+  "id": "EXP-078",
+  "cat": "explicit",
+  "model": "qwen-72b",
+  "prompt": "显式大模型用例27：三角形的边数是多少？",
+  "expect": {
+   "http": 200,
+   "intent": "complex",
+   "backend": "gpt-oss:20b"
+  }
+ },
+ {
+  "id": "EXP-079",
+  "cat": "explicit",
+  "model": "qwen-72b",
+  "prompt": "显式大模型用例28：谁写了《静夜思》？",
+  "expect": {
+   "http": 200,
+   "intent": "complex",
+   "backend": "gpt-oss:20b"
+  }
+ },
+ {
+  "id": "EXP-080",
+  "cat": "explicit",
+  "model": "qwen-72b",
+  "prompt": "显式大模型用例29：巧克力的原料是什么？",
+  "expect": {
+   "http": 200,
+   "intent": "complex",
+   "backend": "gpt-oss:20b"
+  }
+ },
+ {
+  "id": "EXP-081",
+  "cat": "explicit",
+  "model": "qwen-72b",
+  "prompt": "显式大模型用例30：足球几个人踢？",
+  "expect": {
+   "http": 200,
+   "intent": "complex",
+   "backend": "gpt-oss:20b"
+  }
+ },
+ {
+  "id": "EXP-082",
+  "cat": "explicit",
+  "model": "qwen-72b",
+  "prompt": "显式大模型用例31：地球有几颗卫星？",
+  "expect": {
+   "http": 200,
+   "intent": "complex",
+   "backend": "gpt-oss:20b"
+  }
+ },
+ {
+  "id": "EXP-083",
+  "cat": "explicit",
+  "model": "qwen-72b",
+  "prompt": "显式大模型用例32：早餐一般吃什么？",
+  "expect": {
+   "http": 200,
+   "intent": "complex",
+   "backend": "gpt-oss:20b"
+  }
+ },
+ {
+  "id": "EXP-084",
+  "cat": "explicit",
+  "model": "qwen-72b",
+  "prompt": "显式大模型用例33：今天天气怎么样？",
+  "expect": {
+   "http": 200,
+   "intent": "complex",
+   "backend": "gpt-oss:20b"
+  }
+ },
+ {
+  "id": "EXP-085",
+  "cat": "explicit",
+  "model": "qwen-72b",
+  "prompt": "显式大模型用例34：北京是哪个国家的首都？",
+  "expect": {
+   "http": 200,
+   "intent": "complex",
+   "backend": "gpt-oss:20b"
+  }
+ },
+ {
+  "id": "EXP-086",
+  "cat": "explicit",
+  "model": "qwen-72b",
+  "prompt": "显式大模型用例35：一周有几天？",
+  "expect": {
+   "http": 200,
+   "intent": "complex",
+   "backend": "gpt-oss:20b"
+  }
+ },
+ {
+  "id": "EXP-087",
+  "cat": "explicit",
+  "model": "qwen-72b",
+  "prompt": "显式大模型用例36：水的化学式是什么？",
+  "expect": {
+   "http": 200,
+   "intent": "complex",
+   "backend": "gpt-oss:20b"
+  }
+ },
+ {
+  "id": "EXP-088",
+  "cat": "explicit",
+  "model": "qwen-72b",
+  "prompt": "显式大模型用例37：是谁发明了电灯泡？",
+  "expect": {
+   "http": 200,
+   "intent": "complex",
+   "backend": "gpt-oss:20b"
+  }
+ },
+ {
+  "id": "EXP-089",
+  "cat": "explicit",
+  "model": "qwen-72b",
+  "prompt": "显式大模型用例38：现在几点了？",
+  "expect": {
+   "http": 200,
+   "intent": "complex",
+   "backend": "gpt-oss:20b"
+  }
+ },
+ {
+  "id": "EXP-090",
+  "cat": "explicit",
+  "model": "qwen-72b",
+  "prompt": "显式大模型用例39：你好，介绍一下你自己",
+  "expect": {
+   "http": 200,
+   "intent": "complex",
+   "backend": "gpt-oss:20b"
+  }
+ },
+ {
+  "id": "EXP-091",
+  "cat": "explicit",
+  "model": "qwen-72b",
+  "prompt": "显式大模型用例40：明天是星期几？",
+  "expect": {
+   "http": 200,
+   "intent": "complex",
+   "backend": "gpt-oss:20b"
+  }
+ },
+ {
+  "id": "EXP-092",
+  "cat": "explicit",
+  "model": "qwen-72b",
+  "prompt": "显式大模型用例41：一年有多少个月？",
+  "expect": {
+   "http": 200,
+   "intent": "complex",
+   "backend": "gpt-oss:20b"
+  }
+ },
+ {
+  "id": "EXP-093",
+  "cat": "explicit",
+  "model": "qwen-72b",
+  "prompt": "显式大模型用例42：中国的首都在哪里？",
+  "expect": {
+   "http": 200,
+   "intent": "complex",
+   "backend": "gpt-oss:20b"
+  }
+ },
+ {
+  "id": "EXP-094",
+  "cat": "explicit",
+  "model": "qwen-72b",
+  "prompt": "显式大模型用例43：这本书多少钱？",
+  "expect": {
+   "http": 200,
+   "intent": "complex",
+   "backend": "gpt-oss:20b"
+  }
+ },
+ {
+  "id": "EXP-095",
+  "cat": "explicit",
+  "model": "qwen-72b",
+  "prompt": "显式大模型用例44：帮我翻译这句话：good morning",
+  "expect": {
+   "http": 200,
+   "intent": "complex",
+   "backend": "gpt-oss:20b"
+  }
+ },
+ {
+  "id": "EXP-096",
+  "cat": "explicit",
+  "model": "qwen-72b",
+  "prompt": "显式大模型用例45：地球是圆的吗？",
+  "expect": {
+   "http": 200,
+   "intent": "complex",
+   "backend": "gpt-oss:20b"
+  }
+ },
+ {
+  "id": "EXP-097",
+  "cat": "explicit",
+  "model": "qwen-72b",
+  "prompt": "显式大模型用例46：猫的英文怎么说？",
+  "expect": {
+   "http": 200,
+   "intent": "complex",
+   "backend": "gpt-oss:20b"
+  }
+ },
+ {
+  "id": "EXP-098",
+  "cat": "explicit",
+  "model": "qwen-72b",
+  "prompt": "显式大模型用例47：1加1等于几？",
+  "expect": {
+   "http": 200,
+   "intent": "complex",
+   "backend": "gpt-oss:20b"
+  }
+ },
+ {
+  "id": "EXP-099",
+  "cat": "explicit",
+  "model": "qwen-72b",
+  "prompt": "显式大模型用例48：你喜欢什么颜色？",
+  "expect": {
+   "http": 200,
+   "intent": "complex",
+   "backend": "gpt-oss:20b"
+  }
+ },
+ {
+  "id": "EXP-100",
+  "cat": "explicit",
+  "model": "qwen-72b",
+  "prompt": "显式大模型用例49：怎么打电话给客服？",
+  "expect": {
+   "http": 200,
+   "intent": "complex",
+   "backend": "gpt-oss:20b"
+  }
+ },
+ {
+  "id": "ERR-001",
+  "cat": "error",
+  "model": "gpt-99b",
+  "prompt": "未注册模型用例",
+  "expect": {
+   "http": 404,
+   "err_code": "model_not_found",
+   "err_type": "invalid_request_error"
+  }
+ },
+ {
+  "id": "ERR-002",
+  "cat": "error",
+  "model": "claude-opus-x",
+  "prompt": "未注册模型用例",
+  "expect": {
+   "http": 404,
+   "err_code": "model_not_found",
+   "err_type": "invalid_request_error"
+  }
+ },
+ {
+  "id": "ERR-003",
+  "cat": "error",
+  "model": "llama-405b",
+  "prompt": "未注册模型用例",
+  "expect": {
+   "http": 404,
+   "err_code": "model_not_found",
+   "err_type": "invalid_request_error"
+  }
+ },
+ {
+  "id": "ERR-004",
+  "cat": "error",
+  "model": "gemini-ultra-2",
+  "prompt": "未注册模型用例",
+  "expect": {
+   "http": 404,
+   "err_code": "model_not_found",
+   "err_type": "invalid_request_error"
+  }
+ },
+ {
+  "id": "ERR-005",
+  "cat": "error",
+  "model": "mistral-9000",
+  "prompt": "未注册模型用例",
+  "expect": {
+   "http": 404,
+   "err_code": "model_not_found",
+   "err_type": "invalid_request_error"
+  }
+ },
+ {
+  "id": "ERR-006",
+  "cat": "error",
+  "model": "未注册模型甲",
+  "prompt": "未注册模型用例",
+  "expect": {
+   "http": 404,
+   "err_code": "model_not_found",
+   "err_type": "invalid_request_error"
+  }
+ },
+ {
+  "id": "ERR-007",
+  "cat": "error",
+  "model": "不存在的模型乙",
+  "prompt": "未注册模型用例",
+  "expect": {
+   "http": 404,
+   "err_code": "model_not_found",
+   "err_type": "invalid_request_error"
+  }
+ },
+ {
+  "id": "ERR-008",
+  "cat": "error",
+  "model": "no-such-model-01",
+  "prompt": "未注册模型用例",
+  "expect": {
+   "http": 404,
+   "err_code": "model_not_found",
+   "err_type": "invalid_request_error"
+  }
+ },
+ {
+  "id": "ERR-009",
+  "cat": "error",
+  "model": "no-such-model-02",
+  "prompt": "未注册模型用例",
+  "expect": {
+   "http": 404,
+   "err_code": "model_not_found",
+   "err_type": "invalid_request_error"
+  }
+ },
+ {
+  "id": "ERR-010",
+  "cat": "error",
+  "model": "phantom-llm",
+  "prompt": "未注册模型用例",
+  "expect": {
+   "http": 404,
+   "err_code": "model_not_found",
+   "err_type": "invalid_request_error"
+  }
+ },
+ {
+  "id": "ERR-011",
+  "cat": "error",
+  "model": "qwen-0.1b",
+  "prompt": "未注册模型用例",
+  "expect": {
+   "http": 404,
+   "err_code": "model_not_found",
+   "err_type": "invalid_request_error"
+  }
+ },
+ {
+  "id": "ERR-012",
+  "cat": "error",
+  "model": "deepseek-999b",
+  "prompt": "未注册模型用例",
+  "expect": {
+   "http": 404,
+   "err_code": "model_not_found",
+   "err_type": "invalid_request_error"
+  }
+ },
+ {
+  "id": "ERR-013",
+  "cat": "error",
+  "model": "chatgpt-4o-mini-fake",
+  "prompt": "未注册模型用例",
+  "expect": {
+   "http": 404,
+   "err_code": "model_not_found",
+   "err_type": "invalid_request_error"
+  }
+ },
+ {
+  "id": "ERR-014",
+  "cat": "error",
+  "model": "baichuan-max",
+  "prompt": "未注册模型用例",
+  "expect": {
+   "http": 404,
+   "err_code": "model_not_found",
+   "err_type": "invalid_request_error"
+  }
+ },
+ {
+  "id": "ERR-015",
+  "cat": "error",
+  "model": "yi-lightning-x",
+  "prompt": "未注册模型用例",
+  "expect": {
+   "http": 404,
+   "err_code": "model_not_found",
+   "err_type": "invalid_request_error"
+  }
+ },
+ {
+  "id": "ERR-016",
+  "cat": "error",
+  "model": "abc",
+  "prompt": "未注册模型用例",
+  "expect": {
+   "http": 404,
+   "err_code": "model_not_found",
+   "err_type": "invalid_request_error"
+  }
+ },
+ {
+  "id": "ERR-017",
+  "cat": "error",
+  "model": "x",
+  "prompt": "未注册模型用例",
+  "expect": {
+   "http": 404,
+   "err_code": "model_not_found",
+   "err_type": "invalid_request_error"
+  }
+ },
+ {
+  "id": "ERR-018",
+  "cat": "error",
+  "model": "12345",
+  "prompt": "未注册模型用例",
+  "expect": {
+   "http": 404,
+   "err_code": "model_not_found",
+   "err_type": "invalid_request_error"
+  }
+ },
+ {
+  "id": "ERR-019",
+  "cat": "error",
+  "model": "-leading-dash",
+  "prompt": "未注册模型用例",
+  "expect": {
+   "http": 404,
+   "err_code": "model_not_found",
+   "err_type": "invalid_request_error"
+  }
+ },
+ {
+  "id": "ERR-020",
+  "cat": "error",
+  "model": "model with space",
+  "prompt": "未注册模型用例",
+  "expect": {
+   "http": 404,
+   "err_code": "model_not_found",
+   "err_type": "invalid_request_error"
+  }
+ },
+ {
+  "id": "ERR-021",
+  "cat": "error",
+  "model": "UPPER-CASE-MODEL",
+  "prompt": "未注册模型用例",
+  "expect": {
+   "http": 404,
+   "err_code": "model_not_found",
+   "err_type": "invalid_request_error"
+  }
+ },
+ {
+  "id": "ERR-022",
+  "cat": "error",
+  "model": "emoji模型🚀",
+  "prompt": "未注册模型用例",
+  "expect": {
+   "http": 404,
+   "err_code": "model_not_found",
+   "err_type": "invalid_request_error"
+  }
+ },
+ {
+  "id": "ERR-023",
+  "cat": "error",
+  "model": "very-long-model-id-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+  "prompt": "未注册模型用例",
+  "expect": {
+   "http": 404,
+   "err_code": "model_not_found",
+   "err_type": "invalid_request_error"
+  }
+ },
+ {
+  "id": "ERR-024",
+  "cat": "error",
+  "model": "sql'; drop",
+  "prompt": "未注册模型用例",
+  "expect": {
+   "http": 404,
+   "err_code": "model_not_found",
+   "err_type": "invalid_request_error"
+  }
+ },
+ {
+  "id": "ERR-025",
+  "cat": "error",
+  "model": "../etc/passwd",
+  "prompt": "未注册模型用例",
+  "expect": {
+   "http": 404,
+   "err_code": "model_not_found",
+   "err_type": "invalid_request_error"
+  }
+ },
+ {
+  "id": "ERR-026",
+  "cat": "error",
+  "raw": "not-json",
+  "expect": {
+   "http": 400,
+   "err_code": "invalid_param"
+  }
+ },
+ {
+  "id": "ERR-027",
+  "cat": "error",
+  "raw": "{broken:}",
+  "expect": {
+   "http": 400,
+   "err_code": "invalid_param"
+  }
+ },
+ {
+  "id": "ERR-028",
+  "cat": "error",
+  "raw": "[1,2,3]",
+  "expect": {
+   "http": 400,
+   "err_code": "invalid_param"
+  }
+ },
+ {
+  "id": "ERR-029",
+  "cat": "error",
+  "raw": "{'single': 'quote'}",
+  "expect": {
+   "http": 400,
+   "err_code": "invalid_param"
+  }
+ },
+ {
+  "id": "ERR-030",
+  "cat": "error",
+  "raw": "{\"unterminated\": ",
+  "expect": {
+   "http": 400,
+   "err_code": "invalid_param"
+  }
+ },
+ {
+  "id": "ERR-031",
+  "cat": "error",
+  "raw": "12345",
+  "expect": {
+   "http": 400,
+   "err_code": "invalid_param"
+  }
+ },
+ {
+  "id": "ERR-032",
+  "cat": "error",
+  "raw": "true",
+  "expect": {
+   "http": 400,
+   "err_code": "invalid_param"
+  }
+ },
+ {
+  "id": "ERR-033",
+  "cat": "error",
+  "raw": "\"just-a-string\"",
+  "expect": {
+   "http": 400,
+   "err_code": "invalid_param"
+  }
+ },
+ {
+  "id": "ERR-034",
+  "cat": "error",
+  "raw": "{,}",
+  "expect": {
+   "http": 400,
+   "err_code": "invalid_param"
+  }
+ },
+ {
+  "id": "ERR-035",
+  "cat": "error",
+  "raw": "[}",
+  "expect": {
+   "http": 400,
+   "err_code": "invalid_param"
+  }
+ },
+ {
+  "id": "ERR-036",
+  "cat": "error",
+  "raw": "{\"messages\": null}",
+  "expect": {
+   "http": 400,
+   "err_code": "invalid_param"
+  }
+ },
+ {
+  "id": "ERR-037",
+  "cat": "error",
+  "raw": "{\"messages\": {}}",
+  "expect": {
+   "http": 400,
+   "err_code": "invalid_param"
+  }
+ },
+ {
+  "id": "ERR-038",
+  "cat": "error",
+  "raw": "{\"messages\": \"text\"}",
+  "expect": {
+   "http": 400,
+   "err_code": "invalid_param"
+  }
+ },
+ {
+  "id": "ERR-039",
+  "cat": "error",
+  "raw": "{\"model\": }",
+  "expect": {
+   "http": 400,
+   "err_code": "invalid_param"
+  }
+ },
+ {
+  "id": "ERR-040",
+  "cat": "error",
+  "raw": "null",
+  "expect": {
+   "http": 400,
+   "err_code": "invalid_param"
+  }
+ },
+ {
+  "id": "ERR-041",
+  "cat": "error",
+  "raw": "{\"messages\": [], \"model\": \"qwen-lite\"}",
+  "expect": {
+   "http": 400,
+   "err_code": "invalid_param"
+  }
+ },
+ {
+  "id": "ERR-042",
+  "cat": "error",
+  "raw": "[]",
+  "expect": {
+   "http": 400,
+   "err_code": "invalid_param"
+  }
+ },
+ {
+  "id": "ERR-043",
+  "cat": "error",
+  "raw": "  {invalid leading spaces",
+  "expect": {
+   "http": 400,
+   "err_code": "invalid_param"
+  }
+ },
+ {
+  "id": "ERR-044",
+  "cat": "error",
+  "raw": "{\"stream\": notbool}",
+  "expect": {
+   "http": 400,
+   "err_code": "invalid_param"
+  }
+ },
+ {
+  "id": "ERR-045",
+  "cat": "error",
+  "raw": "key: value",
+  "expect": {
+   "http": 400,
+   "err_code": "invalid_param"
+  }
+ },
+ {
+  "id": "ERR-046",
+  "cat": "error",
+  "user": "banned-user",
+  "prompt": "黑名单用户请求0",
+  "expect": {
+   "http": 403,
+   "err_code": "blacklisted",
+   "err_type": "permission_error"
+  }
+ },
+ {
+  "id": "ERR-047",
+  "cat": "error",
+  "user": "banned-user",
+  "prompt": "黑名单用户请求1",
+  "expect": {
+   "http": 403,
+   "err_code": "blacklisted",
+   "err_type": "permission_error"
+  },
+  "model": "qwen-lite"
+ },
+ {
+  "id": "ERR-048",
+  "cat": "error",
+  "user": "banned-user",
+  "prompt": "黑名单用户请求2",
+  "expect": {
+   "http": 403,
+   "err_code": "blacklisted",
+   "err_type": "permission_error"
+  },
+  "model": "qwen-72b"
+ },
+ {
+  "id": "ERR-049",
+  "cat": "error",
+  "user": "banned-user",
+  "prompt": "黑名单用户请求3",
+  "expect": {
+   "http": 403,
+   "err_code": "blacklisted",
+   "err_type": "permission_error"
+  }
+ },
+ {
+  "id": "ERR-050",
+  "cat": "error",
+  "user": "banned-user",
+  "prompt": "黑名单用户请求4",
+  "expect": {
+   "http": 403,
+   "err_code": "blacklisted",
+   "err_type": "permission_error"
+  },
+  "model": "qwen-lite"
+ },
+ {
+  "id": "ERR-051",
+  "cat": "error",
+  "user": "banned-user",
+  "prompt": "黑名单用户请求5",
+  "expect": {
+   "http": 403,
+   "err_code": "blacklisted",
+   "err_type": "permission_error"
+  },
+  "model": "qwen-72b"
+ },
+ {
+  "id": "ERR-052",
+  "cat": "error",
+  "user": "banned-user",
+  "prompt": "黑名单用户请求6",
+  "expect": {
+   "http": 403,
+   "err_code": "blacklisted",
+   "err_type": "permission_error"
+  }
+ },
+ {
+  "id": "ERR-053",
+  "cat": "error",
+  "user": "banned-user",
+  "prompt": "黑名单用户请求7",
+  "expect": {
+   "http": 403,
+   "err_code": "blacklisted",
+   "err_type": "permission_error"
+  },
+  "model": "qwen-lite"
+ },
+ {
+  "id": "ERR-054",
+  "cat": "error",
+  "user": "banned-user",
+  "prompt": "黑名单用户请求8",
+  "expect": {
+   "http": 403,
+   "err_code": "blacklisted",
+   "err_type": "permission_error"
+  },
+  "model": "qwen-72b"
+ },
+ {
+  "id": "ERR-055",
+  "cat": "error",
+  "user": "banned-user",
+  "prompt": "黑名单用户请求9",
+  "expect": {
+   "http": 403,
+   "err_code": "blacklisted",
+   "err_type": "permission_error"
+  }
+ },
+ {
+  "id": "ERR-056",
+  "cat": "error",
+  "user": "banned-user",
+  "prompt": "黑名单用户请求10",
+  "expect": {
+   "http": 403,
+   "err_code": "blacklisted",
+   "err_type": "permission_error"
+  },
+  "model": "qwen-lite"
+ },
+ {
+  "id": "ERR-057",
+  "cat": "error",
+  "user": "banned-user",
+  "prompt": "黑名单用户请求11",
+  "expect": {
+   "http": 403,
+   "err_code": "blacklisted",
+   "err_type": "permission_error"
+  },
+  "model": "qwen-72b"
+ },
+ {
+  "id": "ERR-058",
+  "cat": "error",
+  "user": "banned-user",
+  "prompt": "黑名单用户请求12",
+  "expect": {
+   "http": 403,
+   "err_code": "blacklisted",
+   "err_type": "permission_error"
+  }
+ },
+ {
+  "id": "ERR-059",
+  "cat": "error",
+  "user": "banned-user",
+  "prompt": "黑名单用户请求13",
+  "expect": {
+   "http": 403,
+   "err_code": "blacklisted",
+   "err_type": "permission_error"
+  },
+  "model": "qwen-lite"
+ },
+ {
+  "id": "ERR-060",
+  "cat": "error",
+  "user": "banned-user",
+  "prompt": "黑名单用户请求14",
+  "expect": {
+   "http": 403,
+   "err_code": "blacklisted",
+   "err_type": "permission_error"
+  },
+  "model": "qwen-72b"
+ },
+ {
+  "id": "ERR-061",
+  "cat": "error",
+  "prompt": "测试敏感词普通内容第0条",
+  "expect": {
+   "http": 400,
+   "err_code": "input_blocked",
+   "err_type": "content_filter"
+  }
+ },
+ {
+  "id": "ERR-062",
+  "cat": "error",
+  "prompt": "普通内容第1条违法违规",
+  "expect": {
+   "http": 400,
+   "err_code": "input_blocked",
+   "err_type": "content_filter"
+  }
+ },
+ {
+  "id": "ERR-063",
+  "cat": "error",
+  "prompt": "普通内容第2条测试敏感词普通内容第2条",
+  "expect": {
+   "http": 400,
+   "err_code": "input_blocked",
+   "err_type": "content_filter"
+  }
+ },
+ {
+  "id": "ERR-064",
+  "cat": "error",
+  "prompt": "违法违规普通内容第3条",
+  "expect": {
+   "http": 400,
+   "err_code": "input_blocked",
+   "err_type": "content_filter"
+  }
+ },
+ {
+  "id": "ERR-065",
+  "cat": "error",
+  "prompt": "普通内容第4条测试敏感词",
+  "expect": {
+   "http": 400,
+   "err_code": "input_blocked",
+   "err_type": "content_filter"
+  }
+ },
+ {
+  "id": "ERR-066",
+  "cat": "error",
+  "prompt": "普通内容第5条违法违规普通内容第5条",
+  "expect": {
+   "http": 400,
+   "err_code": "input_blocked",
+   "err_type": "content_filter"
+  }
+ },
+ {
+  "id": "ERR-067",
+  "cat": "error",
+  "prompt": "测试敏感词普通内容第6条",
+  "expect": {
+   "http": 400,
+   "err_code": "input_blocked",
+   "err_type": "content_filter"
+  }
+ },
+ {
+  "id": "ERR-068",
+  "cat": "error",
+  "prompt": "普通内容第7条违法违规",
+  "expect": {
+   "http": 400,
+   "err_code": "input_blocked",
+   "err_type": "content_filter"
+  }
+ },
+ {
+  "id": "ERR-069",
+  "cat": "error",
+  "prompt": "普通内容第8条测试敏感词普通内容第8条",
+  "expect": {
+   "http": 400,
+   "err_code": "input_blocked",
+   "err_type": "content_filter"
+  }
+ },
+ {
+  "id": "ERR-070",
+  "cat": "error",
+  "prompt": "违法违规普通内容第9条",
+  "expect": {
+   "http": 400,
+   "err_code": "input_blocked",
+   "err_type": "content_filter"
+  }
+ },
+ {
+  "id": "ERR-071",
+  "cat": "error",
+  "prompt": "普通内容第10条测试敏感词",
+  "expect": {
+   "http": 400,
+   "err_code": "input_blocked",
+   "err_type": "content_filter"
+  }
+ },
+ {
+  "id": "ERR-072",
+  "cat": "error",
+  "prompt": "普通内容第11条违法违规普通内容第11条",
+  "expect": {
+   "http": 400,
+   "err_code": "input_blocked",
+   "err_type": "content_filter"
+  }
+ },
+ {
+  "id": "ERR-073",
+  "cat": "error",
+  "prompt": "测试敏感词普通内容第12条",
+  "expect": {
+   "http": 400,
+   "err_code": "input_blocked",
+   "err_type": "content_filter"
+  }
+ },
+ {
+  "id": "ERR-074",
+  "cat": "error",
+  "prompt": "普通内容第13条违法违规",
+  "expect": {
+   "http": 400,
+   "err_code": "input_blocked",
+   "err_type": "content_filter"
+  }
+ },
+ {
+  "id": "ERR-075",
+  "cat": "error",
+  "prompt": "普通内容第14条测试敏感词普通内容第14条",
+  "expect": {
+   "http": 400,
+   "err_code": "input_blocked",
+   "err_type": "content_filter"
+  }
+ },
+ {
+  "id": "ERR-076",
+  "cat": "error",
+  "prompt": "违法违规普通内容第15条",
+  "expect": {
+   "http": 400,
+   "err_code": "input_blocked",
+   "err_type": "content_filter"
+  }
+ },
+ {
+  "id": "ERR-077",
+  "cat": "error",
+  "prompt": "普通内容第16条测试敏感词",
+  "expect": {
+   "http": 400,
+   "err_code": "input_blocked",
+   "err_type": "content_filter"
+  }
+ },
+ {
+  "id": "ERR-078",
+  "cat": "error",
+  "prompt": "普通内容第17条违法违规普通内容第17条",
+  "expect": {
+   "http": 400,
+   "err_code": "input_blocked",
+   "err_type": "content_filter"
+  }
+ },
+ {
+  "id": "ERR-079",
+  "cat": "error",
+  "prompt": "测试敏感词普通内容第18条",
+  "expect": {
+   "http": 400,
+   "err_code": "input_blocked",
+   "err_type": "content_filter"
+  }
+ },
+ {
+  "id": "ERR-080",
+  "cat": "error",
+  "prompt": "普通内容第19条违法违规",
+  "expect": {
+   "http": 400,
+   "err_code": "input_blocked",
+   "err_type": "content_filter"
+  }
+ },
+ {
+  "id": "ERR-081",
+  "cat": "error",
+  "prompt": "普通内容第20条测试敏感词普通内容第20条",
+  "expect": {
+   "http": 400,
+   "err_code": "input_blocked",
+   "err_type": "content_filter"
+  }
+ },
+ {
+  "id": "ERR-082",
+  "cat": "error",
+  "prompt": "违法违规普通内容第21条",
+  "expect": {
+   "http": 400,
+   "err_code": "input_blocked",
+   "err_type": "content_filter"
+  }
+ },
+ {
+  "id": "ERR-083",
+  "cat": "error",
+  "prompt": "普通内容第22条测试敏感词",
+  "expect": {
+   "http": 400,
+   "err_code": "input_blocked",
+   "err_type": "content_filter"
+  }
+ },
+ {
+  "id": "ERR-084",
+  "cat": "error",
+  "prompt": "普通内容第23条违法违规普通内容第23条",
+  "expect": {
+   "http": 400,
+   "err_code": "input_blocked",
+   "err_type": "content_filter"
+  }
+ },
+ {
+  "id": "ERR-085",
+  "cat": "error",
+  "prompt": "测试敏感词普通内容第24条",
+  "expect": {
+   "http": 400,
+   "err_code": "input_blocked",
+   "err_type": "content_filter"
+  }
+ },
+ {
+  "id": "ERR-086",
+  "cat": "error",
+  "stream": true,
+  "prompt": "流式请求第0条包含测试敏感词",
+  "expect": {
+   "http": 400,
+   "err_code": "input_blocked"
+  }
+ },
+ {
+  "id": "ERR-087",
+  "cat": "error",
+  "stream": true,
+  "prompt": "流式请求第1条包含违法违规",
+  "expect": {
+   "http": 400,
+   "err_code": "input_blocked"
+  }
+ },
+ {
+  "id": "ERR-088",
+  "cat": "error",
+  "stream": true,
+  "prompt": "流式请求第2条包含测试敏感词",
+  "expect": {
+   "http": 400,
+   "err_code": "input_blocked"
+  }
+ },
+ {
+  "id": "ERR-089",
+  "cat": "error",
+  "stream": true,
+  "prompt": "流式请求第3条包含违法违规",
+  "expect": {
+   "http": 400,
+   "err_code": "input_blocked"
+  }
+ },
+ {
+  "id": "ERR-090",
+  "cat": "error",
+  "stream": true,
+  "prompt": "流式请求第4条包含测试敏感词",
+  "expect": {
+   "http": 400,
+   "err_code": "input_blocked"
+  }
+ },
+ {
+  "id": "ERR-091",
+  "cat": "error",
+  "stream": true,
+  "prompt": "流式请求第5条包含违法违规",
+  "expect": {
+   "http": 400,
+   "err_code": "input_blocked"
+  }
+ },
+ {
+  "id": "ERR-092",
+  "cat": "error",
+  "stream": true,
+  "prompt": "流式请求第6条包含测试敏感词",
+  "expect": {
+   "http": 400,
+   "err_code": "input_blocked"
+  }
+ },
+ {
+  "id": "ERR-093",
+  "cat": "error",
+  "stream": true,
+  "prompt": "流式请求第7条包含违法违规",
+  "expect": {
+   "http": 400,
+   "err_code": "input_blocked"
+  }
+ },
+ {
+  "id": "ERR-094",
+  "cat": "error",
+  "stream": true,
+  "prompt": "流式请求第8条包含测试敏感词",
+  "expect": {
+   "http": 400,
+   "err_code": "input_blocked"
+  }
+ },
+ {
+  "id": "ERR-095",
+  "cat": "error",
+  "stream": true,
+  "prompt": "流式请求第9条包含违法违规",
+  "expect": {
+   "http": 400,
+   "err_code": "input_blocked"
+  }
+ },
+ {
+  "id": "ERR-096",
+  "cat": "error",
+  "stream": true,
+  "prompt": "流式请求第10条包含测试敏感词",
+  "expect": {
+   "http": 400,
+   "err_code": "input_blocked"
+  }
+ },
+ {
+  "id": "ERR-097",
+  "cat": "error",
+  "stream": true,
+  "prompt": "流式请求第11条包含违法违规",
+  "expect": {
+   "http": 400,
+   "err_code": "input_blocked"
+  }
+ },
+ {
+  "id": "ERR-098",
+  "cat": "error",
+  "stream": true,
+  "prompt": "流式请求第12条包含测试敏感词",
+  "expect": {
+   "http": 400,
+   "err_code": "input_blocked"
+  }
+ },
+ {
+  "id": "ERR-099",
+  "cat": "error",
+  "stream": true,
+  "prompt": "流式请求第13条包含违法违规",
+  "expect": {
+   "http": 400,
+   "err_code": "input_blocked"
+  }
+ },
+ {
+  "id": "ERR-100",
+  "cat": "error",
+  "stream": true,
+  "prompt": "流式请求第14条包含测试敏感词",
+  "expect": {
+   "http": 400,
+   "err_code": "input_blocked"
+  }
+ },
+ {
+  "id": "LEG-001",
+  "cat": "legacy",
+  "model": "qwen-lite",
+  "prompt": "旧协议小模型用例0",
+  "expect": {
+   "http": 200,
+   "legacy_code": 0,
+   "legacy_content": true
+  }
+ },
+ {
+  "id": "LEG-002",
+  "cat": "legacy",
+  "model": "qwen-lite",
+  "prompt": "旧协议小模型用例1",
+  "expect": {
+   "http": 200,
+   "legacy_code": 0,
+   "legacy_content": true
+  }
+ },
+ {
+  "id": "LEG-003",
+  "cat": "legacy",
+  "model": "qwen-lite",
+  "prompt": "旧协议小模型用例2",
+  "expect": {
+   "http": 200,
+   "legacy_code": 0,
+   "legacy_content": true
+  }
+ },
+ {
+  "id": "LEG-004",
+  "cat": "legacy",
+  "model": "qwen-lite",
+  "prompt": "旧协议小模型用例3",
+  "expect": {
+   "http": 200,
+   "legacy_code": 0,
+   "legacy_content": true
+  }
+ },
+ {
+  "id": "LEG-005",
+  "cat": "legacy",
+  "model": "qwen-lite",
+  "prompt": "旧协议小模型用例4",
+  "expect": {
+   "http": 200,
+   "legacy_code": 0,
+   "legacy_content": true
+  }
+ },
+ {
+  "id": "LEG-006",
+  "cat": "legacy",
+  "model": "qwen-lite",
+  "prompt": "旧协议小模型用例5",
+  "expect": {
+   "http": 200,
+   "legacy_code": 0,
+   "legacy_content": true
+  }
+ },
+ {
+  "id": "LEG-007",
+  "cat": "legacy",
+  "model": "qwen-lite",
+  "prompt": "旧协议小模型用例6",
+  "expect": {
+   "http": 200,
+   "legacy_code": 0,
+   "legacy_content": true
+  }
+ },
+ {
+  "id": "LEG-008",
+  "cat": "legacy",
+  "model": "qwen-lite",
+  "prompt": "旧协议小模型用例7",
+  "expect": {
+   "http": 200,
+   "legacy_code": 0,
+   "legacy_content": true
+  }
+ },
+ {
+  "id": "LEG-009",
+  "cat": "legacy",
+  "model": "qwen-lite",
+  "prompt": "旧协议小模型用例8",
+  "expect": {
+   "http": 200,
+   "legacy_code": 0,
+   "legacy_content": true
+  }
+ },
+ {
+  "id": "LEG-010",
+  "cat": "legacy",
+  "model": "qwen-lite",
+  "prompt": "旧协议小模型用例9",
+  "expect": {
+   "http": 200,
+   "legacy_code": 0,
+   "legacy_content": true
+  }
+ },
+ {
+  "id": "LEG-011",
+  "cat": "legacy",
+  "model": "qwen-lite",
+  "prompt": "旧协议小模型用例10",
+  "expect": {
+   "http": 200,
+   "legacy_code": 0,
+   "legacy_content": true
+  }
+ },
+ {
+  "id": "LEG-012",
+  "cat": "legacy",
+  "model": "qwen-lite",
+  "prompt": "旧协议小模型用例11",
+  "expect": {
+   "http": 200,
+   "legacy_code": 0,
+   "legacy_content": true
+  }
+ },
+ {
+  "id": "LEG-013",
+  "cat": "legacy",
+  "model": "qwen-lite",
+  "prompt": "旧协议小模型用例12",
+  "expect": {
+   "http": 200,
+   "legacy_code": 0,
+   "legacy_content": true
+  }
+ },
+ {
+  "id": "LEG-014",
+  "cat": "legacy",
+  "model": "qwen-lite",
+  "prompt": "旧协议小模型用例13",
+  "expect": {
+   "http": 200,
+   "legacy_code": 0,
+   "legacy_content": true
+  }
+ },
+ {
+  "id": "LEG-015",
+  "cat": "legacy",
+  "model": "qwen-lite",
+  "prompt": "旧协议小模型用例14",
+  "expect": {
+   "http": 200,
+   "legacy_code": 0,
+   "legacy_content": true
+  }
+ },
+ {
+  "id": "LEG-016",
+  "cat": "legacy",
+  "model": "qwen-lite",
+  "prompt": "旧协议小模型用例15",
+  "expect": {
+   "http": 200,
+   "legacy_code": 0,
+   "legacy_content": true
+  }
+ },
+ {
+  "id": "LEG-017",
+  "cat": "legacy",
+  "model": "qwen-lite",
+  "prompt": "旧协议小模型用例16",
+  "expect": {
+   "http": 200,
+   "legacy_code": 0,
+   "legacy_content": true
+  }
+ },
+ {
+  "id": "LEG-018",
+  "cat": "legacy",
+  "model": "qwen-lite",
+  "prompt": "旧协议小模型用例17",
+  "expect": {
+   "http": 200,
+   "legacy_code": 0,
+   "legacy_content": true
+  }
+ },
+ {
+  "id": "LEG-019",
+  "cat": "legacy",
+  "model": "qwen-lite",
+  "prompt": "旧协议小模型用例18",
+  "expect": {
+   "http": 200,
+   "legacy_code": 0,
+   "legacy_content": true
+  }
+ },
+ {
+  "id": "LEG-020",
+  "cat": "legacy",
+  "model": "qwen-lite",
+  "prompt": "旧协议小模型用例19",
+  "expect": {
+   "http": 200,
+   "legacy_code": 0,
+   "legacy_content": true
+  }
+ },
+ {
+  "id": "LEG-021",
+  "cat": "legacy",
+  "model": "qwen-lite",
+  "prompt": "旧协议小模型用例20",
+  "expect": {
+   "http": 200,
+   "legacy_code": 0,
+   "legacy_content": true
+  }
+ },
+ {
+  "id": "LEG-022",
+  "cat": "legacy",
+  "model": "qwen-lite",
+  "prompt": "旧协议小模型用例21",
+  "expect": {
+   "http": 200,
+   "legacy_code": 0,
+   "legacy_content": true
+  }
+ },
+ {
+  "id": "LEG-023",
+  "cat": "legacy",
+  "model": "qwen-lite",
+  "prompt": "旧协议小模型用例22",
+  "expect": {
+   "http": 200,
+   "legacy_code": 0,
+   "legacy_content": true
+  }
+ },
+ {
+  "id": "LEG-024",
+  "cat": "legacy",
+  "model": "qwen-lite",
+  "prompt": "旧协议小模型用例23",
+  "expect": {
+   "http": 200,
+   "legacy_code": 0,
+   "legacy_content": true
+  }
+ },
+ {
+  "id": "LEG-025",
+  "cat": "legacy",
+  "model": "qwen-lite",
+  "prompt": "旧协议小模型用例24",
+  "expect": {
+   "http": 200,
+   "legacy_code": 0,
+   "legacy_content": true
+  }
+ },
+ {
+  "id": "LEG-026",
+  "cat": "legacy",
+  "model": "qwen-lite",
+  "prompt": "旧协议小模型用例25",
+  "expect": {
+   "http": 200,
+   "legacy_code": 0,
+   "legacy_content": true
+  }
+ },
+ {
+  "id": "LEG-027",
+  "cat": "legacy",
+  "model": "qwen-lite",
+  "prompt": "旧协议小模型用例26",
+  "expect": {
+   "http": 200,
+   "legacy_code": 0,
+   "legacy_content": true
+  }
+ },
+ {
+  "id": "LEG-028",
+  "cat": "legacy",
+  "model": "qwen-lite",
+  "prompt": "旧协议小模型用例27",
+  "expect": {
+   "http": 200,
+   "legacy_code": 0,
+   "legacy_content": true
+  }
+ },
+ {
+  "id": "LEG-029",
+  "cat": "legacy",
+  "model": "qwen-lite",
+  "prompt": "旧协议小模型用例28",
+  "expect": {
+   "http": 200,
+   "legacy_code": 0,
+   "legacy_content": true
+  }
+ },
+ {
+  "id": "LEG-030",
+  "cat": "legacy",
+  "model": "qwen-lite",
+  "prompt": "旧协议小模型用例29",
+  "expect": {
+   "http": 200,
+   "legacy_code": 0,
+   "legacy_content": true
+  }
+ },
+ {
+  "id": "LEG-031",
+  "cat": "legacy",
+  "model": "qwen-72b",
+  "prompt": "旧协议大模型用例0",
+  "expect": {
+   "http": 200,
+   "legacy_code": 0,
+   "legacy_content": true
+  }
+ },
+ {
+  "id": "LEG-032",
+  "cat": "legacy",
+  "model": "qwen-72b",
+  "prompt": "旧协议大模型用例1",
+  "expect": {
+   "http": 200,
+   "legacy_code": 0,
+   "legacy_content": true
+  }
+ },
+ {
+  "id": "LEG-033",
+  "cat": "legacy",
+  "model": "qwen-72b",
+  "prompt": "旧协议大模型用例2",
+  "expect": {
+   "http": 200,
+   "legacy_code": 0,
+   "legacy_content": true
+  }
+ },
+ {
+  "id": "LEG-034",
+  "cat": "legacy",
+  "model": "qwen-72b",
+  "prompt": "旧协议大模型用例3",
+  "expect": {
+   "http": 200,
+   "legacy_code": 0,
+   "legacy_content": true
+  }
+ },
+ {
+  "id": "LEG-035",
+  "cat": "legacy",
+  "model": "qwen-72b",
+  "prompt": "旧协议大模型用例4",
+  "expect": {
+   "http": 200,
+   "legacy_code": 0,
+   "legacy_content": true
+  }
+ },
+ {
+  "id": "LEG-036",
+  "cat": "legacy",
+  "model": "qwen-72b",
+  "prompt": "旧协议大模型用例5",
+  "expect": {
+   "http": 200,
+   "legacy_code": 0,
+   "legacy_content": true
+  }
+ },
+ {
+  "id": "LEG-037",
+  "cat": "legacy",
+  "model": "qwen-72b",
+  "prompt": "旧协议大模型用例6",
+  "expect": {
+   "http": 200,
+   "legacy_code": 0,
+   "legacy_content": true
+  }
+ },
+ {
+  "id": "LEG-038",
+  "cat": "legacy",
+  "model": "qwen-72b",
+  "prompt": "旧协议大模型用例7",
+  "expect": {
+   "http": 200,
+   "legacy_code": 0,
+   "legacy_content": true
+  }
+ },
+ {
+  "id": "LEG-039",
+  "cat": "legacy",
+  "model": "qwen-72b",
+  "prompt": "旧协议大模型用例8",
+  "expect": {
+   "http": 200,
+   "legacy_code": 0,
+   "legacy_content": true
+  }
+ },
+ {
+  "id": "LEG-040",
+  "cat": "legacy",
+  "model": "qwen-72b",
+  "prompt": "旧协议大模型用例9",
+  "expect": {
+   "http": 200,
+   "legacy_code": 0,
+   "legacy_content": true
+  }
+ },
+ {
+  "id": "LEG-041",
+  "cat": "legacy",
+  "model": "qwen-72b",
+  "prompt": "旧协议大模型用例10",
+  "expect": {
+   "http": 200,
+   "legacy_code": 0,
+   "legacy_content": true
+  }
+ },
+ {
+  "id": "LEG-042",
+  "cat": "legacy",
+  "model": "qwen-72b",
+  "prompt": "旧协议大模型用例11",
+  "expect": {
+   "http": 200,
+   "legacy_code": 0,
+   "legacy_content": true
+  }
+ },
+ {
+  "id": "LEG-043",
+  "cat": "legacy",
+  "model": "qwen-72b",
+  "prompt": "旧协议大模型用例12",
+  "expect": {
+   "http": 200,
+   "legacy_code": 0,
+   "legacy_content": true
+  }
+ },
+ {
+  "id": "LEG-044",
+  "cat": "legacy",
+  "model": "qwen-72b",
+  "prompt": "旧协议大模型用例13",
+  "expect": {
+   "http": 200,
+   "legacy_code": 0,
+   "legacy_content": true
+  }
+ },
+ {
+  "id": "LEG-045",
+  "cat": "legacy",
+  "model": "qwen-72b",
+  "prompt": "旧协议大模型用例14",
+  "expect": {
+   "http": 200,
+   "legacy_code": 0,
+   "legacy_content": true
+  }
+ },
+ {
+  "id": "LEG-046",
+  "cat": "legacy",
+  "model": "qwen-72b",
+  "prompt": "旧协议大模型用例15",
+  "expect": {
+   "http": 200,
+   "legacy_code": 0,
+   "legacy_content": true
+  }
+ },
+ {
+  "id": "LEG-047",
+  "cat": "legacy",
+  "model": "qwen-72b",
+  "prompt": "旧协议大模型用例16",
+  "expect": {
+   "http": 200,
+   "legacy_code": 0,
+   "legacy_content": true
+  }
+ },
+ {
+  "id": "LEG-048",
+  "cat": "legacy",
+  "model": "qwen-72b",
+  "prompt": "旧协议大模型用例17",
+  "expect": {
+   "http": 200,
+   "legacy_code": 0,
+   "legacy_content": true
+  }
+ },
+ {
+  "id": "LEG-049",
+  "cat": "legacy",
+  "model": "qwen-72b",
+  "prompt": "旧协议大模型用例18",
+  "expect": {
+   "http": 200,
+   "legacy_code": 0,
+   "legacy_content": true
+  }
+ },
+ {
+  "id": "LEG-050",
+  "cat": "legacy",
+  "model": "qwen-72b",
+  "prompt": "旧协议大模型用例19",
+  "expect": {
+   "http": 200,
+   "legacy_code": 0,
+   "legacy_content": true
+  }
+ },
+ {
+  "id": "LEG-051",
+  "cat": "legacy",
+  "model": "qwen-72b",
+  "prompt": "旧协议大模型用例20",
+  "expect": {
+   "http": 200,
+   "legacy_code": 0,
+   "legacy_content": true
+  }
+ },
+ {
+  "id": "LEG-052",
+  "cat": "legacy",
+  "model": "qwen-72b",
+  "prompt": "旧协议大模型用例21",
+  "expect": {
+   "http": 200,
+   "legacy_code": 0,
+   "legacy_content": true
+  }
+ },
+ {
+  "id": "LEG-053",
+  "cat": "legacy",
+  "model": "qwen-72b",
+  "prompt": "旧协议大模型用例22",
+  "expect": {
+   "http": 200,
+   "legacy_code": 0,
+   "legacy_content": true
+  }
+ },
+ {
+  "id": "LEG-054",
+  "cat": "legacy",
+  "model": "qwen-72b",
+  "prompt": "旧协议大模型用例23",
+  "expect": {
+   "http": 200,
+   "legacy_code": 0,
+   "legacy_content": true
+  }
+ },
+ {
+  "id": "LEG-055",
+  "cat": "legacy",
+  "model": "qwen-72b",
+  "prompt": "旧协议大模型用例24",
+  "expect": {
+   "http": 200,
+   "legacy_code": 0,
+   "legacy_content": true
+  }
+ },
+ {
+  "id": "LEG-056",
+  "cat": "legacy",
+  "model": "qwen-72b",
+  "prompt": "旧协议大模型用例25",
+  "expect": {
+   "http": 200,
+   "legacy_code": 0,
+   "legacy_content": true
+  }
+ },
+ {
+  "id": "LEG-057",
+  "cat": "legacy",
+  "model": "qwen-72b",
+  "prompt": "旧协议大模型用例26",
+  "expect": {
+   "http": 200,
+   "legacy_code": 0,
+   "legacy_content": true
+  }
+ },
+ {
+  "id": "LEG-058",
+  "cat": "legacy",
+  "model": "qwen-72b",
+  "prompt": "旧协议大模型用例27",
+  "expect": {
+   "http": 200,
+   "legacy_code": 0,
+   "legacy_content": true
+  }
+ },
+ {
+  "id": "LEG-059",
+  "cat": "legacy",
+  "model": "qwen-72b",
+  "prompt": "旧协议大模型用例28",
+  "expect": {
+   "http": 200,
+   "legacy_code": 0,
+   "legacy_content": true
+  }
+ },
+ {
+  "id": "LEG-060",
+  "cat": "legacy",
+  "model": "qwen-72b",
+  "prompt": "旧协议大模型用例29",
+  "expect": {
+   "http": 200,
+   "legacy_code": 0,
+   "legacy_content": true
+  }
+ },
+ {
+  "id": "LEG-061",
+  "cat": "legacy",
+  "prompt": "旧协议默认路由用例0",
+  "expect": {
+   "http": 200,
+   "legacy_code": 0,
+   "legacy_content": true
+  }
+ },
+ {
+  "id": "LEG-062",
+  "cat": "legacy",
+  "prompt": "旧协议默认路由用例1",
+  "expect": {
+   "http": 200,
+   "legacy_code": 0,
+   "legacy_content": true
+  }
+ },
+ {
+  "id": "LEG-063",
+  "cat": "legacy",
+  "prompt": "旧协议默认路由用例2",
+  "expect": {
+   "http": 200,
+   "legacy_code": 0,
+   "legacy_content": true
+  }
+ },
+ {
+  "id": "LEG-064",
+  "cat": "legacy",
+  "prompt": "旧协议默认路由用例3",
+  "expect": {
+   "http": 200,
+   "legacy_code": 0,
+   "legacy_content": true
+  }
+ },
+ {
+  "id": "LEG-065",
+  "cat": "legacy",
+  "prompt": "旧协议默认路由用例4",
+  "expect": {
+   "http": 200,
+   "legacy_code": 0,
+   "legacy_content": true
+  }
+ },
+ {
+  "id": "LEG-066",
+  "cat": "legacy",
+  "prompt": "旧协议默认路由用例5",
+  "expect": {
+   "http": 200,
+   "legacy_code": 0,
+   "legacy_content": true
+  }
+ },
+ {
+  "id": "LEG-067",
+  "cat": "legacy",
+  "prompt": "旧协议默认路由用例6",
+  "expect": {
+   "http": 200,
+   "legacy_code": 0,
+   "legacy_content": true
+  }
+ },
+ {
+  "id": "LEG-068",
+  "cat": "legacy",
+  "prompt": "旧协议默认路由用例7",
+  "expect": {
+   "http": 200,
+   "legacy_code": 0,
+   "legacy_content": true
+  }
+ },
+ {
+  "id": "LEG-069",
+  "cat": "legacy",
+  "prompt": "旧协议默认路由用例8",
+  "expect": {
+   "http": 200,
+   "legacy_code": 0,
+   "legacy_content": true
+  }
+ },
+ {
+  "id": "LEG-070",
+  "cat": "legacy",
+  "prompt": "旧协议默认路由用例9",
+  "expect": {
+   "http": 200,
+   "legacy_code": 0,
+   "legacy_content": true
+  }
+ },
+ {
+  "id": "LEG-071",
+  "cat": "legacy",
+  "prompt": "旧协议默认路由用例10",
+  "expect": {
+   "http": 200,
+   "legacy_code": 0,
+   "legacy_content": true
+  }
+ },
+ {
+  "id": "LEG-072",
+  "cat": "legacy",
+  "prompt": "旧协议默认路由用例11",
+  "expect": {
+   "http": 200,
+   "legacy_code": 0,
+   "legacy_content": true
+  }
+ },
+ {
+  "id": "LEG-073",
+  "cat": "legacy",
+  "prompt": "旧协议默认路由用例12",
+  "expect": {
+   "http": 200,
+   "legacy_code": 0,
+   "legacy_content": true
+  }
+ },
+ {
+  "id": "LEG-074",
+  "cat": "legacy",
+  "prompt": "旧协议默认路由用例13",
+  "expect": {
+   "http": 200,
+   "legacy_code": 0,
+   "legacy_content": true
+  }
+ },
+ {
+  "id": "LEG-075",
+  "cat": "legacy",
+  "prompt": "旧协议默认路由用例14",
+  "expect": {
+   "http": 200,
+   "legacy_code": 0,
+   "legacy_content": true
+  }
+ },
+ {
+  "id": "LEG-076",
+  "cat": "legacy",
+  "prompt": "旧协议默认路由用例15",
+  "expect": {
+   "http": 200,
+   "legacy_code": 0,
+   "legacy_content": true
+  }
+ },
+ {
+  "id": "LEG-077",
+  "cat": "legacy",
+  "prompt": "旧协议默认路由用例16",
+  "expect": {
+   "http": 200,
+   "legacy_code": 0,
+   "legacy_content": true
+  }
+ },
+ {
+  "id": "LEG-078",
+  "cat": "legacy",
+  "prompt": "旧协议默认路由用例17",
+  "expect": {
+   "http": 200,
+   "legacy_code": 0,
+   "legacy_content": true
+  }
+ },
+ {
+  "id": "LEG-079",
+  "cat": "legacy",
+  "prompt": "旧协议默认路由用例18",
+  "expect": {
+   "http": 200,
+   "legacy_code": 0,
+   "legacy_content": true
+  }
+ },
+ {
+  "id": "LEG-080",
+  "cat": "legacy",
+  "prompt": "旧协议默认路由用例19",
+  "expect": {
+   "http": 200,
+   "legacy_code": 0,
+   "legacy_content": true
+  }
+ },
+ {
+  "id": "LEG-081",
+  "cat": "legacy",
+  "model": "qwen-lite",
+  "prompt": "旧协议maxTokens映射用例0",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "legacy_code": 0
+  }
+ },
+ {
+  "id": "LEG-082",
+  "cat": "legacy",
+  "model": "qwen-lite",
+  "prompt": "旧协议maxTokens映射用例1",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "legacy_code": 0
+  }
+ },
+ {
+  "id": "LEG-083",
+  "cat": "legacy",
+  "model": "qwen-lite",
+  "prompt": "旧协议maxTokens映射用例2",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "legacy_code": 0
+  }
+ },
+ {
+  "id": "LEG-084",
+  "cat": "legacy",
+  "model": "qwen-lite",
+  "prompt": "旧协议maxTokens映射用例3",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "legacy_code": 0
+  }
+ },
+ {
+  "id": "LEG-085",
+  "cat": "legacy",
+  "model": "qwen-lite",
+  "prompt": "旧协议maxTokens映射用例4",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "legacy_code": 0
+  }
+ },
+ {
+  "id": "LEG-086",
+  "cat": "legacy",
+  "model": "not-exist-0",
+  "prompt": "旧协议未注册模型",
+  "expect": {
+   "http": 404,
+   "legacy_code": -1
+  }
+ },
+ {
+  "id": "LEG-087",
+  "cat": "legacy",
+  "model": "not-exist-1",
+  "prompt": "旧协议未注册模型",
+  "expect": {
+   "http": 404,
+   "legacy_code": -1
+  }
+ },
+ {
+  "id": "LEG-088",
+  "cat": "legacy",
+  "model": "not-exist-2",
+  "prompt": "旧协议未注册模型",
+  "expect": {
+   "http": 404,
+   "legacy_code": -1
+  }
+ },
+ {
+  "id": "LEG-089",
+  "cat": "legacy",
+  "model": "not-exist-3",
+  "prompt": "旧协议未注册模型",
+  "expect": {
+   "http": 404,
+   "legacy_code": -1
+  }
+ },
+ {
+  "id": "LEG-090",
+  "cat": "legacy",
+  "model": "not-exist-4",
+  "prompt": "旧协议未注册模型",
+  "expect": {
+   "http": 404,
+   "legacy_code": -1
+  }
+ },
+ {
+  "id": "LEG-091",
+  "cat": "legacy",
+  "raw": "legacy-not-json",
+  "expect": {
+   "http": 400,
+   "legacy_code": -1
+  }
+ },
+ {
+  "id": "LEG-092",
+  "cat": "legacy",
+  "raw": "{bad",
+  "expect": {
+   "http": 400,
+   "legacy_code": -1
+  }
+ },
+ {
+  "id": "LEG-093",
+  "cat": "legacy",
+  "raw": "]",
+  "expect": {
+   "http": 400,
+   "legacy_code": -1
+  }
+ },
+ {
+  "id": "LEG-094",
+  "cat": "legacy",
+  "raw": "42",
+  "expect": {
+   "http": 400,
+   "legacy_code": -1
+  }
+ },
+ {
+  "id": "LEG-095",
+  "cat": "legacy",
+  "raw": "legacy\t\n bad",
+  "expect": {
+   "http": 400,
+   "legacy_code": -1
+  }
+ },
+ {
+  "id": "LEG-096",
+  "cat": "legacy",
+  "user": "banned-user",
+  "model": "qwen-lite",
+  "prompt": "旧协议黑名单0",
+  "expect": {
+   "http": 403,
+   "legacy_code": -1
+  }
+ },
+ {
+  "id": "LEG-097",
+  "cat": "legacy",
+  "user": "banned-user",
+  "model": "qwen-lite",
+  "prompt": "旧协议黑名单1",
+  "expect": {
+   "http": 403,
+   "legacy_code": -1
+  }
+ },
+ {
+  "id": "LEG-098",
+  "cat": "legacy",
+  "user": "banned-user",
+  "model": "qwen-lite",
+  "prompt": "旧协议黑名单2",
+  "expect": {
+   "http": 403,
+   "legacy_code": -1
+  }
+ },
+ {
+  "id": "LEG-099",
+  "cat": "legacy",
+  "user": "banned-user",
+  "model": "qwen-lite",
+  "prompt": "旧协议黑名单3",
+  "expect": {
+   "http": 403,
+   "legacy_code": -1
+  }
+ },
+ {
+  "id": "LEG-100",
+  "cat": "legacy",
+  "user": "banned-user",
+  "model": "qwen-lite",
+  "prompt": "旧协议黑名单4",
+  "expect": {
+   "http": 403,
+   "legacy_code": -1
+  }
+ },
+ {
+  "id": "CH-001",
+  "cat": "cache",
+  "model": "qwen-lite",
+  "prompt": "缓存测试0：什么是机器学习？",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200
+  }
+ },
+ {
+  "id": "CH-002",
+  "cat": "cache",
+  "ref": "CH-001",
+  "expect": {
+   "http": 200,
+   "cache_hit": true,
+   "cache_level": "exact"
+  }
+ },
+ {
+  "id": "CH-003",
+  "cat": "cache",
+  "model": "qwen-lite",
+  "prompt": "缓存测试1：如何烹饪意大利面？",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200
+  }
+ },
+ {
+  "id": "CH-004",
+  "cat": "cache",
+  "ref": "CH-003",
+  "expect": {
+   "http": 200,
+   "cache_hit": true,
+   "cache_level": "exact"
+  }
+ },
+ {
+  "id": "CH-005",
+  "cat": "cache",
+  "model": "qwen-lite",
+  "prompt": "缓存测试2：量子力学的基本原理是什么？",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200
+  }
+ },
+ {
+  "id": "CH-006",
+  "cat": "cache",
+  "ref": "CH-005",
+  "expect": {
+   "http": 200,
+   "cache_hit": true,
+   "cache_level": "exact"
+  }
+ },
+ {
+  "id": "CH-007",
+  "cat": "cache",
+  "model": "qwen-lite",
+  "prompt": "缓存测试3：介绍一下巴黎的著名景点",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200
+  }
+ },
+ {
+  "id": "CH-008",
+  "cat": "cache",
+  "ref": "CH-007",
+  "expect": {
+   "http": 200,
+   "cache_hit": true,
+   "cache_level": "exact"
+  }
+ },
+ {
+  "id": "CH-009",
+  "cat": "cache",
+  "model": "qwen-lite",
+  "prompt": "缓存测试4：如何培养良好的睡眠习惯？",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200
+  }
+ },
+ {
+  "id": "CH-010",
+  "cat": "cache",
+  "ref": "CH-009",
+  "expect": {
+   "http": 200,
+   "cache_hit": true,
+   "cache_level": "exact"
+  }
+ },
+ {
+  "id": "CH-011",
+  "cat": "cache",
+  "model": "qwen-lite",
+  "prompt": "缓存测试5：讲解一下TCP/IP协议",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200
+  }
+ },
+ {
+  "id": "CH-012",
+  "cat": "cache",
+  "ref": "CH-011",
+  "expect": {
+   "http": 200,
+   "cache_hit": true,
+   "cache_level": "exact"
+  }
+ },
+ {
+  "id": "CH-013",
+  "cat": "cache",
+  "model": "qwen-lite",
+  "prompt": "缓存测试6：什么是区块链技术？",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200
+  }
+ },
+ {
+  "id": "CH-014",
+  "cat": "cache",
+  "ref": "CH-013",
+  "expect": {
+   "http": 200,
+   "cache_hit": true,
+   "cache_level": "exact"
+  }
+ },
+ {
+  "id": "CH-015",
+  "cat": "cache",
+  "model": "qwen-lite",
+  "prompt": "缓存测试7：如何学习弹钢琴？",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200
+  }
+ },
+ {
+  "id": "CH-016",
+  "cat": "cache",
+  "ref": "CH-015",
+  "expect": {
+   "http": 200,
+   "cache_hit": true,
+   "cache_level": "exact"
+  }
+ },
+ {
+  "id": "CH-017",
+  "cat": "cache",
+  "model": "qwen-lite",
+  "prompt": "缓存测试8：介绍太阳系的行星",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200
+  }
+ },
+ {
+  "id": "CH-018",
+  "cat": "cache",
+  "ref": "CH-017",
+  "expect": {
+   "http": 200,
+   "cache_hit": true,
+   "cache_level": "exact"
+  }
+ },
+ {
+  "id": "CH-019",
+  "cat": "cache",
+  "model": "qwen-lite",
+  "prompt": "缓存测试9：如何进行有效的时间管理？",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200
+  }
+ },
+ {
+  "id": "CH-020",
+  "cat": "cache",
+  "ref": "CH-019",
+  "expect": {
+   "http": 200,
+   "cache_hit": true,
+   "cache_level": "exact"
+  }
+ },
+ {
+  "id": "CH-021",
+  "cat": "cache",
+  "model": "qwen-lite",
+  "prompt": "缓存测试10：解释什么是通货膨胀",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200
+  }
+ },
+ {
+  "id": "CH-022",
+  "cat": "cache",
+  "ref": "CH-021",
+  "expect": {
+   "http": 200,
+   "cache_hit": true,
+   "cache_level": "exact"
+  }
+ },
+ {
+  "id": "CH-023",
+  "cat": "cache",
+  "model": "qwen-lite",
+  "prompt": "缓存测试11：如何提高编程能力？",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200
+  }
+ },
+ {
+  "id": "CH-024",
+  "cat": "cache",
+  "ref": "CH-023",
+  "expect": {
+   "http": 200,
+   "cache_hit": true,
+   "cache_level": "exact"
+  }
+ },
+ {
+  "id": "CH-025",
+  "cat": "cache",
+  "model": "qwen-lite",
+  "prompt": "缓存测试12：介绍文艺复兴时期的艺术",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200
+  }
+ },
+ {
+  "id": "CH-026",
+  "cat": "cache",
+  "ref": "CH-025",
+  "expect": {
+   "http": 200,
+   "cache_hit": true,
+   "cache_level": "exact"
+  }
+ },
+ {
+  "id": "CH-027",
+  "cat": "cache",
+  "model": "qwen-lite",
+  "prompt": "缓存测试13：什么是深度学习神经网络？",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200
+  }
+ },
+ {
+  "id": "CH-028",
+  "cat": "cache",
+  "ref": "CH-027",
+  "expect": {
+   "http": 200,
+   "cache_hit": true,
+   "cache_level": "exact"
+  }
+ },
+ {
+  "id": "CH-029",
+  "cat": "cache",
+  "model": "qwen-lite",
+  "prompt": "缓存测试14：如何保持身体健康？",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200
+  }
+ },
+ {
+  "id": "CH-030",
+  "cat": "cache",
+  "ref": "CH-029",
+  "expect": {
+   "http": 200,
+   "cache_hit": true,
+   "cache_level": "exact"
+  }
+ },
+ {
+  "id": "CH-031",
+  "cat": "cache",
+  "model": "qwen-lite",
+  "prompt": "缓存测试15：介绍中国的四大发明",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200
+  }
+ },
+ {
+  "id": "CH-032",
+  "cat": "cache",
+  "ref": "CH-031",
+  "expect": {
+   "http": 200,
+   "cache_hit": true,
+   "cache_level": "exact"
+  }
+ },
+ {
+  "id": "CH-033",
+  "cat": "cache",
+  "model": "qwen-lite",
+  "prompt": "缓存测试16：什么是相对论？",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200
+  }
+ },
+ {
+  "id": "CH-034",
+  "cat": "cache",
+  "ref": "CH-033",
+  "expect": {
+   "http": 200,
+   "cache_hit": true,
+   "cache_level": "exact"
+  }
+ },
+ {
+  "id": "CH-035",
+  "cat": "cache",
+  "model": "qwen-lite",
+  "prompt": "缓存测试17：如何写好一篇论文？",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200
+  }
+ },
+ {
+  "id": "CH-036",
+  "cat": "cache",
+  "ref": "CH-035",
+  "expect": {
+   "http": 200,
+   "cache_hit": true,
+   "cache_level": "exact"
+  }
+ },
+ {
+  "id": "CH-037",
+  "cat": "cache",
+  "model": "qwen-lite",
+  "prompt": "缓存测试18：介绍莎士比亚的作品",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200
+  }
+ },
+ {
+  "id": "CH-038",
+  "cat": "cache",
+  "ref": "CH-037",
+  "expect": {
+   "http": 200,
+   "cache_hit": true,
+   "cache_level": "exact"
+  }
+ },
+ {
+  "id": "CH-039",
+  "cat": "cache",
+  "model": "qwen-lite",
+  "prompt": "缓存测试19：什么是云计算？",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200
+  }
+ },
+ {
+  "id": "CH-040",
+  "cat": "cache",
+  "ref": "CH-039",
+  "expect": {
+   "http": 200,
+   "cache_hit": true,
+   "cache_level": "exact"
+  }
+ },
+ {
+  "id": "CH-041",
+  "cat": "cache",
+  "model": "qwen-lite",
+  "prompt": "精确缓存写入用例20：序号20的测试问题是什么？",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200
+  }
+ },
+ {
+  "id": "CH-042",
+  "cat": "cache",
+  "ref": "CH-041",
+  "expect": {
+   "http": 200,
+   "cache_hit": true,
+   "cache_level": "exact"
+  }
+ },
+ {
+  "id": "CH-043",
+  "cat": "cache",
+  "model": "qwen-lite",
+  "prompt": "精确缓存写入用例21：序号21的测试问题是什么？",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200
+  }
+ },
+ {
+  "id": "CH-044",
+  "cat": "cache",
+  "ref": "CH-043",
+  "expect": {
+   "http": 200,
+   "cache_hit": true,
+   "cache_level": "exact"
+  }
+ },
+ {
+  "id": "CH-045",
+  "cat": "cache",
+  "model": "qwen-lite",
+  "prompt": "精确缓存写入用例22：序号22的测试问题是什么？",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200
+  }
+ },
+ {
+  "id": "CH-046",
+  "cat": "cache",
+  "ref": "CH-045",
+  "expect": {
+   "http": 200,
+   "cache_hit": true,
+   "cache_level": "exact"
+  }
+ },
+ {
+  "id": "CH-047",
+  "cat": "cache",
+  "model": "qwen-lite",
+  "prompt": "精确缓存写入用例23：序号23的测试问题是什么？",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200
+  }
+ },
+ {
+  "id": "CH-048",
+  "cat": "cache",
+  "ref": "CH-047",
+  "expect": {
+   "http": 200,
+   "cache_hit": true,
+   "cache_level": "exact"
+  }
+ },
+ {
+  "id": "CH-049",
+  "cat": "cache",
+  "model": "qwen-lite",
+  "prompt": "精确缓存写入用例24：序号24的测试问题是什么？",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200
+  }
+ },
+ {
+  "id": "CH-050",
+  "cat": "cache",
+  "ref": "CH-049",
+  "expect": {
+   "http": 200,
+   "cache_hit": true,
+   "cache_level": "exact"
+  }
+ },
+ {
+  "id": "CH-051",
+  "cat": "cache",
+  "model": "qwen-72b",
+  "nonce_group": "sem-pair-0",
+  "prompt": "语义缓存基准问法0：2+1等于几？",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200
+  }
+ },
+ {
+  "id": "CH-052",
+  "cat": "cache",
+  "model": "qwen-72b",
+  "nonce_group": "sem-pair-0",
+  "prompt": "语义缓存同义问法0：2+1是等于几？",
+  "expect": {
+   "http": 200,
+   "cache_hit": true,
+   "cache_level": "semantic"
+  }
+ },
+ {
+  "id": "CH-053",
+  "cat": "cache",
+  "model": "qwen-72b",
+  "nonce_group": "sem-pair-1",
+  "prompt": "语义缓存基准问法1：3+1等于几？",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200
+  }
+ },
+ {
+  "id": "CH-054",
+  "cat": "cache",
+  "model": "qwen-72b",
+  "nonce_group": "sem-pair-1",
+  "prompt": "语义缓存同义问法1：3+1是等于几？",
+  "expect": {
+   "http": 200,
+   "cache_hit": true,
+   "cache_level": "semantic"
+  }
+ },
+ {
+  "id": "CH-055",
+  "cat": "cache",
+  "model": "qwen-72b",
+  "nonce_group": "sem-pair-2",
+  "prompt": "语义缓存基准问法2：3+2等于几？",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200
+  }
+ },
+ {
+  "id": "CH-056",
+  "cat": "cache",
+  "model": "qwen-72b",
+  "nonce_group": "sem-pair-2",
+  "prompt": "语义缓存同义问法2：3+2是等于几？",
+  "expect": {
+   "http": 200,
+   "cache_hit": true,
+   "cache_level": "semantic"
+  }
+ },
+ {
+  "id": "CH-057",
+  "cat": "cache",
+  "model": "qwen-72b",
+  "nonce_group": "sem-pair-3",
+  "prompt": "语义缓存基准问法3：4+1等于几？",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200
+  }
+ },
+ {
+  "id": "CH-058",
+  "cat": "cache",
+  "model": "qwen-72b",
+  "nonce_group": "sem-pair-3",
+  "prompt": "语义缓存同义问法3：4+1是等于几？",
+  "expect": {
+   "http": 200,
+   "cache_hit": true,
+   "cache_level": "semantic"
+  }
+ },
+ {
+  "id": "CH-059",
+  "cat": "cache",
+  "model": "qwen-72b",
+  "nonce_group": "sem-pair-4",
+  "prompt": "语义缓存基准问法4：4+2等于几？",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200
+  }
+ },
+ {
+  "id": "CH-060",
+  "cat": "cache",
+  "model": "qwen-72b",
+  "nonce_group": "sem-pair-4",
+  "prompt": "语义缓存同义问法4：4+2是等于几？",
+  "expect": {
+   "http": 200,
+   "cache_hit": true,
+   "cache_level": "semantic"
+  }
+ },
+ {
+  "id": "CH-061",
+  "cat": "cache",
+  "model": "qwen-72b",
+  "nonce_group": "sem-pair-5",
+  "prompt": "语义缓存基准问法5：4+3等于几？",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200
+  }
+ },
+ {
+  "id": "CH-062",
+  "cat": "cache",
+  "model": "qwen-72b",
+  "nonce_group": "sem-pair-5",
+  "prompt": "语义缓存同义问法5：4+3是等于几？",
+  "expect": {
+   "http": 200,
+   "cache_hit": true,
+   "cache_level": "semantic"
+  }
+ },
+ {
+  "id": "CH-063",
+  "cat": "cache",
+  "model": "qwen-72b",
+  "nonce_group": "sem-pair-6",
+  "prompt": "语义缓存基准问法6：5+1等于几？",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200
+  }
+ },
+ {
+  "id": "CH-064",
+  "cat": "cache",
+  "model": "qwen-72b",
+  "nonce_group": "sem-pair-6",
+  "prompt": "语义缓存同义问法6：5+1是等于几？",
+  "expect": {
+   "http": 200,
+   "cache_hit": true,
+   "cache_level": "semantic"
+  }
+ },
+ {
+  "id": "CH-065",
+  "cat": "cache",
+  "model": "qwen-72b",
+  "nonce_group": "sem-pair-7",
+  "prompt": "语义缓存基准问法7：5+2等于几？",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200
+  }
+ },
+ {
+  "id": "CH-066",
+  "cat": "cache",
+  "model": "qwen-72b",
+  "nonce_group": "sem-pair-7",
+  "prompt": "语义缓存同义问法7：5+2是等于几？",
+  "expect": {
+   "http": 200,
+   "cache_hit": true,
+   "cache_level": "semantic"
+  }
+ },
+ {
+  "id": "CH-067",
+  "cat": "cache",
+  "model": "qwen-72b",
+  "nonce_group": "sem-pair-8",
+  "prompt": "语义缓存基准问法8：5+3等于几？",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200
+  }
+ },
+ {
+  "id": "CH-068",
+  "cat": "cache",
+  "model": "qwen-72b",
+  "nonce_group": "sem-pair-8",
+  "prompt": "语义缓存同义问法8：5+3是等于几？",
+  "expect": {
+   "http": 200,
+   "cache_hit": true,
+   "cache_level": "semantic"
+  }
+ },
+ {
+  "id": "CH-069",
+  "cat": "cache",
+  "model": "qwen-72b",
+  "nonce_group": "sem-pair-9",
+  "prompt": "语义缓存基准问法9：5+4等于几？",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200
+  }
+ },
+ {
+  "id": "CH-070",
+  "cat": "cache",
+  "model": "qwen-72b",
+  "nonce_group": "sem-pair-9",
+  "prompt": "语义缓存同义问法9：5+4是等于几？",
+  "expect": {
+   "http": 200,
+   "cache_hit": true,
+   "cache_level": "semantic"
+  }
+ },
+ {
+  "id": "CH-071",
+  "cat": "cache",
+  "model": "qwen-72b",
+  "prompt": "跨模型隔离用例0：编号0的隔离验证问题",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200
+  }
+ },
+ {
+  "id": "CH-072",
+  "cat": "cache",
+  "ref": "CH-071",
+  "model": "qwen-lite",
+  "expect": {
+   "http": 200,
+   "cache_hit": false
+  }
+ },
+ {
+  "id": "CH-073",
+  "cat": "cache",
+  "model": "qwen-72b",
+  "prompt": "跨模型隔离用例1：编号1的隔离验证问题",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200
+  }
+ },
+ {
+  "id": "CH-074",
+  "cat": "cache",
+  "ref": "CH-073",
+  "model": "qwen-lite",
+  "expect": {
+   "http": 200,
+   "cache_hit": false
+  }
+ },
+ {
+  "id": "CH-075",
+  "cat": "cache",
+  "model": "qwen-72b",
+  "prompt": "跨模型隔离用例2：编号2的隔离验证问题",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200
+  }
+ },
+ {
+  "id": "CH-076",
+  "cat": "cache",
+  "ref": "CH-075",
+  "model": "qwen-lite",
+  "expect": {
+   "http": 200,
+   "cache_hit": false
+  }
+ },
+ {
+  "id": "CH-077",
+  "cat": "cache",
+  "model": "qwen-72b",
+  "prompt": "跨模型隔离用例3：编号3的隔离验证问题",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200
+  }
+ },
+ {
+  "id": "CH-078",
+  "cat": "cache",
+  "ref": "CH-077",
+  "model": "qwen-lite",
+  "expect": {
+   "http": 200,
+   "cache_hit": false
+  }
+ },
+ {
+  "id": "CH-079",
+  "cat": "cache",
+  "model": "qwen-72b",
+  "prompt": "跨模型隔离用例4：编号4的隔离验证问题",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200
+  }
+ },
+ {
+  "id": "CH-080",
+  "cat": "cache",
+  "ref": "CH-079",
+  "model": "qwen-lite",
+  "expect": {
+   "http": 200,
+   "cache_hit": false
+  }
+ },
+ {
+  "id": "CH-081",
+  "cat": "cache",
+  "model": "qwen-72b",
+  "prompt": "跨模型隔离用例5：编号5的隔离验证问题",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200
+  }
+ },
+ {
+  "id": "CH-082",
+  "cat": "cache",
+  "ref": "CH-081",
+  "model": "qwen-lite",
+  "expect": {
+   "http": 200,
+   "cache_hit": false
+  }
+ },
+ {
+  "id": "CH-083",
+  "cat": "cache",
+  "model": "qwen-72b",
+  "prompt": "跨模型隔离用例6：编号6的隔离验证问题",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200
+  }
+ },
+ {
+  "id": "CH-084",
+  "cat": "cache",
+  "ref": "CH-083",
+  "model": "qwen-lite",
+  "expect": {
+   "http": 200,
+   "cache_hit": false
+  }
+ },
+ {
+  "id": "CH-085",
+  "cat": "cache",
+  "model": "qwen-72b",
+  "prompt": "跨模型隔离用例7：编号7的隔离验证问题",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200
+  }
+ },
+ {
+  "id": "CH-086",
+  "cat": "cache",
+  "ref": "CH-085",
+  "model": "qwen-lite",
+  "expect": {
+   "http": 200,
+   "cache_hit": false
+  }
+ },
+ {
+  "id": "CH-087",
+  "cat": "cache",
+  "model": "qwen-72b",
+  "prompt": "跨模型隔离用例8：编号8的隔离验证问题",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200
+  }
+ },
+ {
+  "id": "CH-088",
+  "cat": "cache",
+  "ref": "CH-087",
+  "model": "qwen-lite",
+  "expect": {
+   "http": 200,
+   "cache_hit": false
+  }
+ },
+ {
+  "id": "CH-089",
+  "cat": "cache",
+  "model": "qwen-72b",
+  "prompt": "跨模型隔离用例9：编号9的隔离验证问题",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200
+  }
+ },
+ {
+  "id": "CH-090",
+  "cat": "cache",
+  "ref": "CH-089",
+  "model": "qwen-lite",
+  "expect": {
+   "http": 200,
+   "cache_hit": false
+  }
+ },
+ {
+  "id": "CH-091",
+  "cat": "cache",
+  "model": "qwen-lite",
+  "stream": true,
+  "prompt": "流式缓存0：如何制作寿司？",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "sse": true
+  }
+ },
+ {
+  "id": "CH-092",
+  "cat": "cache",
+  "ref": "CH-091",
+  "model": "qwen-lite",
+  "expect": {
+   "http": 200,
+   "cache_hit": true,
+   "cache_level": "exact"
+  }
+ },
+ {
+  "id": "CH-093",
+  "cat": "cache",
+  "model": "qwen-lite",
+  "stream": true,
+  "prompt": "流式缓存1：介绍古埃及文明",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "sse": true
+  }
+ },
+ {
+  "id": "CH-094",
+  "cat": "cache",
+  "ref": "CH-093",
+  "model": "qwen-lite",
+  "expect": {
+   "http": 200,
+   "cache_hit": true,
+   "cache_level": "exact"
+  }
+ },
+ {
+  "id": "CH-095",
+  "cat": "cache",
+  "model": "qwen-lite",
+  "stream": true,
+  "prompt": "流式缓存2：什么是大数据技术？",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "sse": true
+  }
+ },
+ {
+  "id": "CH-096",
+  "cat": "cache",
+  "ref": "CH-095",
+  "model": "qwen-lite",
+  "expect": {
+   "http": 200,
+   "cache_hit": true,
+   "cache_level": "exact"
+  }
+ },
+ {
+  "id": "CH-097",
+  "cat": "cache",
+  "model": "qwen-lite",
+  "stream": true,
+  "prompt": "流式缓存3：如何保护环境？",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "sse": true
+  }
+ },
+ {
+  "id": "CH-098",
+  "cat": "cache",
+  "ref": "CH-097",
+  "model": "qwen-lite",
+  "expect": {
+   "http": 200,
+   "cache_hit": true,
+   "cache_level": "exact"
+  }
+ },
+ {
+  "id": "CH-099",
+  "cat": "cache",
+  "model": "qwen-lite",
+  "stream": true,
+  "prompt": "流式缓存4：介绍古典音乐",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "sse": true
+  }
+ },
+ {
+  "id": "CH-100",
+  "cat": "cache",
+  "ref": "CH-099",
+  "model": "qwen-lite",
+  "expect": {
+   "http": 200,
+   "cache_hit": true,
+   "cache_level": "exact"
+  }
+ },
+ {
+  "id": "ST-001",
+  "cat": "stream",
+  "stream": true,
+  "prompt": "流式简单问句0：今天天气怎么样？",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "sse": true,
+   "intent": "simple"
+  }
+ },
+ {
+  "id": "ST-002",
+  "cat": "stream",
+  "stream": true,
+  "prompt": "流式简单问句1：北京是哪个国家的首都？",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "sse": true,
+   "intent": "simple"
+  }
+ },
+ {
+  "id": "ST-003",
+  "cat": "stream",
+  "stream": true,
+  "prompt": "流式简单问句2：一周有几天？",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "sse": true,
+   "intent": "simple"
+  }
+ },
+ {
+  "id": "ST-004",
+  "cat": "stream",
+  "stream": true,
+  "prompt": "流式简单问句3：水的化学式是什么？",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "sse": true,
+   "intent": "simple"
+  }
+ },
+ {
+  "id": "ST-005",
+  "cat": "stream",
+  "stream": true,
+  "prompt": "流式简单问句4：是谁发明了电灯泡？",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "sse": true,
+   "intent": "simple"
+  }
+ },
+ {
+  "id": "ST-006",
+  "cat": "stream",
+  "stream": true,
+  "prompt": "流式简单问句5：现在几点了？",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "sse": true,
+   "intent": "simple"
+  }
+ },
+ {
+  "id": "ST-007",
+  "cat": "stream",
+  "stream": true,
+  "prompt": "流式简单问句6：你好，介绍一下你自己",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "sse": true,
+   "intent": "simple"
+  }
+ },
+ {
+  "id": "ST-008",
+  "cat": "stream",
+  "stream": true,
+  "prompt": "流式简单问句7：明天是星期几？",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "sse": true,
+   "intent": "simple"
+  }
+ },
+ {
+  "id": "ST-009",
+  "cat": "stream",
+  "stream": true,
+  "prompt": "流式简单问句8：一年有多少个月？",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "sse": true,
+   "intent": "simple"
+  }
+ },
+ {
+  "id": "ST-010",
+  "cat": "stream",
+  "stream": true,
+  "prompt": "流式简单问句9：中国的首都在哪里？",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "sse": true,
+   "intent": "simple"
+  }
+ },
+ {
+  "id": "ST-011",
+  "cat": "stream",
+  "stream": true,
+  "prompt": "流式简单问句10：这本书多少钱？",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "sse": true,
+   "intent": "simple"
+  }
+ },
+ {
+  "id": "ST-012",
+  "cat": "stream",
+  "stream": true,
+  "prompt": "流式简单问句11：帮我翻译这句话：good morning",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "sse": true,
+   "intent": "simple"
+  }
+ },
+ {
+  "id": "ST-013",
+  "cat": "stream",
+  "stream": true,
+  "prompt": "流式简单问句12：地球是圆的吗？",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "sse": true,
+   "intent": "simple"
+  }
+ },
+ {
+  "id": "ST-014",
+  "cat": "stream",
+  "stream": true,
+  "prompt": "流式简单问句13：猫的英文怎么说？",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "sse": true,
+   "intent": "simple"
+  }
+ },
+ {
+  "id": "ST-015",
+  "cat": "stream",
+  "stream": true,
+  "prompt": "流式简单问句14：1加1等于几？",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "sse": true,
+   "intent": "simple"
+  }
+ },
+ {
+  "id": "ST-016",
+  "cat": "stream",
+  "stream": true,
+  "prompt": "流式简单问句15：你喜欢什么颜色？",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "sse": true,
+   "intent": "simple"
+  }
+ },
+ {
+  "id": "ST-017",
+  "cat": "stream",
+  "stream": true,
+  "prompt": "流式简单问句16：怎么打电话给客服？",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "sse": true,
+   "intent": "simple"
+  }
+ },
+ {
+  "id": "ST-018",
+  "cat": "stream",
+  "stream": true,
+  "prompt": "流式简单问句17：米饭的热量是多少？",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "sse": true,
+   "intent": "simple"
+  }
+ },
+ {
+  "id": "ST-019",
+  "cat": "stream",
+  "stream": true,
+  "prompt": "流式简单问句18：上海在北京的哪个方向？",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "sse": true,
+   "intent": "simple"
+  }
+ },
+ {
+  "id": "ST-020",
+  "cat": "stream",
+  "stream": true,
+  "prompt": "流式简单问句19：今天限行尾号是多少？",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "sse": true,
+   "intent": "simple"
+  }
+ },
+ {
+  "id": "ST-021",
+  "cat": "stream",
+  "stream": true,
+  "prompt": "流式简单问句20：太阳从哪边升起？",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "sse": true,
+   "intent": "simple"
+  }
+ },
+ {
+  "id": "ST-022",
+  "cat": "stream",
+  "stream": true,
+  "prompt": "流式简单问句21：一年有几个季节？",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "sse": true,
+   "intent": "simple"
+  }
+ },
+ {
+  "id": "ST-023",
+  "cat": "stream",
+  "stream": true,
+  "prompt": "流式简单问句22：彩虹有几种颜色？",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "sse": true,
+   "intent": "simple"
+  }
+ },
+ {
+  "id": "ST-024",
+  "cat": "stream",
+  "stream": true,
+  "prompt": "流式简单问句23：最大的海洋是哪个？",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "sse": true,
+   "intent": "simple"
+  }
+ },
+ {
+  "id": "ST-025",
+  "cat": "stream",
+  "stream": true,
+  "prompt": "流式简单问句24：熊猫主要吃什么？",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "sse": true,
+   "intent": "simple"
+  }
+ },
+ {
+  "id": "ST-026",
+  "cat": "stream",
+  "stream": true,
+  "prompt": "流式复杂任务0：请证明分布式缓存架构，逐步给出多步骤方案。第0批",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "sse": true,
+   "intent": "complex"
+  }
+ },
+ {
+  "id": "ST-027",
+  "cat": "stream",
+  "stream": true,
+  "prompt": "流式复杂任务1：请推导消息队列可靠性，对比分析权衡并给出设计方案。第1批",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "sse": true,
+   "intent": "complex"
+  }
+ },
+ {
+  "id": "ST-028",
+  "cat": "stream",
+  "stream": true,
+  "prompt": "流式复杂任务2：请设计编译器词法分析，推导原理并给出优化方案。第2批",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "sse": true,
+   "intent": "complex"
+  }
+ },
+ {
+  "id": "ST-029",
+  "cat": "stream",
+  "stream": true,
+  "prompt": "流式复杂任务3：请重构分布式事务模式，给出架构评估结论与规划。第3批",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "sse": true,
+   "intent": "complex"
+  }
+ },
+ {
+  "id": "ST-030",
+  "cat": "stream",
+  "stream": true,
+  "prompt": "流式复杂任务4：请深入分析数据库索引算法，深入分析原理并规划落地。第4批",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "sse": true,
+   "intent": "complex"
+  }
+ },
+ {
+  "id": "ST-031",
+  "cat": "stream",
+  "stream": true,
+  "prompt": "流式复杂任务5：请对比分析推荐系统召回，逐步给出多步骤方案。第5批",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "sse": true,
+   "intent": "complex"
+  }
+ },
+ {
+  "id": "ST-032",
+  "cat": "stream",
+  "stream": true,
+  "prompt": "流式复杂任务6：请全面评估并发容器原理，对比分析权衡并给出设计方案。第6批",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "sse": true,
+   "intent": "complex"
+  }
+ },
+ {
+  "id": "ST-033",
+  "cat": "stream",
+  "stream": true,
+  "prompt": "流式复杂任务7：实现一个微服务拆分方案，推导原理并给出优化方案。第7批",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "sse": true,
+   "intent": "complex"
+  }
+ },
+ {
+  "id": "ST-034",
+  "cat": "stream",
+  "stream": true,
+  "prompt": "流式复杂任务8：设计一个限流降级策略，给出架构评估结论与规划。第8批",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "sse": true,
+   "intent": "complex"
+  }
+ },
+ {
+  "id": "ST-035",
+  "cat": "stream",
+  "stream": true,
+  "prompt": "流式复杂任务9：写一篇垃圾回收调优，深入分析原理并规划落地。第9批",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "sse": true,
+   "intent": "complex"
+  }
+ },
+ {
+  "id": "ST-036",
+  "cat": "stream",
+  "stream": true,
+  "prompt": "流式复杂任务10：请证明微服务拆分方案，逐步给出多步骤方案。第10批",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "sse": true,
+   "intent": "complex"
+  }
+ },
+ {
+  "id": "ST-037",
+  "cat": "stream",
+  "stream": true,
+  "prompt": "流式复杂任务11：请推导限流降级策略，对比分析权衡并给出设计方案。第11批",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "sse": true,
+   "intent": "complex"
+  }
+ },
+ {
+  "id": "ST-038",
+  "cat": "stream",
+  "stream": true,
+  "prompt": "流式复杂任务12：请设计垃圾回收调优，推导原理并给出优化方案。第12批",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "sse": true,
+   "intent": "complex"
+  }
+ },
+ {
+  "id": "ST-039",
+  "cat": "stream",
+  "stream": true,
+  "prompt": "流式复杂任务13：请重构分布式缓存架构，给出架构评估结论与规划。第13批",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "sse": true,
+   "intent": "complex"
+  }
+ },
+ {
+  "id": "ST-040",
+  "cat": "stream",
+  "stream": true,
+  "prompt": "流式复杂任务14：请深入分析消息队列可靠性，深入分析原理并规划落地。第14批",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "sse": true,
+   "intent": "complex"
+  }
+ },
+ {
+  "id": "ST-041",
+  "cat": "stream",
+  "stream": true,
+  "prompt": "流式复杂任务15：请对比分析编译器词法分析，逐步给出多步骤方案。第15批",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "sse": true,
+   "intent": "complex"
+  }
+ },
+ {
+  "id": "ST-042",
+  "cat": "stream",
+  "stream": true,
+  "prompt": "流式复杂任务16：请全面评估分布式事务模式，对比分析权衡并给出设计方案。第16批",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "sse": true,
+   "intent": "complex"
+  }
+ },
+ {
+  "id": "ST-043",
+  "cat": "stream",
+  "stream": true,
+  "prompt": "流式复杂任务17：实现一个数据库索引算法，推导原理并给出优化方案。第17批",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "sse": true,
+   "intent": "complex"
+  }
+ },
+ {
+  "id": "ST-044",
+  "cat": "stream",
+  "stream": true,
+  "prompt": "流式复杂任务18：设计一个推荐系统召回，给出架构评估结论与规划。第18批",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "sse": true,
+   "intent": "complex"
+  }
+ },
+ {
+  "id": "ST-045",
+  "cat": "stream",
+  "stream": true,
+  "prompt": "流式复杂任务19：写一篇并发容器原理，深入分析原理并规划落地。第19批",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "sse": true,
+   "intent": "complex"
+  }
+ },
+ {
+  "id": "ST-046",
+  "cat": "stream",
+  "stream": true,
+  "prompt": "流式复杂任务20：请证明数据库索引算法，逐步给出多步骤方案。第20批",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "sse": true,
+   "intent": "complex"
+  }
+ },
+ {
+  "id": "ST-047",
+  "cat": "stream",
+  "stream": true,
+  "prompt": "流式复杂任务21：请推导推荐系统召回，对比分析权衡并给出设计方案。第21批",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "sse": true,
+   "intent": "complex"
+  }
+ },
+ {
+  "id": "ST-048",
+  "cat": "stream",
+  "stream": true,
+  "prompt": "流式复杂任务22：请设计并发容器原理，推导原理并给出优化方案。第22批",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "sse": true,
+   "intent": "complex"
+  }
+ },
+ {
+  "id": "ST-049",
+  "cat": "stream",
+  "stream": true,
+  "prompt": "流式复杂任务23：请重构微服务拆分方案，给出架构评估结论与规划。第23批",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "sse": true,
+   "intent": "complex"
+  }
+ },
+ {
+  "id": "ST-050",
+  "cat": "stream",
+  "stream": true,
+  "prompt": "流式复杂任务24：请深入分析限流降级策略，深入分析原理并规划落地。第24批",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "sse": true,
+   "intent": "complex"
+  }
+ },
+ {
+  "id": "ST-051",
+  "cat": "stream",
+  "stream": true,
+  "model": "qwen-lite",
+  "prompt": "流式问答0：介绍长城的历史",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "sse": true,
+   "intent": "simple",
+   "backend": "qwen2.5:0.5b"
+  }
+ },
+ {
+  "id": "ST-052",
+  "cat": "stream",
+  "stream": true,
+  "model": "qwen-lite",
+  "prompt": "流式问答1：如何制作咖啡？",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "sse": true,
+   "intent": "simple",
+   "backend": "qwen2.5:0.5b"
+  }
+ },
+ {
+  "id": "ST-053",
+  "cat": "stream",
+  "stream": true,
+  "model": "qwen-lite",
+  "prompt": "流式问答2：什么是人工智能？",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "sse": true,
+   "intent": "simple",
+   "backend": "qwen2.5:0.5b"
+  }
+ },
+ {
+  "id": "ST-054",
+  "cat": "stream",
+  "stream": true,
+  "model": "qwen-lite",
+  "prompt": "流式问答3：讲解摄影的基本技巧",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "sse": true,
+   "intent": "simple",
+   "backend": "qwen2.5:0.5b"
+  }
+ },
+ {
+  "id": "ST-055",
+  "cat": "stream",
+  "stream": true,
+  "model": "qwen-lite",
+  "prompt": "流式问答4：介绍古希腊哲学",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "sse": true,
+   "intent": "simple",
+   "backend": "qwen2.5:0.5b"
+  }
+ },
+ {
+  "id": "ST-056",
+  "cat": "stream",
+  "stream": true,
+  "model": "qwen-lite",
+  "prompt": "流式问答5：如何学习外语？",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "sse": true,
+   "intent": "simple",
+   "backend": "qwen2.5:0.5b"
+  }
+ },
+ {
+  "id": "ST-057",
+  "cat": "stream",
+  "stream": true,
+  "model": "qwen-lite",
+  "prompt": "流式问答6：什么是基因编辑技术？",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "sse": true,
+   "intent": "simple",
+   "backend": "qwen2.5:0.5b"
+  }
+ },
+ {
+  "id": "ST-058",
+  "cat": "stream",
+  "stream": true,
+  "model": "qwen-lite",
+  "prompt": "流式问答7：介绍世界著名的博物馆",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "sse": true,
+   "intent": "simple",
+   "backend": "qwen2.5:0.5b"
+  }
+ },
+ {
+  "id": "ST-059",
+  "cat": "stream",
+  "stream": true,
+  "model": "qwen-lite",
+  "prompt": "流式问答8：如何进行投资理财？",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "sse": true,
+   "intent": "simple",
+   "backend": "qwen2.5:0.5b"
+  }
+ },
+ {
+  "id": "ST-060",
+  "cat": "stream",
+  "stream": true,
+  "model": "qwen-lite",
+  "prompt": "流式问答9：什么是可再生能源？",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "sse": true,
+   "intent": "simple",
+   "backend": "qwen2.5:0.5b"
+  }
+ },
+ {
+  "id": "ST-061",
+  "cat": "stream",
+  "stream": true,
+  "model": "qwen-72b",
+  "prompt": "大模型流式0：介绍长城的历史",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "sse": true,
+   "intent": "complex",
+   "backend": "gpt-oss:20b"
+  }
+ },
+ {
+  "id": "ST-062",
+  "cat": "stream",
+  "stream": true,
+  "model": "qwen-72b",
+  "prompt": "大模型流式1：如何制作咖啡？",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "sse": true,
+   "intent": "complex",
+   "backend": "gpt-oss:20b"
+  }
+ },
+ {
+  "id": "ST-063",
+  "cat": "stream",
+  "stream": true,
+  "model": "qwen-72b",
+  "prompt": "大模型流式2：什么是人工智能？",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "sse": true,
+   "intent": "complex",
+   "backend": "gpt-oss:20b"
+  }
+ },
+ {
+  "id": "ST-064",
+  "cat": "stream",
+  "stream": true,
+  "model": "qwen-72b",
+  "prompt": "大模型流式3：讲解摄影的基本技巧",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "sse": true,
+   "intent": "complex",
+   "backend": "gpt-oss:20b"
+  }
+ },
+ {
+  "id": "ST-065",
+  "cat": "stream",
+  "stream": true,
+  "model": "qwen-72b",
+  "prompt": "大模型流式4：介绍古希腊哲学",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "sse": true,
+   "intent": "complex",
+   "backend": "gpt-oss:20b"
+  }
+ },
+ {
+  "id": "ST-066",
+  "cat": "stream",
+  "stream": true,
+  "model": "qwen-72b",
+  "prompt": "大模型流式5：如何学习外语？",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "sse": true,
+   "intent": "complex",
+   "backend": "gpt-oss:20b"
+  }
+ },
+ {
+  "id": "ST-067",
+  "cat": "stream",
+  "stream": true,
+  "model": "qwen-72b",
+  "prompt": "大模型流式6：什么是基因编辑技术？",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "sse": true,
+   "intent": "complex",
+   "backend": "gpt-oss:20b"
+  }
+ },
+ {
+  "id": "ST-068",
+  "cat": "stream",
+  "stream": true,
+  "model": "qwen-72b",
+  "prompt": "大模型流式7：介绍世界著名的博物馆",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "sse": true,
+   "intent": "complex",
+   "backend": "gpt-oss:20b"
+  }
+ },
+ {
+  "id": "ST-069",
+  "cat": "stream",
+  "stream": true,
+  "model": "qwen-72b",
+  "prompt": "大模型流式8：如何进行投资理财？",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "sse": true,
+   "intent": "complex",
+   "backend": "gpt-oss:20b"
+  }
+ },
+ {
+  "id": "ST-070",
+  "cat": "stream",
+  "stream": true,
+  "model": "qwen-72b",
+  "prompt": "大模型流式9：什么是可再生能源？",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "sse": true,
+   "intent": "complex",
+   "backend": "gpt-oss:20b"
+  }
+ },
+ {
+  "id": "ST-071",
+  "cat": "stream",
+  "stream": true,
+  "prompt": "流式帧序列用例0：请简短回答序号0的问题",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "sse": true
+  }
+ },
+ {
+  "id": "ST-072",
+  "cat": "stream",
+  "stream": true,
+  "prompt": "流式帧序列用例1：请简短回答序号1的问题",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "sse": true
+  }
+ },
+ {
+  "id": "ST-073",
+  "cat": "stream",
+  "stream": true,
+  "prompt": "流式帧序列用例2：请简短回答序号2的问题",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "sse": true
+  }
+ },
+ {
+  "id": "ST-074",
+  "cat": "stream",
+  "stream": true,
+  "prompt": "流式帧序列用例3：请简短回答序号3的问题",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "sse": true
+  }
+ },
+ {
+  "id": "ST-075",
+  "cat": "stream",
+  "stream": true,
+  "prompt": "流式帧序列用例4：请简短回答序号4的问题",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "sse": true
+  }
+ },
+ {
+  "id": "ST-076",
+  "cat": "stream",
+  "stream": true,
+  "prompt": "流式帧序列用例5：请简短回答序号5的问题",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "sse": true
+  }
+ },
+ {
+  "id": "ST-077",
+  "cat": "stream",
+  "stream": true,
+  "prompt": "流式帧序列用例6：请简短回答序号6的问题",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "sse": true
+  }
+ },
+ {
+  "id": "ST-078",
+  "cat": "stream",
+  "stream": true,
+  "prompt": "流式帧序列用例7：请简短回答序号7的问题",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "sse": true
+  }
+ },
+ {
+  "id": "ST-079",
+  "cat": "stream",
+  "stream": true,
+  "prompt": "流式帧序列用例8：请简短回答序号8的问题",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "sse": true
+  }
+ },
+ {
+  "id": "ST-080",
+  "cat": "stream",
+  "stream": true,
+  "prompt": "流式帧序列用例9：请简短回答序号9的问题",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "sse": true
+  }
+ },
+ {
+  "id": "ST-081",
+  "cat": "stream",
+  "stream": true,
+  "prompt": "流式帧序列用例10：请简短回答序号10的问题",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "sse": true
+  }
+ },
+ {
+  "id": "ST-082",
+  "cat": "stream",
+  "stream": true,
+  "prompt": "流式帧序列用例11：请简短回答序号11的问题",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "sse": true
+  }
+ },
+ {
+  "id": "ST-083",
+  "cat": "stream",
+  "stream": true,
+  "prompt": "流式帧序列用例12：请简短回答序号12的问题",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "sse": true
+  }
+ },
+ {
+  "id": "ST-084",
+  "cat": "stream",
+  "stream": true,
+  "prompt": "流式帧序列用例13：请简短回答序号13的问题",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "sse": true
+  }
+ },
+ {
+  "id": "ST-085",
+  "cat": "stream",
+  "stream": true,
+  "prompt": "流式帧序列用例14：请简短回答序号14的问题",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "sse": true
+  }
+ },
+ {
+  "id": "ST-086",
+  "cat": "stream",
+  "stream": true,
+  "prompt": "流式帧序列用例15：请简短回答序号15的问题",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "sse": true
+  }
+ },
+ {
+  "id": "ST-087",
+  "cat": "stream",
+  "stream": true,
+  "prompt": "流式帧序列用例16：请简短回答序号16的问题",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "sse": true
+  }
+ },
+ {
+  "id": "ST-088",
+  "cat": "stream",
+  "stream": true,
+  "prompt": "流式帧序列用例17：请简短回答序号17的问题",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "sse": true
+  }
+ },
+ {
+  "id": "ST-089",
+  "cat": "stream",
+  "stream": true,
+  "prompt": "流式帧序列用例18：请简短回答序号18的问题",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "sse": true
+  }
+ },
+ {
+  "id": "ST-090",
+  "cat": "stream",
+  "stream": true,
+  "prompt": "流式帧序列用例19：请简短回答序号19的问题",
+  "max_tokens": 8,
+  "expect": {
+   "http": 200,
+   "sse": true
+  }
+ },
+ {
+  "id": "ST-091",
+  "cat": "stream",
+  "stream": true,
+  "prompt": "流式敏感词拦截0：内容包含测试敏感词",
+  "expect": {
+   "http": 400,
+   "err_code": "input_blocked"
+  }
+ },
+ {
+  "id": "ST-092",
+  "cat": "stream",
+  "stream": true,
+  "prompt": "流式敏感词拦截1：内容包含测试敏感词",
+  "expect": {
+   "http": 400,
+   "err_code": "input_blocked"
+  }
+ },
+ {
+  "id": "ST-093",
+  "cat": "stream",
+  "stream": true,
+  "prompt": "流式敏感词拦截2：内容包含测试敏感词",
+  "expect": {
+   "http": 400,
+   "err_code": "input_blocked"
+  }
+ },
+ {
+  "id": "ST-094",
+  "cat": "stream",
+  "stream": true,
+  "prompt": "流式敏感词拦截3：内容包含测试敏感词",
+  "expect": {
+   "http": 400,
+   "err_code": "input_blocked"
+  }
+ },
+ {
+  "id": "ST-095",
+  "cat": "stream",
+  "stream": true,
+  "prompt": "流式敏感词拦截4：内容包含测试敏感词",
+  "expect": {
+   "http": 400,
+   "err_code": "input_blocked"
+  }
+ },
+ {
+  "id": "ST-096",
+  "cat": "stream",
+  "stream": true,
+  "user": "banned-user",
+  "prompt": "流式黑名单拦截0",
+  "expect": {
+   "http": 403,
+   "err_code": "blacklisted"
+  }
+ },
+ {
+  "id": "ST-097",
+  "cat": "stream",
+  "stream": true,
+  "user": "banned-user",
+  "prompt": "流式黑名单拦截1",
+  "expect": {
+   "http": 403,
+   "err_code": "blacklisted"
+  }
+ },
+ {
+  "id": "ST-098",
+  "cat": "stream",
+  "stream": true,
+  "user": "banned-user",
+  "prompt": "流式黑名单拦截2",
+  "expect": {
+   "http": 403,
+   "err_code": "blacklisted"
+  }
+ },
+ {
+  "id": "ST-099",
+  "cat": "stream",
+  "stream": true,
+  "user": "banned-user",
+  "prompt": "流式黑名单拦截3",
+  "expect": {
+   "http": 403,
+   "err_code": "blacklisted"
+  }
+ },
+ {
+  "id": "ST-100",
+  "cat": "stream",
+  "stream": true,
+  "user": "banned-user",
+  "prompt": "流式黑名单拦截4",
+  "expect": {
+   "http": 403,
+   "err_code": "blacklisted"
+  }
+ },
+ {
+  "id": "RATE-001",
+  "cat": "rate",
+  "type": "rate",
+  "model": "qwen-lite",
+  "user": "rate-over-000",
+  "burst": 40,
+  "prompt": "限流超限突发用例0",
+  "expect": {
+   "rate429_ge": 1
+  }
+ },
+ {
+  "id": "RATE-002",
+  "cat": "rate",
+  "type": "rate",
+  "model": "qwen-lite",
+  "user": "rate-over-001",
+  "burst": 40,
+  "prompt": "限流超限突发用例1",
+  "expect": {
+   "rate429_ge": 1
+  }
+ },
+ {
+  "id": "RATE-003",
+  "cat": "rate",
+  "type": "rate",
+  "model": "qwen-lite",
+  "user": "rate-over-002",
+  "burst": 40,
+  "prompt": "限流超限突发用例2",
+  "expect": {
+   "rate429_ge": 1
+  }
+ },
+ {
+  "id": "RATE-004",
+  "cat": "rate",
+  "type": "rate",
+  "model": "qwen-lite",
+  "user": "rate-over-003",
+  "burst": 40,
+  "prompt": "限流超限突发用例3",
+  "expect": {
+   "rate429_ge": 1
+  }
+ },
+ {
+  "id": "RATE-005",
+  "cat": "rate",
+  "type": "rate",
+  "model": "qwen-lite",
+  "user": "rate-over-004",
+  "burst": 40,
+  "prompt": "限流超限突发用例4",
+  "expect": {
+   "rate429_ge": 1
+  }
+ },
+ {
+  "id": "RATE-006",
+  "cat": "rate",
+  "type": "rate",
+  "model": "qwen-lite",
+  "user": "rate-over-005",
+  "burst": 40,
+  "prompt": "限流超限突发用例5",
+  "expect": {
+   "rate429_ge": 1
+  }
+ },
+ {
+  "id": "RATE-007",
+  "cat": "rate",
+  "type": "rate",
+  "model": "qwen-lite",
+  "user": "rate-over-006",
+  "burst": 40,
+  "prompt": "限流超限突发用例6",
+  "expect": {
+   "rate429_ge": 1
+  }
+ },
+ {
+  "id": "RATE-008",
+  "cat": "rate",
+  "type": "rate",
+  "model": "qwen-lite",
+  "user": "rate-over-007",
+  "burst": 40,
+  "prompt": "限流超限突发用例7",
+  "expect": {
+   "rate429_ge": 1
+  }
+ },
+ {
+  "id": "RATE-009",
+  "cat": "rate",
+  "type": "rate",
+  "model": "qwen-lite",
+  "user": "rate-over-008",
+  "burst": 40,
+  "prompt": "限流超限突发用例8",
+  "expect": {
+   "rate429_ge": 1
+  }
+ },
+ {
+  "id": "RATE-010",
+  "cat": "rate",
+  "type": "rate",
+  "model": "qwen-lite",
+  "user": "rate-over-009",
+  "burst": 40,
+  "prompt": "限流超限突发用例9",
+  "expect": {
+   "rate429_ge": 1
+  }
+ },
+ {
+  "id": "RATE-011",
+  "cat": "rate",
+  "type": "rate",
+  "model": "qwen-lite",
+  "user": "rate-over-010",
+  "burst": 40,
+  "prompt": "限流超限突发用例10",
+  "expect": {
+   "rate429_ge": 1
+  }
+ },
+ {
+  "id": "RATE-012",
+  "cat": "rate",
+  "type": "rate",
+  "model": "qwen-lite",
+  "user": "rate-over-011",
+  "burst": 40,
+  "prompt": "限流超限突发用例11",
+  "expect": {
+   "rate429_ge": 1
+  }
+ },
+ {
+  "id": "RATE-013",
+  "cat": "rate",
+  "type": "rate",
+  "model": "qwen-lite",
+  "user": "rate-over-012",
+  "burst": 40,
+  "prompt": "限流超限突发用例12",
+  "expect": {
+   "rate429_ge": 1
+  }
+ },
+ {
+  "id": "RATE-014",
+  "cat": "rate",
+  "type": "rate",
+  "model": "qwen-lite",
+  "user": "rate-over-013",
+  "burst": 40,
+  "prompt": "限流超限突发用例13",
+  "expect": {
+   "rate429_ge": 1
+  }
+ },
+ {
+  "id": "RATE-015",
+  "cat": "rate",
+  "type": "rate",
+  "model": "qwen-lite",
+  "user": "rate-over-014",
+  "burst": 40,
+  "prompt": "限流超限突发用例14",
+  "expect": {
+   "rate429_ge": 1
+  }
+ },
+ {
+  "id": "RATE-016",
+  "cat": "rate",
+  "type": "rate",
+  "model": "qwen-lite",
+  "user": "rate-over-015",
+  "burst": 40,
+  "prompt": "限流超限突发用例15",
+  "expect": {
+   "rate429_ge": 1
+  }
+ },
+ {
+  "id": "RATE-017",
+  "cat": "rate",
+  "type": "rate",
+  "model": "qwen-lite",
+  "user": "rate-over-016",
+  "burst": 40,
+  "prompt": "限流超限突发用例16",
+  "expect": {
+   "rate429_ge": 1
+  }
+ },
+ {
+  "id": "RATE-018",
+  "cat": "rate",
+  "type": "rate",
+  "model": "qwen-lite",
+  "user": "rate-over-017",
+  "burst": 40,
+  "prompt": "限流超限突发用例17",
+  "expect": {
+   "rate429_ge": 1
+  }
+ },
+ {
+  "id": "RATE-019",
+  "cat": "rate",
+  "type": "rate",
+  "model": "qwen-lite",
+  "user": "rate-over-018",
+  "burst": 40,
+  "prompt": "限流超限突发用例18",
+  "expect": {
+   "rate429_ge": 1
+  }
+ },
+ {
+  "id": "RATE-020",
+  "cat": "rate",
+  "type": "rate",
+  "model": "qwen-lite",
+  "user": "rate-over-019",
+  "burst": 40,
+  "prompt": "限流超限突发用例19",
+  "expect": {
+   "rate429_ge": 1
+  }
+ },
+ {
+  "id": "RATE-021",
+  "cat": "rate",
+  "type": "rate",
+  "model": "qwen-lite",
+  "user": "rate-over-020",
+  "burst": 40,
+  "prompt": "限流超限突发用例20",
+  "expect": {
+   "rate429_ge": 1
+  }
+ },
+ {
+  "id": "RATE-022",
+  "cat": "rate",
+  "type": "rate",
+  "model": "qwen-lite",
+  "user": "rate-over-021",
+  "burst": 40,
+  "prompt": "限流超限突发用例21",
+  "expect": {
+   "rate429_ge": 1
+  }
+ },
+ {
+  "id": "RATE-023",
+  "cat": "rate",
+  "type": "rate",
+  "model": "qwen-lite",
+  "user": "rate-over-022",
+  "burst": 40,
+  "prompt": "限流超限突发用例22",
+  "expect": {
+   "rate429_ge": 1
+  }
+ },
+ {
+  "id": "RATE-024",
+  "cat": "rate",
+  "type": "rate",
+  "model": "qwen-lite",
+  "user": "rate-over-023",
+  "burst": 40,
+  "prompt": "限流超限突发用例23",
+  "expect": {
+   "rate429_ge": 1
+  }
+ },
+ {
+  "id": "RATE-025",
+  "cat": "rate",
+  "type": "rate",
+  "model": "qwen-lite",
+  "user": "rate-over-024",
+  "burst": 40,
+  "prompt": "限流超限突发用例24",
+  "expect": {
+   "rate429_ge": 1
+  }
+ },
+ {
+  "id": "RATE-026",
+  "cat": "rate",
+  "type": "rate",
+  "model": "qwen-lite",
+  "user": "rate-over-025",
+  "burst": 40,
+  "prompt": "限流超限突发用例25",
+  "expect": {
+   "rate429_ge": 1
+  }
+ },
+ {
+  "id": "RATE-027",
+  "cat": "rate",
+  "type": "rate",
+  "model": "qwen-lite",
+  "user": "rate-over-026",
+  "burst": 40,
+  "prompt": "限流超限突发用例26",
+  "expect": {
+   "rate429_ge": 1
+  }
+ },
+ {
+  "id": "RATE-028",
+  "cat": "rate",
+  "type": "rate",
+  "model": "qwen-lite",
+  "user": "rate-over-027",
+  "burst": 40,
+  "prompt": "限流超限突发用例27",
+  "expect": {
+   "rate429_ge": 1
+  }
+ },
+ {
+  "id": "RATE-029",
+  "cat": "rate",
+  "type": "rate",
+  "model": "qwen-lite",
+  "user": "rate-over-028",
+  "burst": 40,
+  "prompt": "限流超限突发用例28",
+  "expect": {
+   "rate429_ge": 1
+  }
+ },
+ {
+  "id": "RATE-030",
+  "cat": "rate",
+  "type": "rate",
+  "model": "qwen-lite",
+  "user": "rate-over-029",
+  "burst": 40,
+  "prompt": "限流超限突发用例29",
+  "expect": {
+   "rate429_ge": 1
+  }
+ },
+ {
+  "id": "RATE-031",
+  "cat": "rate",
+  "type": "rate",
+  "model": "qwen-lite",
+  "user": "rate-over-030",
+  "burst": 40,
+  "prompt": "限流超限突发用例30",
+  "expect": {
+   "rate429_ge": 1
+  }
+ },
+ {
+  "id": "RATE-032",
+  "cat": "rate",
+  "type": "rate",
+  "model": "qwen-lite",
+  "user": "rate-over-031",
+  "burst": 40,
+  "prompt": "限流超限突发用例31",
+  "expect": {
+   "rate429_ge": 1
+  }
+ },
+ {
+  "id": "RATE-033",
+  "cat": "rate",
+  "type": "rate",
+  "model": "qwen-lite",
+  "user": "rate-over-032",
+  "burst": 40,
+  "prompt": "限流超限突发用例32",
+  "expect": {
+   "rate429_ge": 1
+  }
+ },
+ {
+  "id": "RATE-034",
+  "cat": "rate",
+  "type": "rate",
+  "model": "qwen-lite",
+  "user": "rate-over-033",
+  "burst": 40,
+  "prompt": "限流超限突发用例33",
+  "expect": {
+   "rate429_ge": 1
+  }
+ },
+ {
+  "id": "RATE-035",
+  "cat": "rate",
+  "type": "rate",
+  "model": "qwen-lite",
+  "user": "rate-over-034",
+  "burst": 40,
+  "prompt": "限流超限突发用例34",
+  "expect": {
+   "rate429_ge": 1
+  }
+ },
+ {
+  "id": "RATE-036",
+  "cat": "rate",
+  "type": "rate",
+  "model": "qwen-lite",
+  "user": "rate-over-035",
+  "burst": 40,
+  "prompt": "限流超限突发用例35",
+  "expect": {
+   "rate429_ge": 1
+  }
+ },
+ {
+  "id": "RATE-037",
+  "cat": "rate",
+  "type": "rate",
+  "model": "qwen-lite",
+  "user": "rate-over-036",
+  "burst": 40,
+  "prompt": "限流超限突发用例36",
+  "expect": {
+   "rate429_ge": 1
+  }
+ },
+ {
+  "id": "RATE-038",
+  "cat": "rate",
+  "type": "rate",
+  "model": "qwen-lite",
+  "user": "rate-over-037",
+  "burst": 40,
+  "prompt": "限流超限突发用例37",
+  "expect": {
+   "rate429_ge": 1
+  }
+ },
+ {
+  "id": "RATE-039",
+  "cat": "rate",
+  "type": "rate",
+  "model": "qwen-lite",
+  "user": "rate-over-038",
+  "burst": 40,
+  "prompt": "限流超限突发用例38",
+  "expect": {
+   "rate429_ge": 1
+  }
+ },
+ {
+  "id": "RATE-040",
+  "cat": "rate",
+  "type": "rate",
+  "model": "qwen-lite",
+  "user": "rate-over-039",
+  "burst": 40,
+  "prompt": "限流超限突发用例39",
+  "expect": {
+   "rate429_ge": 1
+  }
+ },
+ {
+  "id": "RATE-041",
+  "cat": "rate",
+  "type": "rate",
+  "model": "qwen-lite",
+  "user": "rate-under-000",
+  "burst": 5,
+  "prompt": "限流低水位用例0",
+  "expect": {
+   "rate429_lt": 1
+  }
+ },
+ {
+  "id": "RATE-042",
+  "cat": "rate",
+  "type": "rate",
+  "model": "qwen-lite",
+  "user": "rate-under-001",
+  "burst": 5,
+  "prompt": "限流低水位用例1",
+  "expect": {
+   "rate429_lt": 1
+  }
+ },
+ {
+  "id": "RATE-043",
+  "cat": "rate",
+  "type": "rate",
+  "model": "qwen-lite",
+  "user": "rate-under-002",
+  "burst": 5,
+  "prompt": "限流低水位用例2",
+  "expect": {
+   "rate429_lt": 1
+  }
+ },
+ {
+  "id": "RATE-044",
+  "cat": "rate",
+  "type": "rate",
+  "model": "qwen-lite",
+  "user": "rate-under-003",
+  "burst": 5,
+  "prompt": "限流低水位用例3",
+  "expect": {
+   "rate429_lt": 1
+  }
+ },
+ {
+  "id": "RATE-045",
+  "cat": "rate",
+  "type": "rate",
+  "model": "qwen-lite",
+  "user": "rate-under-004",
+  "burst": 5,
+  "prompt": "限流低水位用例4",
+  "expect": {
+   "rate429_lt": 1
+  }
+ },
+ {
+  "id": "RATE-046",
+  "cat": "rate",
+  "type": "rate",
+  "model": "qwen-lite",
+  "user": "rate-under-005",
+  "burst": 5,
+  "prompt": "限流低水位用例5",
+  "expect": {
+   "rate429_lt": 1
+  }
+ },
+ {
+  "id": "RATE-047",
+  "cat": "rate",
+  "type": "rate",
+  "model": "qwen-lite",
+  "user": "rate-under-006",
+  "burst": 5,
+  "prompt": "限流低水位用例6",
+  "expect": {
+   "rate429_lt": 1
+  }
+ },
+ {
+  "id": "RATE-048",
+  "cat": "rate",
+  "type": "rate",
+  "model": "qwen-lite",
+  "user": "rate-under-007",
+  "burst": 5,
+  "prompt": "限流低水位用例7",
+  "expect": {
+   "rate429_lt": 1
+  }
+ },
+ {
+  "id": "RATE-049",
+  "cat": "rate",
+  "type": "rate",
+  "model": "qwen-lite",
+  "user": "rate-under-008",
+  "burst": 5,
+  "prompt": "限流低水位用例8",
+  "expect": {
+   "rate429_lt": 1
+  }
+ },
+ {
+  "id": "RATE-050",
+  "cat": "rate",
+  "type": "rate",
+  "model": "qwen-lite",
+  "user": "rate-under-009",
+  "burst": 5,
+  "prompt": "限流低水位用例9",
+  "expect": {
+   "rate429_lt": 1
+  }
+ },
+ {
+  "id": "RATE-051",
+  "cat": "rate",
+  "type": "rate",
+  "model": "qwen-lite",
+  "user": "rate-under-010",
+  "burst": 5,
+  "prompt": "限流低水位用例10",
+  "expect": {
+   "rate429_lt": 1
+  }
+ },
+ {
+  "id": "RATE-052",
+  "cat": "rate",
+  "type": "rate",
+  "model": "qwen-lite",
+  "user": "rate-under-011",
+  "burst": 5,
+  "prompt": "限流低水位用例11",
+  "expect": {
+   "rate429_lt": 1
+  }
+ },
+ {
+  "id": "RATE-053",
+  "cat": "rate",
+  "type": "rate",
+  "model": "qwen-lite",
+  "user": "rate-under-012",
+  "burst": 5,
+  "prompt": "限流低水位用例12",
+  "expect": {
+   "rate429_lt": 1
+  }
+ },
+ {
+  "id": "RATE-054",
+  "cat": "rate",
+  "type": "rate",
+  "model": "qwen-lite",
+  "user": "rate-under-013",
+  "burst": 5,
+  "prompt": "限流低水位用例13",
+  "expect": {
+   "rate429_lt": 1
+  }
+ },
+ {
+  "id": "RATE-055",
+  "cat": "rate",
+  "type": "rate",
+  "model": "qwen-lite",
+  "user": "rate-under-014",
+  "burst": 5,
+  "prompt": "限流低水位用例14",
+  "expect": {
+   "rate429_lt": 1
+  }
+ },
+ {
+  "id": "RATE-056",
+  "cat": "rate",
+  "type": "rate",
+  "model": "qwen-lite",
+  "user": "rate-under-015",
+  "burst": 5,
+  "prompt": "限流低水位用例15",
+  "expect": {
+   "rate429_lt": 1
+  }
+ },
+ {
+  "id": "RATE-057",
+  "cat": "rate",
+  "type": "rate",
+  "model": "qwen-lite",
+  "user": "rate-under-016",
+  "burst": 5,
+  "prompt": "限流低水位用例16",
+  "expect": {
+   "rate429_lt": 1
+  }
+ },
+ {
+  "id": "RATE-058",
+  "cat": "rate",
+  "type": "rate",
+  "model": "qwen-lite",
+  "user": "rate-under-017",
+  "burst": 5,
+  "prompt": "限流低水位用例17",
+  "expect": {
+   "rate429_lt": 1
+  }
+ },
+ {
+  "id": "RATE-059",
+  "cat": "rate",
+  "type": "rate",
+  "model": "qwen-lite",
+  "user": "rate-under-018",
+  "burst": 5,
+  "prompt": "限流低水位用例18",
+  "expect": {
+   "rate429_lt": 1
+  }
+ },
+ {
+  "id": "RATE-060",
+  "cat": "rate",
+  "type": "rate",
+  "model": "qwen-lite",
+  "user": "rate-under-019",
+  "burst": 5,
+  "prompt": "限流低水位用例19",
+  "expect": {
+   "rate429_lt": 1
+  }
+ },
+ {
+  "id": "RATE-061",
+  "cat": "rate",
+  "type": "rate",
+  "model": "qwen-lite",
+  "user": "rate-under-020",
+  "burst": 5,
+  "prompt": "限流低水位用例20",
+  "expect": {
+   "rate429_lt": 1
+  }
+ },
+ {
+  "id": "RATE-062",
+  "cat": "rate",
+  "type": "rate",
+  "model": "qwen-lite",
+  "user": "rate-under-021",
+  "burst": 5,
+  "prompt": "限流低水位用例21",
+  "expect": {
+   "rate429_lt": 1
+  }
+ },
+ {
+  "id": "RATE-063",
+  "cat": "rate",
+  "type": "rate",
+  "model": "qwen-lite",
+  "user": "rate-under-022",
+  "burst": 5,
+  "prompt": "限流低水位用例22",
+  "expect": {
+   "rate429_lt": 1
+  }
+ },
+ {
+  "id": "RATE-064",
+  "cat": "rate",
+  "type": "rate",
+  "model": "qwen-lite",
+  "user": "rate-under-023",
+  "burst": 5,
+  "prompt": "限流低水位用例23",
+  "expect": {
+   "rate429_lt": 1
+  }
+ },
+ {
+  "id": "RATE-065",
+  "cat": "rate",
+  "type": "rate",
+  "model": "qwen-lite",
+  "user": "rate-under-024",
+  "burst": 5,
+  "prompt": "限流低水位用例24",
+  "expect": {
+   "rate429_lt": 1
+  }
+ },
+ {
+  "id": "RATE-066",
+  "cat": "rate",
+  "type": "rate",
+  "model": "qwen-lite",
+  "user": "rate-under-025",
+  "burst": 5,
+  "prompt": "限流低水位用例25",
+  "expect": {
+   "rate429_lt": 1
+  }
+ },
+ {
+  "id": "RATE-067",
+  "cat": "rate",
+  "type": "rate",
+  "model": "qwen-lite",
+  "user": "rate-under-026",
+  "burst": 5,
+  "prompt": "限流低水位用例26",
+  "expect": {
+   "rate429_lt": 1
+  }
+ },
+ {
+  "id": "RATE-068",
+  "cat": "rate",
+  "type": "rate",
+  "model": "qwen-lite",
+  "user": "rate-under-027",
+  "burst": 5,
+  "prompt": "限流低水位用例27",
+  "expect": {
+   "rate429_lt": 1
+  }
+ },
+ {
+  "id": "RATE-069",
+  "cat": "rate",
+  "type": "rate",
+  "model": "qwen-lite",
+  "user": "rate-under-028",
+  "burst": 5,
+  "prompt": "限流低水位用例28",
+  "expect": {
+   "rate429_lt": 1
+  }
+ },
+ {
+  "id": "RATE-070",
+  "cat": "rate",
+  "type": "rate",
+  "model": "qwen-lite",
+  "user": "rate-under-029",
+  "burst": 5,
+  "prompt": "限流低水位用例29",
+  "expect": {
+   "rate429_lt": 1
+  }
+ },
+ {
+  "id": "RATE-071",
+  "cat": "rate",
+  "type": "rate",
+  "model": "qwen-lite",
+  "user": "rate-under-030",
+  "burst": 5,
+  "prompt": "限流低水位用例30",
+  "expect": {
+   "rate429_lt": 1
+  }
+ },
+ {
+  "id": "RATE-072",
+  "cat": "rate",
+  "type": "rate",
+  "model": "qwen-lite",
+  "user": "rate-under-031",
+  "burst": 5,
+  "prompt": "限流低水位用例31",
+  "expect": {
+   "rate429_lt": 1
+  }
+ },
+ {
+  "id": "RATE-073",
+  "cat": "rate",
+  "type": "rate",
+  "model": "qwen-lite",
+  "user": "rate-under-032",
+  "burst": 5,
+  "prompt": "限流低水位用例32",
+  "expect": {
+   "rate429_lt": 1
+  }
+ },
+ {
+  "id": "RATE-074",
+  "cat": "rate",
+  "type": "rate",
+  "model": "qwen-lite",
+  "user": "rate-under-033",
+  "burst": 5,
+  "prompt": "限流低水位用例33",
+  "expect": {
+   "rate429_lt": 1
+  }
+ },
+ {
+  "id": "RATE-075",
+  "cat": "rate",
+  "type": "rate",
+  "model": "qwen-lite",
+  "user": "rate-under-034",
+  "burst": 5,
+  "prompt": "限流低水位用例34",
+  "expect": {
+   "rate429_lt": 1
+  }
+ },
+ {
+  "id": "RATE-076",
+  "cat": "rate",
+  "type": "rate",
+  "model": "qwen-lite",
+  "user": "rate-under-035",
+  "burst": 5,
+  "prompt": "限流低水位用例35",
+  "expect": {
+   "rate429_lt": 1
+  }
+ },
+ {
+  "id": "RATE-077",
+  "cat": "rate",
+  "type": "rate",
+  "model": "qwen-lite",
+  "user": "rate-under-036",
+  "burst": 5,
+  "prompt": "限流低水位用例36",
+  "expect": {
+   "rate429_lt": 1
+  }
+ },
+ {
+  "id": "RATE-078",
+  "cat": "rate",
+  "type": "rate",
+  "model": "qwen-lite",
+  "user": "rate-under-037",
+  "burst": 5,
+  "prompt": "限流低水位用例37",
+  "expect": {
+   "rate429_lt": 1
+  }
+ },
+ {
+  "id": "RATE-079",
+  "cat": "rate",
+  "type": "rate",
+  "model": "qwen-lite",
+  "user": "rate-under-038",
+  "burst": 5,
+  "prompt": "限流低水位用例38",
+  "expect": {
+   "rate429_lt": 1
+  }
+ },
+ {
+  "id": "RATE-080",
+  "cat": "rate",
+  "type": "rate",
+  "model": "qwen-lite",
+  "user": "rate-under-039",
+  "burst": 5,
+  "prompt": "限流低水位用例39",
+  "expect": {
+   "rate429_lt": 1
+  }
+ },
+ {
+  "id": "RATE-081",
+  "cat": "rate",
+  "type": "rate",
+  "model": "qwen-lite",
+  "user": "rate-edge-000",
+  "burst": 20,
+  "prompt": "限流等水位用例0",
+  "expect": {
+   "rate429_lt": 3
+  }
+ },
+ {
+  "id": "RATE-082",
+  "cat": "rate",
+  "type": "rate",
+  "model": "qwen-lite",
+  "user": "rate-edge-001",
+  "burst": 20,
+  "prompt": "限流等水位用例1",
+  "expect": {
+   "rate429_lt": 3
+  }
+ },
+ {
+  "id": "RATE-083",
+  "cat": "rate",
+  "type": "rate",
+  "model": "qwen-lite",
+  "user": "rate-edge-002",
+  "burst": 20,
+  "prompt": "限流等水位用例2",
+  "expect": {
+   "rate429_lt": 3
+  }
+ },
+ {
+  "id": "RATE-084",
+  "cat": "rate",
+  "type": "rate",
+  "model": "qwen-lite",
+  "user": "rate-edge-003",
+  "burst": 20,
+  "prompt": "限流等水位用例3",
+  "expect": {
+   "rate429_lt": 3
+  }
+ },
+ {
+  "id": "RATE-085",
+  "cat": "rate",
+  "type": "rate",
+  "model": "qwen-lite",
+  "user": "rate-edge-004",
+  "burst": 20,
+  "prompt": "限流等水位用例4",
+  "expect": {
+   "rate429_lt": 3
+  }
+ },
+ {
+  "id": "RATE-086",
+  "cat": "rate",
+  "type": "rate",
+  "model": "qwen-lite",
+  "user": "rate-edge-005",
+  "burst": 20,
+  "prompt": "限流等水位用例5",
+  "expect": {
+   "rate429_lt": 3
+  }
+ },
+ {
+  "id": "RATE-087",
+  "cat": "rate",
+  "type": "rate",
+  "model": "qwen-lite",
+  "user": "rate-edge-006",
+  "burst": 20,
+  "prompt": "限流等水位用例6",
+  "expect": {
+   "rate429_lt": 3
+  }
+ },
+ {
+  "id": "RATE-088",
+  "cat": "rate",
+  "type": "rate",
+  "model": "qwen-lite",
+  "user": "rate-edge-007",
+  "burst": 20,
+  "prompt": "限流等水位用例7",
+  "expect": {
+   "rate429_lt": 3
+  }
+ },
+ {
+  "id": "RATE-089",
+  "cat": "rate",
+  "type": "rate",
+  "model": "qwen-lite",
+  "user": "rate-edge-008",
+  "burst": 20,
+  "prompt": "限流等水位用例8",
+  "expect": {
+   "rate429_lt": 3
+  }
+ },
+ {
+  "id": "RATE-090",
+  "cat": "rate",
+  "type": "rate",
+  "model": "qwen-lite",
+  "user": "rate-edge-009",
+  "burst": 20,
+  "prompt": "限流等水位用例9",
+  "expect": {
+   "rate429_lt": 3
+  }
+ },
+ {
+  "id": "RATE-091",
+  "cat": "rate",
+  "type": "rate",
+  "model": "qwen-lite",
+  "user": "rate-edge-010",
+  "burst": 20,
+  "prompt": "限流等水位用例10",
+  "expect": {
+   "rate429_lt": 3
+  }
+ },
+ {
+  "id": "RATE-092",
+  "cat": "rate",
+  "type": "rate",
+  "model": "qwen-lite",
+  "user": "rate-edge-011",
+  "burst": 20,
+  "prompt": "限流等水位用例11",
+  "expect": {
+   "rate429_lt": 3
+  }
+ },
+ {
+  "id": "RATE-093",
+  "cat": "rate",
+  "type": "rate",
+  "model": "qwen-lite",
+  "user": "rate-edge-012",
+  "burst": 20,
+  "prompt": "限流等水位用例12",
+  "expect": {
+   "rate429_lt": 3
+  }
+ },
+ {
+  "id": "RATE-094",
+  "cat": "rate",
+  "type": "rate",
+  "model": "qwen-lite",
+  "user": "rate-edge-013",
+  "burst": 20,
+  "prompt": "限流等水位用例13",
+  "expect": {
+   "rate429_lt": 3
+  }
+ },
+ {
+  "id": "RATE-095",
+  "cat": "rate",
+  "type": "rate",
+  "model": "qwen-lite",
+  "user": "rate-edge-014",
+  "burst": 20,
+  "prompt": "限流等水位用例14",
+  "expect": {
+   "rate429_lt": 3
+  }
+ },
+ {
+  "id": "RATE-096",
+  "cat": "rate",
+  "type": "rate",
+  "model": "qwen-lite",
+  "user": "rate-edge-015",
+  "burst": 20,
+  "prompt": "限流等水位用例15",
+  "expect": {
+   "rate429_lt": 3
+  }
+ },
+ {
+  "id": "RATE-097",
+  "cat": "rate",
+  "type": "rate",
+  "model": "qwen-lite",
+  "user": "rate-edge-016",
+  "burst": 20,
+  "prompt": "限流等水位用例16",
+  "expect": {
+   "rate429_lt": 3
+  }
+ },
+ {
+  "id": "RATE-098",
+  "cat": "rate",
+  "type": "rate",
+  "model": "qwen-lite",
+  "user": "rate-edge-017",
+  "burst": 20,
+  "prompt": "限流等水位用例17",
+  "expect": {
+   "rate429_lt": 3
+  }
+ },
+ {
+  "id": "RATE-099",
+  "cat": "rate",
+  "type": "rate",
+  "model": "qwen-lite",
+  "user": "rate-edge-018",
+  "burst": 20,
+  "prompt": "限流等水位用例18",
+  "expect": {
+   "rate429_lt": 3
+  }
+ },
+ {
+  "id": "RATE-100",
+  "cat": "rate",
+  "type": "rate",
+  "model": "qwen-lite",
+  "user": "rate-edge-019",
+  "burst": 20,
+  "prompt": "限流等水位用例19",
+  "expect": {
+   "rate429_lt": 3
+  }
+ }
+]

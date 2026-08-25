@@ -1,0 +1,22 @@
+# MAS 原型运行环境（设计方案附录 D）
+services:
+  postgres:
+    image: ankane/pgvector:v0.7.0          # 已带 pgvector 的 PostgreSQL 16
+    environment:
+      POSTGRES_USER: mas
+      POSTGRES_PASSWORD: mas123
+      POSTGRES_DB: mas
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mas"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+  ollama:
+    image: ollama/ollama
+    ports:
+      - "11434:11434"
+    # 启动后执行：
+    #   docker compose exec ollama ollama pull qwen2.5:0.5b   # 对话模型
+    #   docker compose exec ollama ollama pull bge-m3         # 语义缓存 embedding；无 GPU/离线时跳过，由附录 F mock 的 /v1/embeddings 承接

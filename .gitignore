@@ -1,0 +1,18 @@
+# ===== Local private / editor / OS files (NEVER commit) =====
+.workbuddy/
+.claude/
+.DS_Store
+
+# ===== Build artifacts =====
+target/
+**/target/
+**/__pycache__/
+*.pyc
+*.class
+.idea/
+*.iml
+
+# ===== Confidential Sunyard solution PDFs (held back) =====
+# Push these ONLY after confirming the repo is private and you are authorized.
+# Blanket rule: no PDFs in this repo (safe default for confidential material).
+*.pdf

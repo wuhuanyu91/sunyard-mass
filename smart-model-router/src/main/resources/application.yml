@@ -1,0 +1,56 @@
+server:
+  port: 9090
+
+spring:
+  application:
+    name: mas
+  webflux:
+    base-path: /smart-router
+  r2dbc:
+    url: r2dbc:postgresql://localhost:5432/mas
+    username: mas
+    password: mas123
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,prometheus
+
+logging:
+  level:
+    com.sunyard.llm.mas: INFO
+
+mas:
+  backend:
+    default-endpoint: http://localhost:11434/v1   # 本地 Ollama；无 GPU 时改用 mock（附录 F）
+    timeout: 60s
+    # 原型工程字段：按路由 model_id 映射后端真实模型名（→ Ollama 实际拉取的模型）。
+    # 未配置的 model_id 原样转发（生产环境后端模型名与 model_id 一致时应留空）。
+    model-overrides:
+      qwen-72b: gpt-oss:20b      # complex 档：本机大参数对话模型
+      qwen-lite: qwen2.5:0.5b    # simple 档：本机小参数对话模型
+  cache:
+    exact-ttl: 30m
+    max-exact-entries: 100000
+    semantic-ttl: 60m
+    semantic-threshold: 0.95
+    max-semantic-entries: 50000
+    embedding-model: bge-m3
+  rate-limit:
+    per-user-qps: 20
+  blacklist:
+    users:
+      - banned-user
+  sensitive-words:
+    path: classpath:sensitive-words.txt
+  quota:
+    per-user-per-minute: 100000
+    per-user-per-day: 5000000
+  routing:
+    default-model: qwen-72b
+    difficulty:
+      enabled: true      # 难度路由开关：无显式 model 时按难度分分流 simple/complex 模型
+      threshold: 0.5     # 评分 >= 阈值 → complex（大参数模型）
+  compress:
+    max-context-tokens: 4096
