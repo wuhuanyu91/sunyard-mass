@@ -6,8 +6,9 @@ import org.springframework.boot.ApplicationRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ClassPathResource;
-import org.springframework.r2dbc.connection.init.ResourceDatabasePopulator;
-import io.r2dbc.spi.ConnectionFactory;
+import org.springframework.jdbc.datasource.init.ResourceDatabasePopulator;
+
+import javax.sql.DataSource;
 
 /**
  * 启动时自动建表并插入种子数据（附录 E.7 零配置可跑）。
@@ -19,15 +20,18 @@ public class DatabaseConfig {
     private static final Logger log = LoggerFactory.getLogger(DatabaseConfig.class);
 
     @Bean
-    public ApplicationRunner masSchemaInitializer(ConnectionFactory connectionFactory) {
+    public ApplicationRunner masSchemaInitializer(DataSource dataSource) {
         return args -> {
-            ResourceDatabasePopulator populator = new ResourceDatabasePopulator(
-                    new ClassPathResource("db/schema.sql"),
-                    new ClassPathResource("db/data.sql"));
-            populator.setContinueOnError(true);
-            populator.populate(connectionFactory)
-                    .subscribe(null, e -> log.warn(
-                            "Schema/seed init skipped (DB unavailable): {}", e.getMessage()));
+            try {
+                ResourceDatabasePopulator populator = new ResourceDatabasePopulator(
+                        new ClassPathResource("db/schema.sql"),
+                        new ClassPathResource("db/data.sql"));
+                populator.setContinueOnError(true);
+                populator.execute(dataSource);
+                log.info("MAS schema/seed initialized successfully");
+            } catch (Exception e) {
+                log.warn("Schema/seed init skipped (DB unavailable): {}", e.getMessage());
+            }
         };
     }
 }

@@ -1,9 +1,10 @@
 package com.sunyard.llm.mas.service;
 
+import com.sunyard.llm.mas.mapper.CallLogMapper;
 import com.sunyard.llm.mas.pipeline.PipelineContext;
+import com.sunyard.llm.mas.util.ReactiveDbAdapter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.r2dbc.core.DatabaseClient;
 import org.springframework.stereotype.Service;
 
 /**
@@ -14,40 +15,33 @@ public class CallLogService {
 
     private static final Logger log = LoggerFactory.getLogger(CallLogService.class);
 
-    private final DatabaseClient db;
+    private final CallLogMapper mapper;
 
-    public CallLogService(DatabaseClient db) {
-        this.db = db;
+    public CallLogService(CallLogMapper mapper) {
+        this.mapper = mapper;
     }
 
     public void logAsync(PipelineContext ctx, int promptTokens, int completionTokens,
                          int totalTokens, long totalCostMs, boolean success) {
-        db.sql("""
-                        INSERT INTO mas_call_log (trace_id, app_id, user_id, model_id, intent_type,
-                            cache_hit, cache_level, routed_to, prompt_tokens, completion_tokens,
-                            total_tokens, pipeline_cost_ms, total_cost_ms, status)
-                        VALUES (:trace, :app, :user, :model, :intent,
-                            :hit, :level, :routed, :pt, :ct, :tt, :pc, :tc, :status)
-                        """)
-                .bind("trace", ctx.getTraceId() == null ? "" : ctx.getTraceId())
-                .bind("app", emptyIfNull(ctx.getAppId()))
-                .bind("user", ctx.getUserId())
-                .bind("model", emptyIfNull(ctx.getRequestedModel()))
-                .bind("intent", emptyIfNull(ctx.getIntent()))
-                .bind("hit", (short) (ctx.getMeta().isCacheHit() ? 1 : 0))
-                .bind("level", emptyIfNull(ctx.getMeta().getCacheLevel()))
-                .bind("routed", emptyIfNull(ctx.getMeta().getRoutedTo()))
-                .bind("pt", promptTokens)
-                .bind("ct", completionTokens)
-                .bind("tt", totalTokens)
-                .bind("pc", (int) ctx.getMeta().getPipelineCostMs())
-                .bind("tc", (int) totalCostMs)
-                .bind("status", (short) (success ? 0 : 1))
-                .then()
+        ReactiveDbAdapter.monoVoid(() -> mapper.insertCallLog(
+                        ctx.getTraceId() == null ? "" : ctx.getTraceId(),
+                        emptyIfNull(ctx.getAppId()),
+                        ctx.getUserId(),
+                        emptyIfNull(ctx.getRequestedModel()),
+                        emptyIfNull(ctx.getIntent()),
+                        ctx.getMeta().isCacheHit() ? 1 : 0,
+                        emptyIfNull(ctx.getMeta().getCacheLevel()),
+                        emptyIfNull(ctx.getMeta().getRoutedTo()),
+                        promptTokens,
+                        completionTokens,
+                        totalTokens,
+                        (int) ctx.getMeta().getPipelineCostMs(),
+                        (int) totalCostMs,
+                        success ? 0 : 1))
                 .subscribe(null, e -> log.warn("Call log write failed: {}", e.getMessage()));
     }
 
-    /** R2DBC bind 不接受 null，统一以空串占位 */
+    /** MyBatis 不接受 null，统一以空串占位 */
     private static String emptyIfNull(String value) {
         return value == null ? "" : value;
     }

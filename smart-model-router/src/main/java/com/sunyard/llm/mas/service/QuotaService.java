@@ -2,9 +2,10 @@ package com.sunyard.llm.mas.service;
 
 import com.sunyard.llm.mas.config.MasProperties;
 import com.sunyard.llm.mas.exception.MasException;
+import com.sunyard.llm.mas.mapper.QuotaMapper;
+import com.sunyard.llm.mas.util.ReactiveDbAdapter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.r2dbc.core.DatabaseClient;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
@@ -23,11 +24,11 @@ public class QuotaService {
     private static final Logger log = LoggerFactory.getLogger(QuotaService.class);
 
     private final MasProperties props;
-    private final DatabaseClient db;
+    private final QuotaMapper mapper;
 
-    public QuotaService(MasProperties props, DatabaseClient db) {
+    public QuotaService(MasProperties props, QuotaMapper mapper) {
         this.props = props;
-        this.db = db;
+        this.mapper = mapper;
     }
 
     /** 预扣 token 额度（分钟 + 天两个维度），任一超限即 402 */
@@ -49,29 +50,9 @@ public class QuotaService {
     }
 
     private Mono<Void> checkAndAdd(String userId, String period, long limit, long tokens, Instant resetAt) {
-        String upsert = """
-                INSERT INTO mas_token_quota (quota_type, quota_key, period, token_limit, token_used, reset_at)
-                VALUES ('user', :k, :p, :limit, 0, :reset)
-                ON CONFLICT (quota_type, quota_key, period) DO UPDATE
-                SET reset_at = EXCLUDED.reset_at, token_used = 0, token_limit = EXCLUDED.token_limit
-                WHERE mas_token_quota.reset_at <= now()
-                """;
-        return db.sql(upsert)
-                .bind("k", userId)
-                .bind("p", period)
-                .bind("limit", limit)
-                .bind("reset", resetAt)
-                .then()
-                .then(Mono.defer(() -> db.sql("""
-                                UPDATE mas_token_quota
-                                SET token_used = token_used + :t
-                                WHERE quota_type = 'user' AND quota_key = :k AND period = :p
-                                  AND reset_at > now() AND token_used + :t <= token_limit
-                                """)
-                        .bind("t", tokens)
-                        .bind("k", userId)
-                        .bind("p", period)
-                        .fetch().rowsUpdated()
+        LocalDateTime resetDateTime = LocalDateTime.ofInstant(resetAt, ZoneId.systemDefault());
+        return ReactiveDbAdapter.mono(() -> mapper.upsertQuota(userId, period, limit, resetDateTime))
+                .then(Mono.defer(() -> ReactiveDbAdapter.mono(() -> mapper.updateQuotaUsed(userId, period, tokens))
                         .flatMap(updated -> updated > 0
                                 ? Mono.<Void>empty()
                                 : Mono.error(MasException.quotaExceeded()))));

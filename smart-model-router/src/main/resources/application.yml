@@ -6,10 +6,19 @@ spring:
     name: mas
   webflux:
     base-path: /smart-router
-  r2dbc:
-    url: r2dbc:postgresql://localhost:5432/mas
+  datasource:
+    url: jdbc:postgresql://localhost:5432/mas
     username: mas
     password: mas123
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+
+mybatis-plus:
+  mapper-locations: classpath*:mapper/**/*.xml
+  configuration:
+    map-underscore-to-camel-case: true
 
 management:
   endpoints:

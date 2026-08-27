@@ -1,12 +1,14 @@
 package com.sunyard.llm.mas.service;
 
 import com.sunyard.llm.mas.config.MasProperties;
+import com.sunyard.llm.mas.mapper.BlacklistMapper;
+import com.sunyard.llm.mas.util.ReactiveDbAdapter;
 import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.r2dbc.core.DatabaseClient;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import reactor.core.publisher.Mono;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -21,12 +23,12 @@ public class BlacklistService {
     private static final Logger log = LoggerFactory.getLogger(BlacklistService.class);
 
     private final MasProperties props;
-    private final DatabaseClient db;
+    private final BlacklistMapper mapper;
     private volatile Set<String> dbUsers = Set.of();
 
-    public BlacklistService(MasProperties props, DatabaseClient db) {
+    public BlacklistService(MasProperties props, BlacklistMapper mapper) {
         this.props = props;
-        this.db = db;
+        this.mapper = mapper;
     }
 
     @PostConstruct
@@ -39,12 +41,9 @@ public class BlacklistService {
         refresh().subscribe(null, e -> log.warn("Blacklist refresh failed: {}", e.getMessage()));
     }
 
-    public reactor.core.publisher.Mono<Void> refresh() {
-        return db.sql("SELECT subject_key FROM mas_blacklist "
-                        + "WHERE subject_type = 'user' AND (expire_at IS NULL OR expire_at > now())")
-                .map(row -> row.get("subject_key", String.class))
-                .all()
-                .collect(java.util.stream.Collectors.toSet())
+    public Mono<Void> refresh() {
+        return ReactiveDbAdapter.mono(mapper::selectActiveSubjectKeys)
+                .map(list -> new HashSet<>(list))
                 .doOnNext(set -> this.dbUsers = set)
                 .then();
     }

@@ -9,7 +9,7 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 /**
  * 附录 G.4 缓存键规则回归：
- * 键 = SHA256(model + "\n" + 紧凑messages(仅role/content、原顺序) + "\n" + temperature + "\n" + max_tokens)，stream 排除在外。
+ * 键 = SHA256(model + "\n" + 紧凑messages(仅role/content、原顺序) + "\n" + temperature + "\n" + max_tokens + "\n" + stream)。
  */
 class CacheKeyGeneratorTest {
 
@@ -29,11 +29,11 @@ class CacheKeyGeneratorTest {
     }
 
     @Test
-    void streamFlagExcludedFromKey() throws Exception {
+    void streamFlagIncludedInKey() throws Exception {
         ObjectNode a = baseRequest();
         ObjectNode b = baseRequest();
         b.put("stream", true);
-        assertEquals(CacheKeyGenerator.generate(a), CacheKeyGenerator.generate(b));
+        assertNotEquals(CacheKeyGenerator.generate(a), CacheKeyGenerator.generate(b));
     }
 
     @Test

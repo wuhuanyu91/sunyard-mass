@@ -1,10 +1,12 @@
 package com.sunyard.llm.mas.service;
 
 import com.sunyard.llm.mas.config.MasProperties;
+import com.sunyard.llm.mas.entity.ModelConfigEntity;
+import com.sunyard.llm.mas.mapper.ModelConfigMapper;
+import com.sunyard.llm.mas.util.ReactiveDbAdapter;
 import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.r2dbc.core.DatabaseClient;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
@@ -25,14 +27,14 @@ public class ModelRouter {
 
     private static final Logger log = LoggerFactory.getLogger(ModelRouter.class);
 
-    private final DatabaseClient db;
+    private final ModelConfigMapper mapper;
     private final MasProperties props;
 
     private volatile Map<String, ModelConfig> byId = Map.of();
     private volatile List<ModelConfig> active = List.of();
 
-    public ModelRouter(DatabaseClient db, MasProperties props) {
-        this.db = db;
+    public ModelRouter(ModelConfigMapper mapper, MasProperties props) {
+        this.mapper = mapper;
         this.props = props;
     }
 
@@ -47,18 +49,8 @@ public class ModelRouter {
     }
 
     public Mono<Void> refresh() {
-        return db.sql("SELECT model_id, model_name, provider, endpoint_url, intent_type, weight, status, max_context_tokens FROM mas_model_config")
-                .map(row -> new ModelConfig(
-                        row.get("model_id", String.class),
-                        row.get("model_name", String.class),
-                        row.get("provider", String.class),
-                        row.get("endpoint_url", String.class),
-                        row.get("intent_type", String.class),
-                        toInt(row.get("weight")),
-                        toInt(row.get("status")),
-                        row.get("max_context_tokens", Integer.class)))
-                .all()
-                .collectList()
+        return ReactiveDbAdapter.mono(mapper::selectAll)
+                .map(list -> list.stream().map(this::toModelConfig).toList())
                 .doOnNext(list -> {
                     this.byId = list.stream().collect(Collectors.toMap(ModelConfig::modelId, Function.identity(), (a, b) -> a));
                     this.active = list.stream().filter(ModelConfig::active).toList();
@@ -67,8 +59,16 @@ public class ModelRouter {
                 .then();
     }
 
-    private static int toInt(Object value) {
-        return value instanceof Number n ? n.intValue() : 0;
+    private ModelConfig toModelConfig(ModelConfigEntity e) {
+        return new ModelConfig(
+                e.getModelId(),
+                e.getModelName(),
+                e.getProvider(),
+                e.getEndpointUrl(),
+                e.getIntentType(),
+                e.getWeight() != null ? e.getWeight() : 0,
+                e.getStatus() != null ? e.getStatus() : 0,
+                e.getMaxContextTokens());
     }
 
     /** 按 model_id 精确查找（含未启用，由调用方判断状态） */
