@@ -27,6 +27,12 @@ public class MasMeta {
     @JsonProperty("difficulty")
     private Double difficulty;
 
+    @JsonProperty("content_blocked")
+    private Boolean contentBlocked;
+
+    @JsonProperty("failover")
+    private Boolean failover;
+
     public boolean isCacheHit() { return cacheHit; }
     public void setCacheHit(boolean cacheHit) { this.cacheHit = cacheHit; }
     public String getCacheLevel() { return cacheLevel; }
@@ -39,4 +45,8 @@ public class MasMeta {
     public void setIntent(String intent) { this.intent = intent; }
     public Double getDifficulty() { return difficulty; }
     public void setDifficulty(Double difficulty) { this.difficulty = difficulty; }
+    public Boolean getContentBlocked() { return contentBlocked; }
+    public void setContentBlocked(Boolean contentBlocked) { this.contentBlocked = contentBlocked; }
+    public Boolean getFailover() { return failover; }
+    public void setFailover(Boolean failover) { this.failover = failover; }
 }

@@ -85,3 +85,26 @@ CREATE TABLE IF NOT EXISTS mas_blacklist (
     created_at   TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
     UNIQUE (subject_type, subject_key)
 );
+
+-- §8 已知限制消除 — API Key 鉴权体系
+CREATE TABLE IF NOT EXISTS mas_api_key (
+    id          BIGSERIAL PRIMARY KEY,
+    key_hash    VARCHAR(64)  NOT NULL UNIQUE,  -- SHA-256(key)
+    key_prefix  VARCHAR(12)  NOT NULL,          -- 前缀用于识别（如 mas-xxxx）
+    user_id     VARCHAR(64)  NOT NULL,
+    app_id      VARCHAR(64),
+    status      SMALLINT     NOT NULL DEFAULT 1, -- 1=active, 0=revoked
+    expire_at   TIMESTAMP,
+    created_at  TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_api_key_hash ON mas_api_key (key_hash);
+
+-- §8 已知限制消除 — 分布式限流（替代 Bucket4j 内存桶，支持多实例部署）
+CREATE TABLE IF NOT EXISTS mas_rate_limit (
+    user_id     VARCHAR(64)  NOT NULL,
+    window_key  VARCHAR(32)  NOT NULL,  -- 秒级窗口键如 '20260828194500'
+    token_count INT          NOT NULL DEFAULT 0,
+    window_end  TIMESTAMP    NOT NULL,
+    UNIQUE (user_id, window_key)
+);
+CREATE INDEX IF NOT EXISTS idx_rate_limit_window ON mas_rate_limit (window_end);

@@ -1,20 +1,40 @@
 package com.sunyard.llm.mas.service;
 
 import com.sunyard.llm.mas.config.MasProperties;
+import com.sunyard.llm.mas.mapper.RateLimitMapper;
 import org.junit.jupiter.api.Test;
+
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Bucket4j 限流边界测试：零/负 QPS 下限兜底、高吞吐不误杀、多用户桶隔离。
+ * 分布式限流边界测试（§8 已知限制消除 — 替代 Bucket4j）：
+ * 零/负 QPS 下限兜底、高吞吐不误杀、多用户隔离。
  */
 class RateLimitServiceBoundaryTest {
+
+    private static RateLimitMapper mockMapper() {
+        ConcurrentHashMap<String, AtomicInteger> counters = new ConcurrentHashMap<>();
+        return new RateLimitMapper() {
+            @Override
+            public int tryAcquire(String userId, String windowKey, int limit, java.time.LocalDateTime windowEnd) {
+                String key = userId + ":" + windowKey;
+                AtomicInteger count = counters.computeIfAbsent(key, k -> new AtomicInteger(0));
+                int current = count.incrementAndGet();
+                return current <= limit ? 1 : 0;
+            }
+            @Override
+            public int purgeExpired() { return 0; }
+        };
+    }
 
     private RateLimitService newService(int qps) {
         MasProperties props = new MasProperties();
         props.getRateLimit().setPerUserQps(qps);
-        return new RateLimitService(props);
+        return new RateLimitService(props, mockMapper());
     }
 
     @Test

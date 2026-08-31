@@ -17,7 +17,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 class ModelRouterWeightedPickTest {
 
-    private final ModelRouter router = new ModelRouter(null, null);
+    private final ModelRouter router = new ModelRouter(null, null, null);
 
     private static ModelConfig model(String id, int weight) {
         return new ModelConfig(id, id, "ollama", "http://localhost:11434/v1", "chat", weight, 1, null);

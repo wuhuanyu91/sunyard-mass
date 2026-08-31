@@ -1,0 +1,44 @@
+# MAS 应用配置
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mas-config
+  namespace: mas
+data:
+  # ---- 数据库（指向集群内 PostgreSQL） ----
+  MAS_DB_URL: "jdbc:postgresql://postgres-svc:5432/mas"
+  MAS_DB_USERNAME: "mas"
+  MAS_DB_PASSWORD: "mas123"
+  # ---- 外部模型推理服务地址（按实际部署环境覆盖） ----
+  # 假设模型服务（Ollama / vLLM / TGI 等）已在 K8s 集群外或集群内独立部署，
+  # MAS 路由平台仅通过此地址访问对应接口。
+  MAS_MODEL_ENDPOINT: "http://model-service.example.com/v1"
+---
+# K8s 环境种子数据
+# endpoint_url 按模型分组指向外部推理服务（部署前请替换为实际地址）
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mas-seed-sql
+  namespace: mas
+data:
+  data-k8s.sql: |
+    -- complex 档模型（外部推理服务）
+    INSERT INTO mas_model_config (model_id, model_name, provider, endpoint_url, intent_type, weight, status)
+    VALUES ('qwen-72b','Qwen-72B','external','http://model-service.example.com/v1','complex',100,1)
+    ON CONFLICT (model_id) DO UPDATE SET intent_type = EXCLUDED.intent_type, endpoint_url = EXCLUDED.endpoint_url;
+
+    -- simple 档模型（外部推理服务）
+    INSERT INTO mas_model_config (model_id, model_name, provider, endpoint_url, intent_type, weight, status)
+    VALUES ('qwen-lite','Qwen-Lite','external','http://model-service.example.com/v1','simple',100,1)
+    ON CONFLICT (model_id) DO UPDATE SET intent_type = EXCLUDED.intent_type, endpoint_url = EXCLUDED.endpoint_url;
+
+    -- embedding 模型（外部推理服务）
+    INSERT INTO mas_model_config (model_id, model_name, provider, endpoint_url, intent_type, weight, status)
+    VALUES ('bge-m3','BGE-M3','external','http://model-service.example.com/v1','embedding',100,1)
+    ON CONFLICT (model_id) DO UPDATE SET endpoint_url = EXCLUDED.endpoint_url;
+
+    -- 默认测试 API Key（明文: mas-test-key-001）
+    INSERT INTO mas_api_key (key_hash, key_prefix, user_id, status)
+    VALUES ('4967cdac0abe235793aadaf37ab545e8c40e01904687e99d87e68a9c4f6c048a', 'mas-test', 'test-user', 1)
+    ON CONFLICT (key_hash) DO NOTHING;

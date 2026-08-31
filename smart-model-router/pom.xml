@@ -47,11 +47,7 @@
             <artifactId>caffeine</artifactId>
         </dependency>
         <!-- 向量以文本格式 [..] + CAST(:v AS vector) 交互，无需 pgvector Java 客户端 -->
-        <dependency>
-            <groupId>com.bucket4j</groupId>
-            <artifactId>bucket4j-core</artifactId>
-            <version>8.10.0</version>
-        </dependency>
+        <!-- §8 改进：Bucket4j 已替换为 PG 原子操作分布式限流，支持多实例部署 -->
         <dependency>
             <groupId>com.knuddels</groupId>
             <artifactId>jtokkit</artifactId>

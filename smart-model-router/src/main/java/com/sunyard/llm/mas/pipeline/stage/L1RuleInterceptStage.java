@@ -3,6 +3,7 @@ package com.sunyard.llm.mas.pipeline.stage;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.sunyard.llm.mas.exception.MasException;
 import com.sunyard.llm.mas.pipeline.PipelineContext;
+import com.sunyard.llm.mas.service.ApiKeyService;
 import com.sunyard.llm.mas.service.BlacklistService;
 import com.sunyard.llm.mas.service.RateLimitService;
 import com.sunyard.llm.mas.service.SensitiveWordFilter;
@@ -15,6 +16,7 @@ import reactor.core.publisher.Mono;
  * L1 规则拦截层（§5.1 / 附录 G.7）：
  * Bearer 校验（G.1）→ 黑名单 → 敏感词 AC 匹配 → 频率限制 → 参数校验。
  * 规则组件自身异常时 fail-open 放行。
+ * §8 已知限制消除：鉴权从“仅校验非空”升级为 API Key 验证体系。
  */
 @Component
 public class L1RuleInterceptStage {
@@ -25,39 +27,59 @@ public class L1RuleInterceptStage {
     private final BlacklistService blacklistService;
     private final SensitiveWordFilter sensitiveWordFilter;
     private final RateLimitService rateLimitService;
+    private final ApiKeyService apiKeyService;
 
     public L1RuleInterceptStage(BlacklistService blacklistService,
                                 SensitiveWordFilter sensitiveWordFilter,
-                                RateLimitService rateLimitService) {
+                                RateLimitService rateLimitService,
+                                ApiKeyService apiKeyService) {
         this.blacklistService = blacklistService;
         this.sensitiveWordFilter = sensitiveWordFilter;
         this.rateLimitService = rateLimitService;
+        this.apiKeyService = apiKeyService;
     }
 
     public Mono<Void> check(PipelineContext ctx) {
-        return Mono.fromRunnable(() -> {
-            checkAuth(ctx);
-            if (blacklistService.isBlacklisted(ctx.getUserId())) {
-                throw MasException.blacklisted(ctx.getUserId());
-            }
-            checkSensitiveWords(ctx.getRequest());
-            if (!rateLimitService.tryAcquire(ctx.getUserId())) {
-                throw MasException.rateLimited(ctx.getUserId());
-            }
-            checkParams(ctx.getRequest());
-        }).then();
+        // 鉴权先行（异步），通过后执行其余同步检查
+        return checkAuth(ctx)
+                .then(Mono.fromRunnable(() -> {
+                    if (blacklistService.isBlacklisted(ctx.getUserId())) {
+                        throw MasException.blacklisted(ctx.getUserId());
+                    }
+                    checkSensitiveWords(ctx.getRequest());
+                    if (!rateLimitService.tryAcquire(ctx.getUserId())) {
+                        throw MasException.rateLimited(ctx.getUserId());
+                    }
+                    checkParams(ctx.getRequest());
+                }).then());
     }
 
-    /** 附录 G.1：Authorization 若提供则必须非空 Bearer */
-    private void checkAuth(PipelineContext ctx) {
+    /** §8 改进：API Key 验证体系（替代原来的“仅校验非空”） */
+    private Mono<Void> checkAuth(PipelineContext ctx) {
         String auth = ctx.getAuthorization();
-        if (auth == null) {
-            return;
+        if (auth == null || auth.isBlank()) {
+            return Mono.error(MasException.unauthorized());
         }
-        String token = auth.startsWith("Bearer ") ? auth.substring(7).trim() : auth.trim();
+        if (!auth.startsWith("Bearer ")) {
+            return Mono.error(MasException.unauthorized());
+        }
+        String token = auth.substring(7).trim();
         if (token.isEmpty()) {
-            throw MasException.unauthorized();
+            return Mono.error(MasException.unauthorized());
         }
+        return apiKeyService.validate(token)
+                .doOnNext(info -> {
+                    // 验证通过：将 userId 写入上下文
+                    ctx.setUserId(info.userId());
+                    if (info.appId() != null) {
+                        ctx.setAppId(info.appId());
+                    }
+                })
+                .onErrorResume(e -> {
+                    log.debug("API Key validation failed: {}", e.getMessage());
+                    return Mono.error(MasException.unauthorized());
+                })
+                .then();
     }
 
     private void checkSensitiveWords(JsonNode request) {

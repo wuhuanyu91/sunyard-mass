@@ -11,7 +11,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * 附录 G.3 旧协议字段映射回归（[待确认] 项按默认假设）。
+ * 附录 G.3 旧协议字段映射回归（§8 改进：补全参数 + 支持流式）。
  */
 class LegacyCompatMappingTest {
 
@@ -29,7 +29,16 @@ class LegacyCompatMappingTest {
         assertEquals("你好", req.path("messages").path(0).path("content").asText());
         assertEquals(0.5, req.path("temperature").asDouble());
         assertEquals(64, req.path("max_tokens").asInt());
-        // 旧协议统一按非流式处理
+        // §8 改进：支持流式，stream 字段透传
+        assertTrue(req.path("stream").asBoolean());
+    }
+
+    @Test
+    void requestMappingStreamDefaultsToFalse() throws Exception {
+        ObjectNode req = controller.mapRequest("""
+                {"messages":[{"role":"user","content":"你好"}]}
+                """);
+        // 未指定 stream 时默认 false
         assertFalse(req.path("stream").asBoolean());
     }
 

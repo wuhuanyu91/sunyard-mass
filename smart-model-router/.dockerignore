@@ -1,0 +1,8 @@
+target/
+.git/
+.idea/
+*.md
+reports/
+tests/
+*.iml
+.DS_Store

@@ -23,6 +23,7 @@ public class MasProperties {
     private Quota quota = new Quota();
     private Routing routing = new Routing();
     private Compress compress = new Compress();
+    private CircuitBreakerConfig circuitBreaker = new CircuitBreakerConfig();
 
     public Backend getBackend() { return backend; }
     public void setBackend(Backend backend) { this.backend = backend; }
@@ -40,6 +41,8 @@ public class MasProperties {
     public void setRouting(Routing routing) { this.routing = routing; }
     public Compress getCompress() { return compress; }
     public void setCompress(Compress compress) { this.compress = compress; }
+    public CircuitBreakerConfig getCircuitBreaker() { return circuitBreaker; }
+    public void setCircuitBreaker(CircuitBreakerConfig circuitBreaker) { this.circuitBreaker = circuitBreaker; }
 
     public static class Backend {
         /** 无模型配置时的兜底后端 */
@@ -62,6 +65,8 @@ public class MasProperties {
         private int maxExactEntries = 100_000;
         private Duration semanticTtl = Duration.ofMinutes(60);
         private double semanticThreshold = 0.95;
+        /** §8 改进：按意图类型覆盖语义缓存阈值（优先级高于全局默认） */
+        private Map<String, Double> semanticThresholdByIntent = new LinkedHashMap<>();
         private int maxSemanticEntries = 50_000;
         /** embedding 模型标识，需在 mas_model_config 中注册（provider=embedding） */
         private String embeddingModel = "bge-m3";
@@ -74,6 +79,8 @@ public class MasProperties {
         public void setSemanticTtl(Duration semanticTtl) { this.semanticTtl = semanticTtl; }
         public double getSemanticThreshold() { return semanticThreshold; }
         public void setSemanticThreshold(double semanticThreshold) { this.semanticThreshold = semanticThreshold; }
+        public Map<String, Double> getSemanticThresholdByIntent() { return semanticThresholdByIntent; }
+        public void setSemanticThresholdByIntent(Map<String, Double> semanticThresholdByIntent) { this.semanticThresholdByIntent = semanticThresholdByIntent; }
         public int getMaxSemanticEntries() { return maxSemanticEntries; }
         public void setMaxSemanticEntries(int maxSemanticEntries) { this.maxSemanticEntries = maxSemanticEntries; }
         public String getEmbeddingModel() { return embeddingModel; }
@@ -140,5 +147,22 @@ public class MasProperties {
 
         public int getMaxContextTokens() { return maxContextTokens; }
         public void setMaxContextTokens(int maxContextTokens) { this.maxContextTokens = maxContextTokens; }
+    }
+
+    /** 熔断器配置（§8 已知限制 — 熔断/故障转移） */
+    public static class CircuitBreakerConfig {
+        /** 连续失败次数触发熔断 */
+        private int failureThreshold = 5;
+        /** 熔断持续时间，之后进入 HALF_OPEN */
+        private Duration openDuration = Duration.ofSeconds(30);
+        /** HALF_OPEN 状态最大试探次数 */
+        private int halfOpenMaxAttempts = 2;
+
+        public int getFailureThreshold() { return failureThreshold; }
+        public void setFailureThreshold(int failureThreshold) { this.failureThreshold = failureThreshold; }
+        public Duration getOpenDuration() { return openDuration; }
+        public void setOpenDuration(Duration openDuration) { this.openDuration = openDuration; }
+        public int getHalfOpenMaxAttempts() { return halfOpenMaxAttempts; }
+        public void setHalfOpenMaxAttempts(int halfOpenMaxAttempts) { this.halfOpenMaxAttempts = halfOpenMaxAttempts; }
     }
 }

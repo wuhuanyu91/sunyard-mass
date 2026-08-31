@@ -111,6 +111,17 @@ public class SemanticCacheService {
         return props.getCache().getSemanticThreshold();
     }
 
+    /** §8 改进：按意图类型获取阈值，优先查 by-intent map，fallback 到全局默认 */
+    public double threshold(String intent) {
+        if (intent != null) {
+            Double specific = props.getCache().getSemanticThresholdByIntent().get(intent);
+            if (specific != null) {
+                return specific;
+            }
+        }
+        return props.getCache().getSemanticThreshold();
+    }
+
     /** 定时清理过期行 */
     @Scheduled(fixedDelay = 600_000)
     public void purgeExpired() {

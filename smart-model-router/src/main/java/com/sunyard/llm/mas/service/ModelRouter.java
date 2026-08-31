@@ -20,7 +20,7 @@ import java.util.stream.Collectors;
 /**
  * 模型路由注册表（§9.2 ModelRouter）：
  * 从 mas_model_config 加载内存快照，30 秒刷新（管理面接入后即为热加载点，附录 H.3）。
- * 同意图多实例按 weight 加权选择；Resilience4j 熔断故障转移为生产增强项。
+ * 同意图多实例按 weight 加权选择；熔断器（ModelHealthTracker）自动跳过不健康端点。
  */
 @Service
 public class ModelRouter {
@@ -29,13 +29,15 @@ public class ModelRouter {
 
     private final ModelConfigMapper mapper;
     private final MasProperties props;
+    private final ModelHealthTracker healthTracker;
 
     private volatile Map<String, ModelConfig> byId = Map.of();
     private volatile List<ModelConfig> active = List.of();
 
-    public ModelRouter(ModelConfigMapper mapper, MasProperties props) {
+    public ModelRouter(ModelConfigMapper mapper, MasProperties props, ModelHealthTracker healthTracker) {
         this.mapper = mapper;
         this.props = props;
+        this.healthTracker = healthTracker;
     }
 
     @PostConstruct
@@ -80,10 +82,21 @@ public class ModelRouter {
         return active;
     }
 
-    /** 按意图加权随机选择启用中的模型 */
+    /** 按意图加权随机选择启用中且健康的模型 */
     public ModelConfig pickByIntent(String intent) {
         List<ModelConfig> candidates = active.stream()
                 .filter(c -> c.intentType().equalsIgnoreCase(intent))
+                .filter(c -> healthTracker.isAvailable(c.endpointUrl()))
+                .toList();
+        return weightedPick(candidates);
+    }
+
+    /** 按意图选择模型，带故障转移：首选模型不可用时依次尝试同意图其他候选 */
+    public ModelConfig pickByIntentWithFallback(String intent, String excludeEndpoint) {
+        List<ModelConfig> candidates = active.stream()
+                .filter(c -> c.intentType().equalsIgnoreCase(intent))
+                .filter(c -> !c.endpointUrl().equals(excludeEndpoint))
+                .filter(c -> healthTracker.isAvailable(c.endpointUrl()))
                 .toList();
         return weightedPick(candidates);
     }

@@ -36,24 +36,32 @@ public class ForwardService {
     private final ExactCacheService exactCache;
     private final SemanticCacheService semanticCache;
     private final CallLogService callLog;
+    private final ModelRouter modelRouter;
+    private final ModelHealthTracker healthTracker;
     private final ObjectMapper mapper = new ObjectMapper();
 
     public ForwardService(WebClient masWebClient, MasProperties props,
                           SensitiveWordFilter sensitiveWordFilter,
                           ExactCacheService exactCache,
                           SemanticCacheService semanticCache,
-                          CallLogService callLog) {
+                          CallLogService callLog,
+                          ModelRouter modelRouter,
+                          ModelHealthTracker healthTracker) {
         this.webClient = masWebClient;
         this.props = props;
         this.sensitiveWordFilter = sensitiveWordFilter;
         this.exactCache = exactCache;
         this.semanticCache = semanticCache;
         this.callLog = callLog;
+        this.modelRouter = modelRouter;
+        this.healthTracker = healthTracker;
     }
 
     // ---------------- 非流式 ----------------
 
     public Mono<String> forwardNonStream(PipelineContext ctx) {
+        // 熔断器检查：当前目标不可用时尝试故障转移
+        checkFailover(ctx);
         ObjectNode body = backendBody(ctx, false);
         return webClient.post()
                 .uri(chatUrl(ctx))
@@ -61,8 +69,34 @@ public class ForwardService {
                 .bodyValue(body.toString())
                 .retrieve()
                 .bodyToMono(String.class)
-                .map(resp -> finalizeNonStream(ctx, resp))
-                .onErrorMap(e -> e instanceof MasException ? e : mapUpstream(e));
+                .map(resp -> {
+                    healthTracker.recordSuccess(ctx.getTarget().endpointUrl());
+                    return finalizeNonStream(ctx, resp);
+                })
+                .onErrorResume(e -> {
+                    if (e instanceof MasException) {
+                        return Mono.error(e);
+                    }
+                    healthTracker.recordFailure(ctx.getTarget().endpointUrl());
+                    // 尝试故障转移重试一次
+                    ModelConfig fallback = tryFailover(ctx);
+                    if (fallback != null) {
+                        log.info("Failover to model {} (trace={})", fallback.modelId(), ctx.getTraceId());
+                        ObjectNode retryBody = backendBody(ctx, false);
+                        return webClient.post()
+                                .uri(fallback.endpointUrl() + "/chat/completions")
+                                .header("Content-Type", "application/json")
+                                .bodyValue(retryBody.toString())
+                                .retrieve()
+                                .bodyToMono(String.class)
+                                .map(resp -> {
+                                    healthTracker.recordSuccess(fallback.endpointUrl());
+                                    return finalizeNonStream(ctx, resp);
+                                })
+                                .onErrorMap(re -> re instanceof MasException ? re : mapUpstream(re));
+                    }
+                    return Mono.error(mapUpstream(e));
+                });
     }
 
     private String finalizeNonStream(PipelineContext ctx, String upstreamResp) {
@@ -122,9 +156,14 @@ public class ForwardService {
     // ---------------- 流式 ----------------
 
     public Flux<String> forwardStream(PipelineContext ctx) {
+        // 熔断器检查：当前目标不可用时尝试故障转移
+        checkFailover(ctx);
         ObjectNode body = backendBody(ctx, true);
         StringBuilder aggregated = new StringBuilder();
         StringBuilder reasoningBuf = new StringBuilder();
+        // §8 改进：流式输出敏感词阻断（滑动窗口审核）
+        final boolean[] blocked = {false};
+        final int WINDOW_SIZE = 5;
         return webClient.post()
                 .uri(chatUrl(ctx))
                 .header("Content-Type", "application/json")
@@ -134,15 +173,44 @@ public class ForwardService {
                 .bodyToFlux(String.class)
                 .filter(payload -> !"[DONE]".equals(payload.trim()))
                 .doOnNext(payload -> appendDelta(aggregated, reasoningBuf, payload))
-                .map(payload -> "data: " + payload + "\n\n")
+                .doOnComplete(() -> healthTracker.recordSuccess(ctx.getTarget().endpointUrl()))
+                // 滑动窗口审核：每 WINDOW_SIZE 个 chunk 检查一次敏感词
+                .buffer(WINDOW_SIZE)
+                .concatMap(batch -> {
+                    if (blocked[0]) {
+                        return Flux.empty();
+                    }
+                    // 聚合本窗口 content
+                    StringBuilder windowContent = new StringBuilder();
+                    for (String p : batch) {
+                        try {
+                            JsonNode delta = mapper.readTree(p).path("choices").path(0).path("delta");
+                            String content = delta.path("content").asText("");
+                            if (!content.isEmpty()) {
+                                windowContent.append(content);
+                            }
+                        } catch (Exception ignored) {}
+                    }
+                    // 敏感词检查
+                    String windowText = windowContent.toString();
+                    if (!windowText.isEmpty() && sensitiveWordFilter.contains(windowText)) {
+                        blocked[0] = true;
+                        log.warn("Stream content blocked by sensitive word filter (trace={})", ctx.getTraceId());
+                        ctx.getMeta().setContentBlocked(true);
+                        // 发送阻断通知帧
+                        String blockChunk = "data: {\"choices\":[{\"index\":0,\"delta\":{\"content\":\"[内容已被审核系统阻断]\"},\"finish_reason\":\"content_filter\"}]}\n\n";
+                        return Flux.just(blockChunk);
+                    }
+                    // 通过审核，正常透传本窗口
+                    return Flux.fromIterable(batch).map(payload -> "data: " + payload + "\n\n");
+                })
                 .concatWith(Flux.defer(() -> {
-                    // 推理型后端 content 为空时兜底用 reasoning 聚合结果
                     String full = aggregated.length() > 0 ? aggregated.toString() : reasoningBuf.toString();
                     finalizeStream(ctx, full);
                     return Flux.just("data: " + metaChunkJson(ctx) + "\n\n", "data: [DONE]\n\n");
                 }))
                 .onErrorResume(e -> {
-                    // 附录 G.5.4：中途断流追加 finish_reason=error chunk 后结束
+                    healthTracker.recordFailure(ctx.getTarget().endpointUrl());
                     log.warn("Stream broken mid-way: {}", e.getMessage());
                     String errChunk = "data: {\"choices\":[{\"index\":0,\"delta\":{},\"finish_reason\":\"error\"}]}\n\n";
                     return Flux.just(errChunk);
@@ -168,10 +236,13 @@ public class ForwardService {
 
     private void finalizeStream(PipelineContext ctx, String fullContent) {
         ctx.getMeta().setPipelineCostMs(ctx.elapsedMs());
-        // 流式输出审核：已输出内容不阻断，仅告警（附录 G.7）
-        String masked = sensitiveWordFilter.mask(fullContent);
-        if (!masked.equals(fullContent)) {
-            log.warn("Stream output contains sensitive words (trace={}), not blocked", ctx.getTraceId());
+        // §8 改进：流式输出审核 — 已在滑动窗口中阻断，此处仅作最终聚合告警
+        Boolean isBlocked = ctx.getMeta().getContentBlocked();
+        if (isBlocked == null || !isBlocked) {
+            String masked = sensitiveWordFilter.mask(fullContent);
+            if (!masked.equals(fullContent)) {
+                log.warn("Stream output contains sensitive words (trace={}), post-window check", ctx.getTraceId());
+            }
         }
         try {
             ObjectNode root = mapper.createObjectNode();
@@ -245,5 +316,33 @@ public class ForwardService {
             return MasException.engineError("HTTP " + wcre.getStatusCode().value());
         }
         return MasException.engineError(e.getMessage() == null ? e.getClass().getSimpleName() : e.getMessage());
+    }
+
+    // ---------------- 熔断器故障转移 ----------------
+
+    /** 检查当前目标端点是否可用，不可用时替换为备用模型 */
+    private void checkFailover(PipelineContext ctx) {
+        if (ctx.getTarget() != null && !healthTracker.isAvailable(ctx.getTarget().endpointUrl())) {
+            ModelConfig fallback = tryFailover(ctx);
+            if (fallback != null) {
+                log.info("Pre-call failover to model {} (trace={})", fallback.modelId(), ctx.getTraceId());
+            }
+        }
+    }
+
+    /** 尝试故障转移：找同意图的健康备用模型，返回 null 表示无备用 */
+    private ModelConfig tryFailover(PipelineContext ctx) {
+        String intent = ctx.getIntent();
+        if (intent == null) {
+            intent = "chat";
+        }
+        String excludeEndpoint = ctx.getTarget() != null ? ctx.getTarget().endpointUrl() : "";
+        ModelConfig fallback = modelRouter.pickByIntentWithFallback(intent, excludeEndpoint);
+        if (fallback != null) {
+            ctx.setTarget(fallback);
+            ctx.getMeta().setRoutedTo("failover:" + fallback.modelId());
+            return fallback;
+        }
+        return null;
     }
 }

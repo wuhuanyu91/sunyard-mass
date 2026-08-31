@@ -56,9 +56,11 @@ public class L2MultiLevelCacheStage {
         if (text == null || text.isBlank()) {
             return Mono.empty();
         }
+        // §8 改进：按意图类型获取阈值
+        String intent = ctx.getIntent();
         return semanticCache.embed(text)
                 .flatMap(vector -> semanticCache.search(modelId, vector))
-                .filter(hit -> hit.similarity() >= semanticCache.threshold())
+                .filter(hit -> hit.similarity() >= semanticCache.threshold(intent))
                 .map(SemanticCacheService.SemanticHit::responseJson)
                 .onErrorResume(e -> {
                     log.debug("Semantic cache lookup degraded (skip): {}", e.getMessage());

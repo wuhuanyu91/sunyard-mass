@@ -1,22 +1,48 @@
-# MAS 原型运行环境（设计方案附录 D）
+version: "3.9"
+
+# ============================================================
+# MAS 智能模型路由访问平台 — Docker Compose
+# 模型推理服务（Ollama 等）假设已在外部独立部署，
+# 通过 MAS_MODEL_ENDPOINT 环境变量指定其地址。
+# ============================================================
+
 services:
+  # ---- PostgreSQL 16 + pgvector ----
   postgres:
-    image: ankane/pgvector:v0.7.0          # 已带 pgvector 的 PostgreSQL 16
+    image: pgvector/pgvector:pg16
+    container_name: mas-postgres
     environment:
-      POSTGRES_USER: mas
-      POSTGRES_PASSWORD: mas123
-      POSTGRES_DB: mas
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
     ports:
       - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./docker/init-pg.sql:/docker-entrypoint-initdb.d/init-pg.sql:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U mas"]
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
-      timeout: 5s
+      timeout: 3s
       retries: 10
-  ollama:
-    image: ollama/ollama
+    restart: unless-stopped
+
+  # ---- MAS 智能模型路由 ----
+  mas:
+    build: .
+    container_name: mas-app
     ports:
-      - "11434:11434"
-    # 启动后执行：
-    #   docker compose exec ollama ollama pull qwen2.5:0.5b   # 对话模型
-    #   docker compose exec ollama ollama pull bge-m3         # 语义缓存 embedding；无 GPU/离线时跳过，由附录 F mock 的 /v1/embeddings 承接
+      - "9090:9090"
+    environment:
+      MAS_DB_URL: "jdbc:postgresql://postgres:5432/mas"
+      MAS_DB_USERNAME: mas
+      MAS_DB_PASSWORD: mas123
+      # 外部模型推理服务地址（部署时按实际环境覆盖）
+      MAS_MODEL_ENDPOINT: "http://host.docker.internal:11434/v1"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  pgdata:
