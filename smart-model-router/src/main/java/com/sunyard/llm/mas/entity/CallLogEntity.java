@@ -21,6 +21,8 @@ public class CallLogEntity {
 
     private String userId;
 
+    private String agentId;
+
     private String modelId;
 
     private String intentType;
@@ -75,6 +77,14 @@ public class CallLogEntity {
 
     public void setUserId(String userId) {
         this.userId = userId;
+    }
+
+    public String getAgentId() {
+        return agentId;
+    }
+
+    public void setAgentId(String agentId) {
+        this.agentId = agentId;
     }
 
     public String getModelId() {

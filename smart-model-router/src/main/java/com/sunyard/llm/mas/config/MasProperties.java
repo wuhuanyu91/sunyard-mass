@@ -24,6 +24,7 @@ public class MasProperties {
     private Routing routing = new Routing();
     private Compress compress = new Compress();
     private CircuitBreakerConfig circuitBreaker = new CircuitBreakerConfig();
+    private Auth auth = new Auth();
 
     public Backend getBackend() { return backend; }
     public void setBackend(Backend backend) { this.backend = backend; }
@@ -43,6 +44,8 @@ public class MasProperties {
     public void setCompress(Compress compress) { this.compress = compress; }
     public CircuitBreakerConfig getCircuitBreaker() { return circuitBreaker; }
     public void setCircuitBreaker(CircuitBreakerConfig circuitBreaker) { this.circuitBreaker = circuitBreaker; }
+    public Auth getAuth() { return auth; }
+    public void setAuth(Auth auth) { this.auth = auth; }
 
     public static class Backend {
         /** 无模型配置时的兜底后端 */
@@ -164,5 +167,13 @@ public class MasProperties {
         public void setOpenDuration(Duration openDuration) { this.openDuration = openDuration; }
         public int getHalfOpenMaxAttempts() { return halfOpenMaxAttempts; }
         public void setHalfOpenMaxAttempts(int halfOpenMaxAttempts) { this.halfOpenMaxAttempts = halfOpenMaxAttempts; }
+    }
+
+    /** 鉴权配置：enabled=false 时跳过 API Key 校验（内网零改造接入场景），身份回退 body.user → X-User-Id → anonymous */
+    public static class Auth {
+        private boolean enabled = true;
+
+        public boolean isEnabled() { return enabled; }
+        public void setEnabled(boolean enabled) { this.enabled = enabled; }
     }
 }

@@ -1,9 +1,17 @@
 package com.sunyard.llm.mas.service;
 
+import com.sunyard.llm.mas.entity.ApiKeyEntity;
+import com.sunyard.llm.mas.mapper.ApiKeyMapper;
 import org.junit.jupiter.api.Test;
+
+import java.time.LocalDateTime;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * API Key 服务测试（§8 已知限制消除 — 鉴权体系）。
@@ -36,5 +44,42 @@ class ApiKeyServiceTest {
         // SHA-256("") = e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
         String expected = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855";
         assertEquals(expected, ApiKeyService.sha256(""));
+    }
+
+    @Test
+    void unknownKeyRejected() {
+        // 回归：selectByHash 返回 null 时 Mono.fromCallable 产生空信号，必须以错误终止，不得静默通过鉴权
+        ApiKeyMapper mapper = mock(ApiKeyMapper.class);
+        when(mapper.selectByHash(anyString())).thenReturn(null);
+        ApiKeyService service = new ApiKeyService(mapper);
+        assertThrows(IllegalStateException.class, () -> service.validate("unknown-key").block());
+    }
+
+    @Test
+    void validKeyReturnsBoundIdentity() {
+        ApiKeyEntity entity = new ApiKeyEntity();
+        entity.setUserId("alice");
+        entity.setAppId("app-1");
+        entity.setKeyPrefix("mas-test");
+        ApiKeyMapper mapper = mock(ApiKeyMapper.class);
+        when(mapper.selectByHash(anyString())).thenReturn(entity);
+        ApiKeyService service = new ApiKeyService(mapper);
+
+        ApiKeyService.ApiKeyInfo info = service.validate("some-valid-key").block();
+
+        assertEquals("alice", info.userId());
+        assertEquals("app-1", info.appId());
+        assertEquals("mas-test", info.keyPrefix());
+    }
+
+    @Test
+    void expiredKeyRejected() {
+        ApiKeyEntity entity = new ApiKeyEntity();
+        entity.setUserId("alice");
+        entity.setExpireAt(LocalDateTime.now().minusDays(1));
+        ApiKeyMapper mapper = mock(ApiKeyMapper.class);
+        when(mapper.selectByHash(anyString())).thenReturn(entity);
+        ApiKeyService service = new ApiKeyService(mapper);
+        assertThrows(IllegalStateException.class, () -> service.validate("expired-key").block());
     }
 }

@@ -103,7 +103,16 @@ public class ChatService {
         Flux<String> chunks = Flux.fromIterable(parts).map(part -> "data: " + chunkJson(id, created, model, part, false) + "\n\n");
         return chunks.concatWith(Flux.defer(() -> {
             callLog.logAsync(ctx, 0, 0, 0, ctx.elapsedMs(), true);
+            // meta 帧构造为合法 chunk（严格 SDK 可解析），x-mas-meta 作为附加字段嵌入
             ObjectNode metaChunk = mapper.createObjectNode();
+            metaChunk.put("id", id);
+            metaChunk.put("object", "chat.completion.chunk");
+            metaChunk.put("created", created);
+            metaChunk.put("model", model);
+            ObjectNode mc0 = metaChunk.putArray("choices").addObject();
+            mc0.put("index", 0);
+            mc0.putObject("delta");
+            mc0.putNull("finish_reason");
             metaChunk.putPOJO("x-mas-meta", ctx.getMeta());
             return Flux.just(
                     "data: " + chunkJson(id, created, model, "", true) + "\n\n",

@@ -1,8 +1,8 @@
 # 智能模型路由访问平台设计方案
 
-> **版本**：v1.2  
-> **状态**：根据已经实现原型完善 
-> **日期**：2026-08-21
+> **版本**：v1.3  
+> **状态**：与已实现原型（含 API Key 鉴权、容器化 K8s 部署、Higress 集成）对齐  
+> **日期**：2026-08-31
 
 ***
 
@@ -43,21 +43,21 @@ flowchart TB
         A3["AgentKit / 未来<br/>其他框架智能体"]
     end
 
-    subgraph HIGRESS["Higress 网关层"]
-        H1["Higress<br/>TLS 终止 / 认证鉴权 / 限流 / 灰度发布"]
+    subgraph HIGRESS["Higress 网关层（L7 流量入口）"]
+        H1["Higress<br/>TLS 终止 / L7 路由 / 健康检查摘除 / 灰度发布"]
     end
 
-    subgraph MAS["MAS 智能模型路由访问平台"]
+    subgraph MAS["MAS 智能模型路由访问平台（K8s 多副本，无状态）"]
         direction TB
         API["OpenAI 兼容 API 层<br/>/v1/chat/completions<br/>/v1/embeddings<br/>/v1/models"]
-        L1["L1 规则拦截层<br/>敏感词过滤 / 黑名单 / 频率限制"]
+        L1["L1 规则拦截层<br/>API Key 鉴权 / 黑名单 / 敏感词 / 频率限制"]
         L2["L2 多级缓存层<br/>PostgreSQL 精确缓存 + pgvector 语义缓存"]
         L3["L3 意图路由层<br/>难度评分 / 意图分类 / 模型选择"]
         L4["L4 执行管控层<br/>上下文压缩 / 输出审核 / Token 限额"]
-        FWD["请求转发器<br/>SSE 流式 / 非流式"]
+        FWD["请求转发器<br/>SSE 流式 / 非流式 / 熔断故障转移"]
     end
 
-    subgraph ENGINES["底层推理引擎"]
+    subgraph ENGINES["底层推理引擎（外部独立部署，MAS 只调用不管生命周期）"]
         direction LR
         V1["vLLM 集群"]
         V2["SGLang 集群"]
@@ -111,7 +111,7 @@ flowchart TB
 
 | 组件                        | 现有角色                                           | MAS 上线后变化                            |
 | ------------------------- | ---------------------------------------------- | ------------------------------------ |
-| **Higress**               | L7 反向代理 + 业务路由                                 | 职责收窄为 L7 流量入口 + TLS/认证/限流，业务路由交给 MAS |
+| **Higress**               | L7 反向代理 + 业务路由                                 | 职责收窄为 L7 流量入口：TLS 终止 / `/smart-router/**` 路由 / 健康检查摘除 / 灰度发布；鉴权、限流与业务路由交给 MAS |
 | **ChatModelInter** (Java) | 调用 `gateway_service + "/ai/gateway/chatModel"` | 仅需修改 `gateway_service` 指向 MAS 地址     |
 | **Nacos 配置**              | `app.algorithm.ai-gateway-service` = 旧网关地址     | 改为 MAS 地址即可                          |
 
@@ -256,9 +256,12 @@ MAS 平台对外暴露 OpenAI 标准兼容接口，确保任何支持 OpenAI SDK
   ],
   "temperature": 0.7,
   "max_tokens": 2048,
-  "stream": false
+  "stream": false,
+  "user": "agent-007"
 }
 ```
+
+> **身份字段**：`user` 为 OpenAI 标准可选字段，MAS 将其解析为**智能体标识（审计用途）**，写入 `mas_call_log.agent_id`。它是「自报身份」，不参与鉴权；可信身份以 API Key 绑定的 `user_id` 为准（身份链与鉴权开关详见附录 G.1）。智能体零改造接入时可借此字段区分请求来自哪个智能体。
 
 
 **响应体（非流式）：**
@@ -316,6 +319,8 @@ data: {"id":"chatcmpl-abc123","object":"chat.completion.chunk","choices":[{"inde
 data: [DONE]
 ```
 
+> **帧标准化（已实现约束）**：MAS 自产的所有 SSE 帧——内容阻断帧、`x-mas-meta` 元信息帧、错误帧——都构造为**合法的 `chat.completion.chunk`**（补齐 `id`/`object`/`created`/`model`/`choices`），`x-mas-meta` 作为附加字段内嵌，保证严格解析的 OpenAI SDK 不会因非法帧中断。
+
 
 #### 4.1.2 Embeddings
 
@@ -353,6 +358,12 @@ data: [DONE]
 | `/smart-router/ai/gateway/chatModel` | `/smart-router/v1/chat/completions` | 兼容现有 ChatModelInter 调用 |
 | `/smart-router/ai/gateway/chatAgent` | 转发至 Agent 服务                        | 兼容现有 AgentLlmInter 调用  |
 
+**已实现的兼容能力**（字段映射定稿见附录 G.3）：
+
+- **请求参数完整映射**：`modelId→model`、`maxTokens→max_tokens`，并补齐 `topP→top_p`、`frequencyPenalty→frequency_penalty`、`presencePenalty→presence_penalty`、`stop`、`n`
+- **支持流式**：旧协议 `stream: true` 时按 SSE 透传（此前旧网关不支持）
+- **响应包裹**：成功时 `{"code":0,"message":"success","data":{content,requestId,modelId,usage}}`；错误时 HTTP 状态码按附录 G.2，同时 `code` 映射为旧协议错误码（400→1000、401→1001、403→1002、429→1003、504→1004、502→1005、其余→-1）
+
 ### 4.3 扩展字段
 
 MAS 在标准 OpenAI 响应中增加 `x-mas-meta` 扩展字段，提供路由元信息（可选返回）：
@@ -361,9 +372,14 @@ MAS 在标准 OpenAI 响应中增加 `x-mas-meta` 扩展字段，提供路由元
 | ----------------------------- | ------- | ------------------------- |
 | `x-mas-meta.cache_hit`        | boolean | 是否命中缓存                    |
 | `x-mas-meta.cache_level`      | string  | 缓存层级：`exact` / `semantic` |
-| `x-mas-meta.routed_to`        | string  | 路由到的推理引擎标识                |
+| `x-mas-meta.routed_to`        | string  | 路由到的推理引擎端点；缓存命中时为 `cache:exact` / `cache:semantic`；熔断故障转移时为 `failover:<模型>` |
 | `x-mas-meta.pipeline_cost_ms` | number  | MAS 内部调度耗时（ms）            |
-| `x-mas-meta.intent`           | string  | 识别的意图分类                   |
+| `x-mas-meta.intent`           | string  | 识别的意图分类（`simple` / `complex` / `chat` / `embedding` 等） |
+| `x-mas-meta.difficulty`       | number  | 难度评分（0-1，难度路由时返回）         |
+| `x-mas-meta.content_blocked`  | boolean | 输出审核命中标记（仅命中时返回）          |
+| `x-mas-meta.failover`         | boolean | 是否经过熔断故障转移（仅触发时返回）        |
+
+> 缓存命中响应在路由决策前短路返回，因此不含 `intent`/`difficulty`；断言路由行为时请求体须避开缓存（唯一化提问或先 `POST /internal/cache/flush`）。
 
 ***
 
@@ -375,13 +391,19 @@ MAS 在标准 OpenAI 响应中增加 `x-mas-meta` 扩展字段，提供路由元
 
 ```mermaid
 flowchart TB
-    INPUT(["请求进入 L1"]) --> BLACK["黑名单检查<br/>用户/模型/IP"]
+    INPUT(["请求进入 L1"]) --> AUTH{"鉴权开关<br/>mas.auth.enabled？"}
+    AUTH -->|"关闭（内网零改造）"| IDENTITY["身份回退链<br/>body.user → X-User-Id → anonymous"]
+    AUTH -->|"开启（默认）"| KEY["API Key 校验<br/>SHA-256 哈希查 mas_api_key<br/>fail-closed"]
+    KEY -->|"无效/缺失"| BLOCK0(["返回 401 Unauthorized"])
+    KEY -->|"通过"| IDENTITY2["身份取 Key 绑定的 user_id"]
+    IDENTITY --> BLACK["黑名单检查"]
+    IDENTITY2 --> BLACK
     BLACK -->|"命中"| BLOCK1(["返回 403 Forbidden"])
     BLACK -->|"通过"| SENSITIVE["敏感词过滤<br/>AC 自动机"]
     SENSITIVE -->|"命中"| BLOCK2(["返回 400 Bad Request"])
-    SENSITIVE -->|"通过"| RATE["频率限制<br/>内存滑动窗口 Bucket4j"]
+    SENSITIVE -->|"通过"| RATE["频率限制<br/>PG 秒级窗口原子计数"]
     RATE -->|"超限"| BLOCK3(["返回 429 Too Many Requests"])
-    RATE -->|"通过"| VALID["参数合法性校验<br/>model/token 范围"]
+    RATE -->|"通过"| VALID["参数合法性校验<br/>messages/max_tokens 范围"]
     VALID -->|"不合法"| BLOCK4(["返回 400 Bad Request"])
     VALID -->|"合法"| PASS(["通过 L1<br/>进入 L2"])
 ```
@@ -391,12 +413,13 @@ flowchart TB
 
 | 规则类型 | 实现方式                 | 耗时   | 说明                       |
 | ---- | -------------------- | ---- | ------------------------ |
-| 黑名单  | HashSet 查找           | O(1) | 用户 ID / 模型名 / IP 黑名单     |
+| API Key 鉴权 | Bearer token → SHA-256 → 查 `mas_api_key` + Caffeine 缓存（5min） | O(1) | 已实现完整鉴权体系：支持过期时间、按前缀撤销、`mas.auth.enabled=false` 一键关闭（内网零改造接入） |
+| 黑名单  | 配置列表 + `mas_blacklist` 表并集查找           | O(1) | 用户/模型/IP 三类主体，支持过期时间     |
 | 敏感词  | AC 自动机（Aho‑Corasick） | O(n) | 输入内容敏感词匹配                |
-| 频率限制 | 内存滑动窗口（Bucket4j / Guava RateLimiter） | O(1) | 每用户/每应用 QPS 限制（原型用内存，生产可换 PG/JDBC 后端） |
-| 参数校验 | 规则校验器                | O(1) | model 是否存在、max_tokens 范围 |
+| 频率限制 | PostgreSQL `mas_rate_limit` 秒级窗口原子计数（`INSERT ... ON CONFLICT DO UPDATE WHERE token_count < qps`） | O(1) | 每用户每秒 `per-user-qps` 次；PG 实现保证多副本部署下限流全局一致；定时清理过期窗口行 |
+| 参数校验 | 规则校验器                | O(1) | messages 非空、max_tokens ≤ 8192 且为正 |
 
-**降级策略**：L1 规则引擎异常时，默认放行（fail‑open），记录告警日志。
+**降级策略**：**鉴权 fail-closed**——API Key 校验链任何异常或空结果一律拒绝（401），杜绝静默放行；其余规则组件自身异常时 **fail-open** 放行并记录告警日志，保证可用性优先。
 
 ### 5.2 L2 多级缓存层
 
@@ -437,16 +460,16 @@ cache_key = SHA256(model + "|" + messages + "|" + temperature + "|" + max_tokens
 
 1. 将请求 `messages` 通过 Embedding 模型转为向量
 2. 在 PostgreSQL `pgvector` 扩展的向量表中检索最近邻（`<=> ` 余弦距离）
-3. 若相似度 >= 阈值（默认 0.95），返回缓存结果
+3. 若相似度 >= 阈值（默认 0.95，可按意图覆盖），返回缓存结果
 4. 否则标记为缓存未命中
 
-**存储方案**：PostgreSQL + `pgvector` 扩展（向量列 `vector(1024)` + 近似索引 `ivfflat`）。**不引入 Faiss / Redis**。
+**存储方案**：PostgreSQL + `pgvector` 扩展（向量列 `vector(1024)` + 近似索引 `hnsw`）。**不引入 Faiss / Redis**。
 
 | 配置项   | 值            | 说明           |
 | ----- | ------------ | ------------ |
 | 向量维度  | 1024（bge‑m3） | Embedding 维度 |
-| 索引类型  | ivfflat（pgvector） | 向量近似索引    |
-| 相似度阈值 | 0.95         | 高于此值视为命中     |
+| 索引类型  | hnsw（pgvector） | 向量近似索引；hnsw 无最小行数要求，空表即可建（原型默认） |
+| 相似度阈值 | 0.95（`mas.cache.semantic-threshold-by-intent` 可按意图覆盖） | 高于此值视为命中 |
 | TTL   | 60 分钟        | 语义缓存过期时间（行级 expire_at） |
 | 最大条目  | 50,000       | 超出后按 TTL 清理    |
 
@@ -575,8 +598,18 @@ mas:
 | 策略       | 说明                                   |
 | -------- | ------------------------------------ |
 | **加权选择** | 同意图下多模型实例时，按 `weight` 字段加权随机选择       |
-| **故障转移** | 目标引擎不可用时，自动切换到同意图的其他实例（生产环境需配合熔断器） |
+| **熔断故障转移** | 已实现 `ModelHealthTracker` 按端点熔断：连续失败达 `failure-threshold`（默认 5）后熔断打开 `open-duration`（默认 30s），期间请求**预检式**切换到同意图健康模型（响应 `x-mas-meta.routed_to=failover:<模型>`、`failover=true`）；半开期最多放行 `half-open-max-attempts`（默认 2）个探测请求，成功则闭合 |
 | **灰度路由** | 支持按用户/应用维度将流量路由到新版本模型（预留能力）        |
+
+**熔断器配置**（`application.yml`）：
+
+```yaml
+mas:
+  circuit-breaker:
+    failure-threshold: 5      # 连续失败次数阈值，达到后熔断打开
+    open-duration: 30s        # 熔断打开时长，期间全部走故障转移
+    half-open-max-attempts: 2 # 半开期探测请求数，成功闭合/失败重新打开
+```
 
 **降级策略**：
 
@@ -618,11 +651,109 @@ flowchart TB
 
 ***
 
-## 6. Higress 路由配置方案
+## 6. 部署架构：容器化、Kubernetes 与 Higress 集成
 
-### 6.1 路由规则
+### 6.1 部署拓扑与职责边界
 
-Higress 新增路由规则，将 `/smart-router/**` 路径转发到 MAS 平台：
+MAS 以**容器化无状态服务**部署在 Kubernetes 集群内，推理引擎在集群外（或集群内）**独立部署**，Higress 作为 L7 流量入口。三者的关系与职责边界如下：
+
+```mermaid
+flowchart LR
+    AGENT["智能体 / SDK"] -->|"HTTPS"| HG["Higress 网关<br/>（L7 流量入口）"]
+
+    subgraph K8S["Kubernetes 集群（namespace: mas）"]
+        SVC["Service mas-svc<br/>NodePort 30090"]
+        MAS1["MAS Pod #1"]
+        MAS2["MAS Pod #2"]
+        PG["PostgreSQL + pgvector<br/>postgres-svc:5432"]
+        SVC --> MAS1
+        SVC --> MAS2
+        MAS1 --> PG
+        MAS2 --> PG
+    end
+
+    HG -->|"PathPrefix /smart-router<br/>不重写路径"| SVC
+    MAS1 -->|"endpoint_url / MAS_MODEL_ENDPOINT"| ENG["外部推理引擎<br/>Ollama / vLLM / TGI（独立部署）"]
+    MAS2 --> ENG
+```
+
+**职责边界（定稿）**：
+
+| 层 | 组件 | 职责 | 明确不做 |
+| --- | --- | --- | --- |
+| 流量入口 | **Higress** | TLS 终止；`/smart-router/**` 前缀路由（不重写路径）；基于 `/smart-router/actuator/health` 的健康检查与不健康副本摘除；灰度/金丝雀发布入口 | 不做业务鉴权、不做限流、不做模型路由 |
+| 业务网关 | **MAS**（K8s 多副本） | API Key 鉴权（`mas.auth.enabled` 可关）；黑名单/敏感词/频率限制；多级缓存；难度/意图路由与熔断故障转移；配额与审计 | 不管推理引擎生命周期；不持久化自身状态（全部状态在 PostgreSQL，副本可随时扩缩） |
+| 推理层 | **Ollama / vLLM / TGI 等** | 纯模型推理，暴露 OpenAI 兼容接口 | 不感知路由/管控逻辑 |
+
+**关键设计决策**：
+
+1. **路径前缀不重写**：Higress 以 `PathPrefix: /smart-router` 转发，MAS 通过 `spring.webflux.base-path: /smart-router` 承接，全链路路径一致，便于日志与追踪对齐（详见 §6.4 与附录 B）。
+2. **MAS 无状态、可水平扩展**：鉴权、限流、缓存、调用记录全部落 PostgreSQL（限流为 PG 原子计数，多副本全局一致；精确/语义缓存二级存储为 PG 共享）；本地 Caffeine 仅为一级加速，副本间不要求一致。
+3. **推理引擎外部化**：MAS 只通过 `mas_model_config.endpoint_url`（或 `MAS_MODEL_ENDPOINT` 环境变量）调用引擎，不随平台部署/启动任何模型服务；引擎地址按模型粒度配置，支持混合多云/多集群引擎。
+4. **旁路降级**：MAS 整体不可用时，智能体将 Nacos 中的 `app.algorithm.ai-gateway-service` 指回推理引擎直连地址即可旁路（缓存/管控能力暂时缺失，可用性优先）。
+5. **双鉴权模式**：默认 `mas.auth.enabled=true`，MAS 以 API Key 体系独立鉴权（不依赖网关）；内网零改造接入场景可置 `false`，身份回退 `body.user → X-User-Id → anonymous`（附录 G.1）。若全行要求统一在 Higress 做 OAuth2/OIDC 认证，可与 MAS API Key 并存：Higress 认证调用方身份，MAS API Key 标识业务用户。
+
+### 6.2 容器镜像设计
+
+`smart-model-router/Dockerfile` 采用多阶段构建，产物为单一运行镜像：
+
+```dockerfile
+# ---- Stage 1: 构建 ----
+FROM maven:3.9-eclipse-temurin-17 AS builder
+WORKDIR /build
+COPY pom.xml .
+RUN mvn dependency:go-offline -B
+COPY src ./src
+RUN mvn package -DskipTests -B
+
+# ---- Stage 2: 运行（多架构兼容） ----
+FROM eclipse-temurin:17-jre-jammy
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends wget \
+    && groupadd -r app && useradd -r -g app app \
+    && rm -rf /var/lib/apt/lists/*
+WORKDIR /app
+COPY --from=builder /build/target/*.jar app.jar
+USER app
+EXPOSE 9090
+HEALTHCHECK --interval=15s --timeout=5s --start-period=30s --retries=3 \
+    CMD wget -qO- http://localhost:9090/smart-router/actuator/health || exit 1
+ENTRYPOINT ["java", "-jar", "app.jar"]
+```
+
+| 要点 | 说明 |
+| --- | --- |
+| 基础镜像 | `eclipse-temurin:17-jre-jammy`（Adoptium 无 arm64 alpine 变体，jammy 多架构兼容，x86_64/arm64 均可构建） |
+| 安全 | 非 root 用户 `app` 运行 |
+| 健康检查 | 镜像级 HEALTHCHECK 与 K8s 探针均探测 `/smart-router/actuator/health`（注意带 base-path 前缀） |
+| 配置注入 | 全部经环境变量（`MAS_DB_URL` / `MAS_DB_USERNAME` / `MAS_DB_PASSWORD` / `MAS_MODEL_ENDPOINT`），镜像不含环境相关配置 |
+
+### 6.3 Kubernetes 资源设计与启动时序
+
+资源清单位于 `smart-model-router/k8s/`，部署顺序：`namespace → postgres → mas-configmap → mas-deployment → mas-service`。
+
+| 清单 | 资源 | 说明 |
+| --- | --- | --- |
+| `namespace.yaml` | Namespace `mas` | 全部资源独立命名空间隔离 |
+| `postgres.yaml` | PVC 5Gi + Deployment + ConfigMap `postgres-init` + Service `postgres-svc`（ClusterIP） | `pgvector/pgvector:pg16` 镜像；**initdb 脚本在 PG 首次初始化时执行**：建 `mas` 用户/库 → `CREATE EXTENSION vector` → 全部 8 张表 DDL → 授权 → 种子数据（5 模型 + 测试 API Key） |
+| `mas-configmap.yaml` | ConfigMap `mas-config` + `mas-seed-sql` | `mas-config`：DB 连接与 `MAS_MODEL_ENDPOINT`（外部推理服务地址占位符，部署前替换）；`mas-seed-sql`：`data-k8s.sql` 幂等种子（`ON CONFLICT DO UPDATE`） |
+| `mas-deployment.yaml` | Deployment `mas`（**2 副本**） | initContainer `wait-db-seed` 等待 PG 就绪后补执行 `data-k8s.sql`（兜底种子）；liveness/readiness 探针指向 `/smart-router/actuator/health`；资源 256Mi~512Mi |
+| `mas-service.yaml` | Service `mas-svc`（NodePort 30090） | Higress backendRef 或 `kubectl port-forward` 的接入点 |
+
+**启动时序（首次部署的关键设计）**：
+
+```
+1. postgres Pod 首次启动 → /docker-entrypoint-initdb.d/init-pg.sql 执行
+   （建库建表 + 授权 + 种子，此时 mas_api_key / mas_model_config 已就绪）
+2. mas Pod 启动 → initContainer 等待 pg_isready 后再次执行 data-k8s.sql（幂等兜底）
+3. mas 应用启动 → 直接读到完整表结构与种子数据，无"表不存在"时序问题
+```
+
+> 设计取舍：表结构与种子放在 **PG initdb 阶段**而非应用侧自动建表，是因为 initContainer 种子脚本在表创建之前执行会静默失败；initdb 一次性完成建表+授权+种子，保证应用首次启动即可用。存量库升级走 `schema.sql` 内的 `ADD COLUMN IF NOT EXISTS` 迁移语句。
+
+### 6.4 Higress 路由配置
+
+Higress 新增路由规则，将 `/smart-router/**` 路径转发到 MAS Service：
 
 ```yaml
 # Higress 路由配置（新增部分）
@@ -641,15 +772,71 @@ spec:
             type: PathPrefix
             value: /smart-router
       backendRefs:
-        - name: mas-service
+        - name: mas-svc      # K8s Service（mas-service.yaml），勿直连 Pod
           port: 9090
           weight: 100
 ```
 
+配套要求：
+
+- **健康检查**：Higress 对 `mas-svc:9090` 配置主动健康检查，探测路径 `GET /smart-router/actuator/health`（200 为健康），不健康副本自动摘除；MAS 滚动更新期间流量无损。
+- **不做路径重写**：见附录 B「路径决策」。
+- **长连接与 SSE**：流式响应为长连接，Higress 路由需关闭响应缓冲（禁用 proxy buffering），`idle timeout` 不小于 `mas.backend.timeout`（默认 60s）。
+- **内部端点隔离**：`/smart-router/internal/**`（缓存清理、API Key 管理）与 `/smart-router/actuator/**` 仅允许内网/管理域名可达，Higress 上不对公网路由开放（附录 H.4）。
 
 <br />
 
 > **路径决策（重要，AI 编程必须遵循）**：Higress 使用 `PathPrefix: /smart-router` 转发，**不做路径重写**，因此 MAS 收到的完整路径为 `/smart-router/v1/...`。MAS 必须注册在全局前缀 `/smart-router` 下（Spring Boot 3.3 通过 `spring.webflux.base-path: /smart-router`，或控制器统一 `@RequestMapping("/smart-router")`）。所有控制器路径以此为前缀，详见 §9.2。
+
+### 6.5 本地验证环境（Colima + kind）
+
+原型在 macOS 上用 Colima（Docker daemon）+ kind 单节点集群完成端到端验证，流程如下：
+
+```bash
+# 1. 启动 Docker 运行时与集群
+colima start --cpu 4 --memory 8
+kind create cluster --name mas
+
+# 2. 构建并加载镜像（kind 节点直接导入本地镜像，无需推送仓库）
+docker build -t mas-app:latest .
+kind load docker-image mas-app:latest --name mas
+kind load docker-image pgvector/pgvector:pg16 --name mas
+
+# 3. 按序部署
+kubectl apply -f k8s/namespace.yaml
+kubectl apply -f k8s/postgres.yaml
+kubectl wait --for=condition=ready pod -l app=postgres -n mas --timeout=120s
+kubectl apply -f k8s/mas-configmap.yaml
+kubectl apply -f k8s/mas-deployment.yaml
+kubectl apply -f k8s/mas-service.yaml
+kubectl wait --for=condition=ready pod -l app=mas -n mas --timeout=120s
+
+# 4. 接入验证
+kubectl port-forward svc/mas-svc 9090:9090 -n mas
+curl -s http://localhost:9090/smart-router/actuator/health   # {"status":"UP"}
+```
+
+**集群访问外部推理引擎**：验证环境的 Ollama 运行在宿主机（非集群内），MAS Pod 经 Colima VM 网关地址访问宿主服务（本机实测 `192.168.5.2:11434`），对应写入 `mas_model_config.endpoint_url`。生产环境替换为真实推理服务地址即可，机制不变。
+
+**部署后 13 项功能验证清单**（均经 `port-forward` 对集群内服务实测通过）：
+
+| # | 验证项 | 预期 |
+| --- | --- | --- |
+| 1 | 健康检查 | `{"status":"UP"}` |
+| 2 | 无 API Key | 401 `invalid_api_key` |
+| 3 | 无效 API Key | 401（fail-closed，不得放行） |
+| 4 | 逻辑模型对话（qwen-lite） | 200 + `x-mas-meta.routed_to` 指向引擎端点 |
+| 5 | 物理模型名零改造 + `user` 字段 | 200；`mas_call_log` 落库 `user_id`（Key 绑定）与 `agent_id`（body.user）分离 |
+| 6 | 难度路由（省略 model） | 复杂问句 `intent=complex`，简单问句 `intent=simple` |
+| 7 | 流式输出 | 每帧均为合法 `chat.completion.chunk`，以 `[DONE]` 收尾 |
+| 8 | 精确缓存 | 相同请求第二次 `cache_hit=true` |
+| 9 | 旧协议 `/ai/gateway/chatModel` | `code=0` 包裹响应 |
+| 10 | Embeddings（bge-m3） | 1024 维向量 |
+| 11 | 敏感词输入 | 400 `input_blocked` |
+| 12 | 限流（40 并发 > 20 QPS） | 出现 429 |
+| 13 | 熔断故障转移（注册死端点模型） | 熔断后自动 `failover:` 至健康模型 |
+
+> 重复执行该清单时，断言路由/意图的请求体须每轮唯一化（如追加时间戳后缀），否则精确/语义缓存命中会短路路由（`routed_to=cache:*`），属预期行为而非故障。
 
 ***
 
@@ -753,6 +940,7 @@ sequenceDiagram
 | trace_id          | varchar(32)  | NO  | 链路追踪 ID             |
 | app_id            | varchar(64)  | YES | 调用方应用 ID            |
 | user_id           | varchar(64)  | YES | 调用方用户 ID            |
+| agent_id          | varchar(64)  | YES | 智能体自报身份（请求体 `user` 字段，仅审计） |
 | model_id          | varchar(64)  | NO  | 使用的模型               |
 | intent_type       | varchar(32)  | YES | 识别的意图               |
 | cache_hit         | tinyint      | NO  | 是否缓存命中              |
@@ -777,6 +965,48 @@ sequenceDiagram
 | token_limit | bigint      | NO | token 上限             |
 | token_used  | bigint      | NO | 已使用 token 数          |
 | reset_at    | datetime    | NO | 下次重置时间               |
+
+#### 8.1.4 API Key 表 `mas_api_key`（已实现）
+
+L1 API Key 鉴权体系的存储底座（详见 §5.1 与附录 G.1）。
+
+| 字段         | 类型           | 可空  | 说明                                       |
+| ---------- | ------------ | --- | ---------------------------------------- |
+| id         | bigint       | NO  | 主键                                       |
+| key_hash   | varchar(64)  | NO  | API Key 的 SHA‑256 摘要（唯一，明文不落库）          |
+| key_prefix | varchar(12)  | NO  | Key 前缀（如 `mas‑test`），用于识别与展示             |
+| user_id    | varchar(64)  | NO  | Key 绑定的可信身份（鉴权通过后作为 `user_id` 进入后续链路）   |
+| app_id     | varchar(64)  | YES | 可选绑定的应用                                  |
+| status     | tinyint      | NO  | 1=有效 0=吊销                                |
+| expire_at  | datetime     | YES | 过期时间（NULL=永不过期）                          |
+| created_at | datetime     | NO  | 创建时间                                     |
+
+#### 8.1.5 分布式限流表 `mas_rate_limit`（已实现）
+
+替代 Bucket4j 内存桶的 PG 秒级滑动窗口限流，多副本部署下全局一致（详见 §5.1 与附录 G.7）。
+
+| 字段          | 类型          | 可空 | 说明                                   |
+| ----------- | ----------- | -- | ------------------------------------ |
+| user_id     | varchar(64) | NO | 限流对象（身份链解析出的 `user_id`）              |
+| window_key  | varchar(32) | NO | 秒级窗口键（如 `20260831120000`）            |
+| token_count | int         | NO | 当前窗口内已放行的请求数                          |
+| window_end  | datetime    | NO | 窗口过期时间（定时清理依据）                        |
+
+> 唯一约束 `(user_id, window_key)`；放行依赖原子语句 `INSERT … ON CONFLICT DO UPDATE … WHERE token_count < :limit`，无需行锁即保证并发一致。
+
+#### 8.1.6 黑名单表 `mas_blacklist`（已实现）
+
+管理面预留表已在原型落地：L1 黑名单校验读取配置 + 本表并集（详见 §5.1 与附录 H.2）。
+
+| 字段           | 类型           | 可空  | 说明                                  |
+| ------------ | ------------ | --- | ----------------------------------- |
+| id           | bigint       | NO  | 主键                                  |
+| subject_type | varchar(16)  | NO  | 主体类型：user/agent/app/ip              |
+| subject_key  | varchar(128) | NO  | 主体标识                                |
+| reason       | varchar(256) | YES | 拉黑原因                                |
+| expire_at    | datetime     | YES | 过期时间（NULL=永久）                       |
+| created_by   | varchar(64)  | NO  | 操作者（默认 `system`）                    |
+| created_at   | datetime     | NO  | 创建时间                                |
 
 > **PostgreSQL DDL（可直接执行；语义缓存前需先 `CREATE EXTENSION IF NOT EXISTS vector;`）**
 
@@ -806,6 +1036,7 @@ CREATE TABLE mas_call_log (
     trace_id            VARCHAR(32)  NOT NULL,
     app_id              VARCHAR(64),
     user_id             VARCHAR(64),
+    agent_id            VARCHAR(64),
     model_id            VARCHAR(64)  NOT NULL,
     intent_type         VARCHAR(32),
     cache_hit           SMALLINT     NOT NULL DEFAULT 0,
@@ -820,6 +1051,8 @@ CREATE TABLE mas_call_log (
     created_at          TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 CREATE INDEX idx_call_log_created ON mas_call_log (created_at);
+-- 存量库升级：补 agent_id 列（请求体 OpenAI 标准 user 字段，智能体自报身份）
+ALTER TABLE mas_call_log ADD COLUMN IF NOT EXISTS agent_id VARCHAR(64);
 
 -- 8.1.3 Token 配额表
 CREATE TABLE mas_token_quota (
@@ -852,8 +1085,44 @@ CREATE TABLE mas_semantic_cache (
     created_at    TIMESTAMP  NOT NULL DEFAULT CURRENT_TIMESTAMP,
     expire_at     TIMESTAMP  NOT NULL
 );
+-- hnsw 无最小行数要求（ivfflat lists=100 在空表上建索引会失败），原型默认选型
 CREATE INDEX idx_semantic_cache_vec ON mas_semantic_cache
-    USING ivfflat (embedding vector_cosine_ops) WITH (lists = 100);
+    USING hnsw (embedding vector_cosine_ops);
+
+-- 8.1.6 黑名单表（附录 H.2，L1 与配置黑名单取并集）
+CREATE TABLE mas_blacklist (
+    id           BIGSERIAL PRIMARY KEY,
+    subject_type VARCHAR(16)  NOT NULL,
+    subject_key  VARCHAR(128) NOT NULL,
+    reason       VARCHAR(256),
+    expire_at    TIMESTAMP,
+    created_by   VARCHAR(64)  NOT NULL DEFAULT 'system',
+    created_at   TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (subject_type, subject_key)
+);
+
+-- 8.1.4 API Key 鉴权体系
+CREATE TABLE mas_api_key (
+    id          BIGSERIAL PRIMARY KEY,
+    key_hash    VARCHAR(64)  NOT NULL UNIQUE,  -- SHA-256(key)，明文不落库
+    key_prefix  VARCHAR(12)  NOT NULL,          -- 前缀用于识别（如 mas-xxxx）
+    user_id     VARCHAR(64)  NOT NULL,
+    app_id      VARCHAR(64),
+    status      SMALLINT     NOT NULL DEFAULT 1, -- 1=active, 0=revoked
+    expire_at   TIMESTAMP,
+    created_at  TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX idx_api_key_hash ON mas_api_key (key_hash);
+
+-- 8.1.5 分布式限流（替代 Bucket4j 内存桶，支持多实例部署）
+CREATE TABLE mas_rate_limit (
+    user_id     VARCHAR(64)  NOT NULL,
+    window_key  VARCHAR(32)  NOT NULL,  -- 秒级窗口键如 '20260831120000'
+    token_count INT          NOT NULL DEFAULT 0,
+    window_end  TIMESTAMP    NOT NULL,
+    UNIQUE (user_id, window_key)
+);
+CREATE INDEX idx_rate_limit_window ON mas_rate_limit (window_end);
 ```
 
 ***
@@ -864,62 +1133,100 @@ CREATE INDEX idx_semantic_cache_vec ON mas_semantic_cache
 
 | 组件 | 技术选型 | 版本 | 许可证 | 选型理由 |
 | --- | --- | --- | --- | --- |
-| **服务框架** | Spring Boot 3 + WebFlux | **3.3.x** | Apache-2.0 | 与现有后端技术栈一致，WebFlux 支持高并发 SSE（3.0.9 已 EOL，定稿 3.3.x） |
-| **HTTP 客户端** | WebClient (Reactor) | - | Apache-2.0 | 非阻塞，适配 WebFlux |
+| **服务框架** | Spring Boot 3 + WebFlux | **3.3.5** | Apache-2.0 | 与现有后端技术栈一致，WebFlux 支持高并发 SSE（3.0.9 已 EOL，定稿 3.3.x） |
+| **HTTP 客户端** | WebClient (Reactor) | - | Apache-2.0 | 非阻塞，适配 WebFlux；流式透传不开缓冲 |
+| **数据访问** | **MyBatis‑Plus 3.5.7**（`mybatis-plus-spring-boot3-starter`）+ JDBC/HikariCP | 3.5.7 | Apache-2.0 | 原型定稿：放弃 R2DBC（生态适配成本高），阻塞 SQL 经 `ReactiveDbAdapter` 桥接至 `Schedulers.boundedElastic()`，不占用事件循环线程 |
 | **缓存‑精确** | 本地 Caffeine + PostgreSQL `mas_exact_cache` | - | Apache-2.0 / PostgreSQL | 不引入 Redis；本地一级缓存 + PG 二级跨实例共享 |
-| **缓存‑语义** | PostgreSQL + `pgvector` 扩展 | 0.7+ | PostgreSQL License | 向量检索直接落在 PG，信创友好，规避 Faiss/Redis |
-| **Embedding** | 复用现有 bge‑m3 服务 | - | - | 通过 MAS 内部调用 Embedding 模型 |
-| **意图分类** | DJL (Deep Java Library) 或 ONNX Runtime | 0.28+ / 1.18+ | Apache-2.0 / MIT | 纯 Java 本地推理 0.5B 分类模型，不依赖 Python 服务 |
-| **敏感词** | Aho‑Corasick (ahocorasick‑java) | - | Apache-2.0 | 多模式匹配，O(n) 复杂度 |
-| **频率限制** | Bucket4j（内存 / 或 JDBC 后端） | 8.x | Apache-2.0 | 滑动窗口限流，原型用内存，生产可切 PG/JDBC 后端 |
-| **数据库** | PostgreSQL（生产可换 openGauss / KingbaseES） | 15+ | PostgreSQL License | 统一存储配置/记录/缓存，符合信创与零 AGPL 约束 |
-| **注册中心** | Nacos | 现有 | Apache-2.0 | 服务注册与配置管理 |
-| **路由能力** | Spring AI（`ChatClient` / 路由 SPI）+ Resilience4j | 1.0.x | Apache-2.0 | L3 模型路由、负载均衡、故障转移（Resilience4j 配合熔断） |
+| **缓存‑语义** | PostgreSQL + `pgvector` 扩展（hnsw 索引） | 0.7+ | PostgreSQL License | 向量检索直接落在 PG，信创友好，规避 Faiss/Redis |
+| **Embedding** | 复用外部 bge‑m3 推理服务 | - | - | MAS 经 OpenAI 兼容 `/v1/embeddings` 调用外部 Embedding 模型 |
+| **意图/难度分类** | 规则分类器（`RuleIntentClassifier` / `RuleDifficultyClassifier`） | - | - | 原型以关键词 + 长度 + 结构特征打分（阈值 0.5），零模型依赖；DJL/ONNX 本地推理为生产演进方向 |
+| **Token 计数** | jtokkit | 1.1.0 | MIT | 纯 Java BPE 分词，本地估算 prompt/completion token 数 |
+| **敏感词** | Aho‑Corasick（`org.ahocorasick`） | 0.6.3 | Apache-2.0 | 多模式匹配，O(n) 复杂度 |
+| **频率限制** | **PostgreSQL 秒级滑动窗口**（`mas_rate_limit` 原子语句） | - | PostgreSQL License | 原型定稿：放弃 Bucket4j 内存桶，PG 原子 `ON CONFLICT` 计数，多副本部署全局限流一致 |
+| **熔断故障转移** | **自研 `ModelHealthTracker`**（按 endpoint 半开状态机） | - | - | 原型定稿：不引入 Resilience4j；失败阈值/开路时长/半开试探均可配置（§5.3.4） |
+| **可观测性** | Spring Boot Actuator + Micrometer Prometheus | - | Apache-2.0 | `/actuator/health` 供 K8s 探针，`/actuator/prometheus` 暴露指标 |
+| **数据库** | PostgreSQL + pgvector（生产可换 openGauss / KingbaseES） | 16 | PostgreSQL License | 统一存储配置/记录/缓存/鉴权/限流，符合信创与零 AGPL 约束 |
+| **测试** | spring‑boot‑starter‑test + reactor‑test + 数据驱动集成套件 | - | Apache-2.0 | 135 个单测 + `tests/` 目录数据驱动黑盒套件（附录 G.9） |
 
-> **许可证红线**：全栈均为 Apache-2.0 / MIT / PostgreSQL License，**无 copyleft / AGPL 风险**。已移除 Redis（8 为 AGPL）、Faiss（需 JNI 且叠加 Redis）、MySQL（GPL 风险），统一 PostgreSQL。原型阶段不依赖任何外部缓存中间件。
+> **许可证红线**：全栈均为 Apache-2.0 / MIT / PostgreSQL License，**无 copyleft / AGPL 风险**。已移除 Redis（8 为 AGPL）、Faiss（需 JNI 且叠加 Redis）、MySQL（GPL 风险），统一 PostgreSQL。原型阶段不依赖任何外部缓存中间件；Nacos 注册中心与 Spring AI 路由不在原型范围（路由/熔断为自研实现，见 §5.3）。
 
 ### 9.2 项目结构
 
 ```
 smart-model-router/
 ├── pom.xml
+├── Dockerfile                             # 多阶段构建（§6.2）
+├── docker-compose.yml                     # 本地 PG + 应用编排（开发用）
+├── k8s/                                   # K8s 资源清单（§6.3）
+│   ├── postgres.yaml                      #   PVC + PG Deployment + initdb ConfigMap + Service
+│   ├── mas-deployment.yaml                #   MAS Deployment（2 副本 + initContainer）
+│   ├── mas-service.yaml                   #   mas-svc NodePort 30090
+│   └── mas-configmap.yaml                 #   mas-config 环境变量 + K8s 种子 SQL
+├── tests/                                 # 数据驱动黑盒测试套件（附录 G.9）
+│   ├── cases.json                         #   用例定义
+│   ├── gen_cases.py                       #   用例生成
+│   └── run_cases.py                       #   执行器
 ├── src/main/java/com/sunyard/llm/mas/
 │   ├── MasApplication.java                # 启动类
-│   ├── controller/
+│   ├── web/
 │   │   ├── ChatCompletionController.java  # /smart-router/v1/chat/completions
 │   │   ├── EmbeddingController.java       # /smart-router/v1/embeddings
 │   │   ├── ModelController.java           # /smart-router/v1/models
 │   │   ├── LegacyCompatController.java    # /smart-router/ai/gateway/chatModel 兼容旧路径
-│   │   └── admin/                         # 管理面管理 API（附录 H，后续迭代，原型不实现）
+│   │   ├── ApiKeyAdminController.java     # 管理面：/internal/api-keys（POST/DELETE）
+│   │   ├── CacheAdminController.java      # 管理面：/internal/cache/flush（POST）
+│   │   └── TraceWebFilter.java            # trace_id 注入（X-Trace-Id）
 │   ├── pipeline/
 │   │   ├── RoutingPipeline.java           # 流水线编排器
 │   │   ├── PipelineContext.java           # 流水线上下文
+│   │   ├── PipelineContextFactory.java    # 上下文构建（身份链/参数解析）
 │   │   └── stage/
 │   │       ├── L1RuleInterceptStage.java
 │   │       ├── L2MultiLevelCacheStage.java
 │   │       ├── L3IntentRoutingStage.java
 │   │       └── L4ExecutionControlStage.java
 │   ├── service/
-│   │   ├── CacheService.java              # 精确缓存服务
-│   │   ├── SemanticCacheService.java      # 语义缓存
-│   │   ├── IntentClassifier.java          # 意图分类
-│   │   ├── ModelRouter.java               # 模型路由
-│   │   └── ForwardService.java            # 请求转发
-│   ├── repository/                        # R2DBC 仓储（缓存/配额/调用记录）
+│   │   ├── ApiKeyService.java             # API Key 鉴权（SHA-256 + Caffeine，fail-closed）
+│   │   ├── BlacklistService.java          # 黑名单（配置 ∪ mas_blacklist）
+│   │   ├── SensitiveWordFilter.java       # AC 多模式敏感词
+│   │   ├── RateLimitService.java          # PG 秒级窗口限流
+│   │   ├── ExactCacheService.java         # 精确缓存（Caffeine + PG）
+│   │   ├── SemanticCacheService.java      # 语义缓存（pgvector）
+│   │   ├── CacheKeyGenerator.java         # 缓存键（SHA-256）
+│   │   ├── IntentClassifier.java          # 意图分类接口
+│   │   ├── RuleIntentClassifier.java      # 规则意图分类实现
+│   │   ├── DifficultyClassifier.java      # 难度分类接口
+│   │   ├── RuleDifficultyClassifier.java  # 规则难度评分实现（阈值 0.5）
+│   │   ├── ModelRouter.java               # 模型路由（意图/难度 → 档位 → 权重）
+│   │   ├── ModelHealthTracker.java        # 熔断状态机（§5.3.4）
+│   │   ├── ModelConfig.java               # 模型配置加载与缓存
+│   │   ├── ForwardService.java            # 请求转发（流式透传 + 熔断故障转移）
+│   │   ├── QuotaService.java              # Token 配额
+│   │   ├── CallLogService.java            # 调用记录落库
+│   │   ├── TokenCounter.java              # jtokkit token 计数
+│   │   └── ChatService.java               # 流水线入口编排
+│   ├── entity/                            # MyBatis-Plus 实体（7 张表）
+│   ├── mapper/                            # MyBatis-Plus Mapper（8 个）
+│   ├── util/
+│   │   └── ReactiveDbAdapter.java         # 阻塞 JDBC → Mono（boundedElastic）
 │   ├── exception/
+│   │   ├── MasException.java              # 业务异常（错误码）
 │   │   └── GlobalExceptionHandler.java    # @ControllerAdvice 统一错误体（附录 G.2）
 │   ├── config/
 │   │   ├── MasProperties.java             # 配置属性（完整清单见附录 G.6）
+│   │   ├── DatabaseConfig.java            # 数据源/MyBatis-Plus 配置
 │   │   └── WebClientConfig.java           # WebClient 配置
 │   └── model/
-│       ├── ChatCompletionRequest.java     # OpenAI 请求模型
-│       ├── ChatCompletionResponse.java    # OpenAI 响应模型
-│       └── MasMeta.java                   # 扩展元信息
+│       └── MasMeta.java                   # x-mas-meta 扩展元信息
 └── src/main/resources/
     ├── application.yml                    # 含 spring.webflux.base-path: /smart-router
-    └── sensitive-words.txt                # L1/L4 敏感词词表（每行一个词，可为空）
-    # 注：意图分类 .onnx 不在原型范围；生产阶段由 DJL/ONNX Runtime 加载至本目录
+    ├── sensitive-words.txt                # L1/L4 敏感词词表（每行一个词，可为空）
+    └── db/
+        ├── schema.sql                     # 8 张表 DDL（§8，幂等）
+        └── data.sql                       # 本地种子数据（5 模型 + 测试 API Key）
 ```
+
+> 与早期设计的差异：`controller/` 包实际命名为 `web/`；`repository/`（R2DBC）由 `entity/ + mapper/`（MyBatis‑Plus）替代；管理面 API 已在原型实现子集（API Key 管理、缓存清理），其余仍预留（附录 H）。
 
 
 ***
@@ -932,7 +1239,7 @@ smart-model-router/
 
 * OpenAI 兼容的 `/smart-router/v1/chat/completions` 接口（流式 + 非流式）
 
-* L1 规则拦截（黑名单 + 敏感词过滤 + 频率限制，内存 Bucket4j）
+* L1 规则拦截（API Key 鉴权 + 黑名单 + 敏感词过滤 + 频率限制，PostgreSQL 秒级窗口）
 
 * L2 多级缓存（本地 Caffeine + PostgreSQL `mas_exact_cache` 精确缓存 + pgvector 语义缓存）
 
@@ -942,7 +1249,7 @@ smart-model-router/
 
 * 请求转发到后端推理引擎（原型用本地 **Ollama** 或 **mock LLM 服务**，见附录 D）
 
-**不包含**（后续迭代）：意图分类模型（DJL/ONNX 加载 .onnx，原型仅预留 `IntentClassifier` SPI）、摘要式上下文压缩（原型仅实现截断策略）、管理面（前端配置界面与管理 API，见附录 H）。
+**不包含**（后续迭代）：意图分类模型（DJL/ONNX 加载 .onnx，原型仅以规则分类器实现并预留 `IntentClassifier` SPI）、摘要式上下文压缩（原型仅实现截断策略）、管理面前端配置界面（管理 API 子集已实现：API Key 管理、缓存清理，见附录 H）。
 
 > 范围调整说明：原型范围由 v1.0 的最小原型扩展为完整 L1-L4，语义缓存、敏感词过滤、输出审核、上下文压缩（截断式）均已纳入，可执行编程规格见附录 G。
 
@@ -954,7 +1261,7 @@ smart-model-router/
 | --------- | --------------------------------------------------- | ---- | -------- |
 | Day 1‑2   | 项目骨架搭建：Spring Boot 3 + WebFlux 初始化，OpenAI 请求/响应模型定义，统一错误体（附录 G.2）与 trace_id | 2 天  | 可启动的空服务  |
 | Day 3‑4   | 请求转发器：WebClient 非阻塞转发，SSE 流式透传（附录 G.5）      | 2 天  | 能透传到推理引擎 |
-| Day 5‑6   | L1 规则拦截：黑名单 + 敏感词 AC 自动机 + 频率限制（内存 Bucket4j）                  | 2 天  | 基础安全过滤   |
+| Day 5‑6   | L1 规则拦截：API Key 鉴权 + 黑名单 + 敏感词 AC 自动机 + 频率限制（PostgreSQL 秒级窗口）                  | 2 天  | 基础安全过滤   |
 | Day 7‑9   | L2 多级缓存：Caffeine + PG 精确缓存 + pgvector 语义缓存（含 embedding 调用与降级策略） | 3 天  | 重复/相似请求缓存命中 |
 | Day 10‑12 | L3 路由 + L4 管控：模型指定/意图映射路由、Token 统计与配额、输出审核、上下文截断压缩                   | 3 天  | 完整四层流水线    |
 | Day 13‑14 | 旧协议兼容层 `/ai/gateway/chatModel`（附录 G.3） + 集成测试（附录 G.9）  | 2 天  | 兼容层与回归保障   |
@@ -976,13 +1283,21 @@ smart-model-router/
 
 #### 10.3.1 可执行验证命令集（可直接复制运行）
 
-> 约定：MAS 本地监听 `http://localhost:9090`，全局前缀 `/smart-router`；经 Higress 访问为 `http://localhost:8080/smart-router`。以下以直连 MAS 为例。后端用本地 Ollama（`qwen2.5:0.5b` 或 `qwen2.5:7b`）。
+> 约定：MAS 本地监听 `http://localhost:9090`，全局前缀 `/smart-router`；K8s 部署经 NodePort 为 `http://<node>:30090`，经 Higress 访问为 `http://localhost:8080/smart-router`。以下以直连 MAS 为例。
+>
+> 鉴权：`mas.auth.enabled` 默认 `true`，所有请求须携带种子数据中的测试 Key（明文 `mas-test-key-001`，见附录 C）：`Authorization: Bearer mas-test-key-001`，身份为 `test-user`；设 `false` 时退化为内网零改造模式（身份回退 `body.user` → `X-User-Id` → `anonymous`）。
+>
+> 后端为外部推理引擎（本地 Ollama 或 K8s 外部服务），逻辑名经 `mas.backend.model-overrides` 映射为物理名（如 `qwen-72b → gpt-oss:20b`）。
+
+```bash
+AUTH='Authorization: Bearer mas-test-key-001'
+```
 
 **① 基础转发（非流式）**
 
 ```bash
 curl -s -X POST http://localhost:9090/smart-router/v1/chat/completions \
-  -H "Content-Type: application/json" \
+  -H "$AUTH" -H "Content-Type: application/json" \
   -d '{"model":"qwen-72b","messages":[{"role":"user","content":"你好，介绍一下杭州"}],"stream":false}' \
   | tee /tmp/r1.json
 # 断言：返回 JSON 含 "choices"[0]."message"."content" 且 x-mas-meta.routed_to 非空
@@ -993,20 +1308,22 @@ jq -e '.choices[0].message.content' /tmp/r1.json >/dev/null && echo "PASS: 基�
 
 ```bash
 curl -N -X POST http://localhost:9090/smart-router/v1/chat/completions \
-  -H "Content-Type: application/json" \
+  -H "$AUTH" -H "Content-Type: application/json" \
   -d '{"model":"qwen-72b","messages":[{"role":"user","content":"写一句诗"}],"stream":true}' \
   | grep -c '"delta"'   # 统计 chunk 数
-# 断言：输出包含多个 data: {...} 行，且以 "data: [DONE]" 结尾
+# 断言：输出包含多个 data: {...} 行（均为合法 chat.completion.chunk），且以 "data: [DONE]" 结尾
 ```
 
 **③ 精确缓存（第二次相同请求应命中）**
 
 ```bash
 BODY='{"model":"qwen-72b","messages":[{"role":"user","content":"固定问题：1+1=?"}],"stream":false}'
-curl -s -X POST http://localhost:9090/smart-router/v1/chat/completions -H "Content-Type: application/json" -d "$BODY" >/dev/null
-curl -s -X POST http://localhost:9090/smart-router/v1/chat/completions -H "Content-Type: application/json" -d "$BODY" \
+curl -s -X POST http://localhost:9090/smart-router/v1/chat/completions -H "$AUTH" -H "Content-Type: application/json" -d "$BODY" >/dev/null
+curl -s -X POST http://localhost:9090/smart-router/v1/chat/completions -H "$AUTH" -H "Content-Type: application/json" -d "$BODY" \
   | jq -e '.x-mas-meta.cache_hit == true' >/dev/null && echo "PASS: 精确缓存命中"
 # 断言：第二次响应 x-mas-meta.cache_hit == true 且 pipeline_cost_ms < 10
+# 注意：缓存命中会短路 L3（meta 无 intent，routed_to=cache:exact/semantic）；
+# 多副本下首次可能落在另一副本的本地缓存之外，重试至多 5 次以覆盖副本调度
 ```
 
 
@@ -1015,41 +1332,58 @@ curl -s -X POST http://localhost:9090/smart-router/v1/chat/completions -H "Conte
 ```bash
 # 前提：③ 已写入"固定问题：1+1=?"的缓存；此处换一种问法
 SBODY='{"model":"qwen-72b","messages":[{"role":"user","content":"请问 1 加 1 等于几"}],"stream":false}'
-curl -s -X POST http://localhost:9090/smart-router/v1/chat/completions -H "Content-Type: application/json" -d "$SBODY" \
+curl -s -X POST http://localhost:9090/smart-router/v1/chat/completions -H "$AUTH" -H "Content-Type: application/json" -d "$SBODY" \
   | jq -e '.x-mas-meta.cache_hit == true and .x-mas-meta.cache_level == "semantic"' >/dev/null && echo "PASS: 语义缓存命中"
 # 断言：cache_hit == true 且 cache_level == "semantic"；真实 bge-m3 与 mock 伪向量的相似度行为不同，
-# mock 模式下仅验证链路连通（同文本必命中），阈值行为以真实 bge-m3 为准
+# mock 模式下仅验证链路连通（同文本必命中），阈值行为以真实 bge-m3 为准（默认 0.95，可按意图覆盖）
 ```
 
 **④ 黑名单拦截（被禁用户返回 403）**
 
 ```bash
+# 鉴权开启模式：身份来自 API Key（test-user），需将 test-user 写入 mas_blacklist
+#   INSERT INTO mas_blacklist(subject_type, subject_key, reason) VALUES ('user','test-user','测试拉黑');
+# 验证后删除：DELETE FROM mas_blacklist WHERE subject_key='test-user';
+# 鉴权关闭模式（mas.auth.enabled=false）：身份回退 X-User-Id，直接用配置黑名单
 curl -s -o /dev/null -w "%{http_code}\n" -X POST http://localhost:9090/smart-router/v1/chat/completions \
-  -H "X-User-Id: banned-user" \
+  -H "$AUTH" -H "X-User-Id: banned-user" \
   -H "Content-Type: application/json" \
   -d '{"model":"qwen-72b","messages":[{"role":"user","content":"hi"}],"stream":false}'
 # 断言：HTTP 状态码 == 403
+# 说明：配置黑名单（mas.blacklist.users: [banned-user]）与 mas_blacklist 表取并集
 ```
 
 **⑤ 频率限制（短时间大量请求返回 429）**
 
 ```bash
+# 限流对象为身份链解析出的 user_id（鉴权开启时为 test-user），阈值 mas.rate-limit.per-user-qps=20
 for i in $(seq 1 50); do
   code=$(curl -s -o /dev/null -w "%{http_code}" -X POST http://localhost:9090/smart-router/v1/chat/completions \
-    -H "X-User-Id: stress-user" -H "Content-Type: application/json" \
+    -H "$AUTH" -H "Content-Type: application/json" \
     -d '{"model":"qwen-72b","messages":[{"role":"user","content":"hi"}],"stream":false}')
   if [ "$code" = "429" ]; then echo "PASS: 触发限流 ($code)"; break; fi
 done
 ```
 
-**⑥ Higress 联调（经网关访问）**
+**⑥ 鉴权负例（无 Key / 无效 Key → 401，fail-closed）**
+
+```bash
+curl -s -o /dev/null -w "%{http_code}\n" -X POST http://localhost:9090/smart-router/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{"model":"qwen-72b","messages":[{"role":"user","content":"hi"}],"stream":false}'
+# 断言：401（无 Key）；将 Authorization 换为 'Bearer wrong-key' 同样断言 401（无效 Key）
+```
+
+**⑦ Higress 联调（经网关访问）**
 
 ```bash
 curl -s -X POST http://localhost:8080/smart-router/v1/chat/completions \
-  -H "Content-Type: application/json" \
+  -H "$AUTH" -H "Content-Type: application/json" \
   -d '{"model":"qwen-72b","messages":[{"role":"user","content":"经 Higress 测试"}],"stream":false}' \
   | jq -e '.choices[0].message.content' >/dev/null && echo "PASS: Higress 全链路打通"
 ```
+
+> K8s 环境的完整 13 项功能验证清单（含难度路由、物理名零改造、旧协议兼容、Embeddings、熔断故障转移）见 §6.5。
 
 ***
 
@@ -1099,7 +1433,8 @@ gantt
 
 | 风险         | 可能性 | 影响 | 应对策略                                        |
 | ---------- | --- | -- | ------------------------------------------- |
-| MAS 单点故障   | 中   | 高  | 多实例部署 + Higress 健康检查自动摘除；降级开关可旁路 MAS 直连推理引擎 |
+| MAS 单点故障   | 中   | 高  | K8s 多副本部署（原型 2 副本）+ Higress 健康检查自动摘除；降级开关可旁路 MAS 直连推理引擎；DB 故障时鉴权 fail-closed 拒绝、其余 L1 规则 fail-open 放行（§5.1 降级策略） |
+| 多副本本地缓存一致性 | 中   | 低  | Caffeine 一级缓存与 API Key 缓存均为实例本地：PG 为权威二级，本地 TTL 短（API Key 5 分钟），Key 吊销最迟 5 分钟全局生效；`/internal/cache/flush` 清 PG + 命中副本本地缓存，其余副本本地项按 TTL 自然回落。生产可演进为失效事件广播 |
 | 语义缓存误命中    | 中   | 中  | 阈值可调（默认 0.95）；提供手动清除缓存接口                    |
 | 意图分类不准     | 低   | 中  | 模型指定优先（跳过分类）；持续收集样本迭代模型                     |
 | SSE 流式透传延迟 | 低   | 中  | WebFlux 非阻塞架构；首 token 延迟增加不超过 5ms           |
@@ -1123,20 +1458,20 @@ gantt
 
 | 用途 | 选型 | 版本 | 许可证 |
 | --- | --- | --- | --- |
-| 服务框架 | Spring Boot WebFlux | 3.3.x | Apache-2.0 |
+| 服务框架 | Spring Boot WebFlux | 3.3.5 | Apache-2.0 |
 | HTTP 客户端 | WebClient (Reactor Netty) | 同 Boot | Apache-2.0 |
+| 数据访问 | MyBatis‑Plus（spring-boot3-starter）+ JDBC/HikariCP，经 `ReactiveDbAdapter` 桥接 | 3.5.7 | Apache-2.0 |
 | 精确缓存 | Caffeine（本地）+ PostgreSQL 表 `mas_exact_cache` | - | Apache-2.0 / PG |
-| 语义缓存（生产） | PostgreSQL + pgvector | 0.7+ | PostgreSQL License |
-| 意图分类（生产） | DJL 或 ONNX Runtime（**原型不加载**） | 0.28+ / 1.18+ | Apache-2.0 / MIT |
-| 敏感词 | Aho‑Corasick (ahocorasick‑java) | 最新 | Apache-2.0 |
-| 限流 | Bucket4j（内存） | 8.x | Apache-2.0 |
-| 数据库 | PostgreSQL（openGauss / KingbaseES 可替） | 15+ | PostgreSQL License |
-| 注册中心 | Nacos（可选，原型可用静态配置） | - | Apache-2.0 |
-| Token 计数 | jtokkit | 1.x | MIT |
+| 语义缓存 | PostgreSQL + pgvector（hnsw 索引） | 0.7+ | PostgreSQL License |
+| 意图/难度分类 | 规则分类器（**原型不加载 .onnx**；DJL/ONNX 为生产演进方向） | - | - |
+| 敏感词 | Aho‑Corasick (org.ahocorasick) | 0.6.3 | Apache-2.0 |
+| 限流 | PostgreSQL 秒级窗口（`mas_rate_limit` 原子语句，多副本一致） | - | PostgreSQL License |
+| 熔断故障转移 | 自研 `ModelHealthTracker`（不引入 Resilience4j） | - | - |
+| 数据库 | PostgreSQL + pgvector（openGauss / KingbaseES 可替） | 16 | PostgreSQL License |
+| Token 计数 | jtokkit | 1.1.0 | MIT |
 | 可观测性 | Spring Boot Actuator + Micrometer Prometheus | 同 Boot | Apache-2.0 |
-| 路由/容错（可选） | Spring AI + Resilience4j | 1.0.x | Apache-2.0 |
 
-**硬约束**：不引入 Redis、Faiss、MySQL 或任何 GPL/AGPL 组件。意图分类模型（DJL/ONNX）仅在生产阶段加载，原型以「规则/配置路由 + 精确缓存 + 语义缓存」跑通。
+**硬约束**：不引入 Redis、Faiss、MySQL 或任何 GPL/AGPL 组件。意图分类模型（DJL/ONNX）仅在生产阶段加载，原型以「规则/配置路由 + 精确缓存 + 语义缓存」跑通。Nacos 与 Spring AI 不在原型范围（路由/熔断为自研实现）。
 
 ### B. 路径决策（写死，禁止猜测）
 
@@ -1151,21 +1486,37 @@ gantt
 
 ### C. 数据库初始化（PostgreSQL + pgvector）
 
-建表语句见 §8（已含 `mas_model_config` / `mas_call_log` / `mas_token_quota` / `mas_exact_cache` / `mas_semantic_cache` 及 pgvector 扩展与索引）。启动顺序：
+建表语句见 §8（8 张表：`mas_model_config` / `mas_call_log` / `mas_token_quota` / `mas_exact_cache` / `mas_semantic_cache` / `mas_blacklist` / `mas_api_key` / `mas_rate_limit`，含 pgvector 扩展与索引；实现位于 `src/main/resources/db/schema.sql`，幂等）。启动顺序：
 
 ```sql
 -- 1) 安装 pgvector 扩展（需在已安装 pgvector 的 PG 实例上执行一次）
 CREATE EXTENSION IF NOT EXISTS vector;
--- 2) 执行 §8 的 DDL
--- 3) 种子数据：插入默认模型，使原型零配置可跑
+-- 2) 执行 §8 的 DDL（即 db/schema.sql）
+-- 3) 种子数据（与 src/main/resources/db/data.sql 一致）：
+--    complex / simple 两档逻辑模型，难度路由评分 >= 阈值走 complex 档
 INSERT INTO mas_model_config (model_id, model_name, provider, endpoint_url, intent_type, weight, status)
-VALUES ('qwen-72b','Qwen-72B','ollama','http://localhost:11434/v1','chat',100,1)
-ON CONFLICT (model_id) DO NOTHING;
--- 4) 种子数据：注册 embedding 模型，语义缓存（L2.2）的寻址依据（附录 G.6 mas.cache.embedding-model）；
+VALUES ('qwen-72b','Qwen-72B','external','http://localhost:11434/v1','complex',100,1)
+ON CONFLICT (model_id) DO UPDATE SET intent_type = EXCLUDED.intent_type;
+INSERT INTO mas_model_config (model_id, model_name, provider, endpoint_url, intent_type, weight, status)
+VALUES ('qwen-lite','Qwen-Lite','external','http://localhost:11434/v1','simple',100,1)
+ON CONFLICT (model_id) DO UPDATE SET intent_type = EXCLUDED.intent_type;
+-- 4) embedding 模型：语义缓存（L2.2）寻址依据（mas.cache.embedding-model）；
 --    缺失或端点不可用时 L2.2 按降级策略跳过，不影响其他功能
 INSERT INTO mas_model_config (model_id, model_name, provider, endpoint_url, intent_type, weight, status)
-VALUES ('bge-m3','BGE-M3','embedding','http://localhost:11434/v1','embedding',100,1)
+VALUES ('bge-m3','BGE-M3','external','http://localhost:11434/v1','embedding',100,1)
 ON CONFLICT (model_id) DO NOTHING;
+-- 5) 零改造接入：登记后端物理模型名（与 mas.backend.model-overrides 目标一致）。
+--    智能体原本直接向推理引擎发送物理名时，切换到路由地址后请求体无需改动即可命中转发
+INSERT INTO mas_model_config (model_id, model_name, provider, endpoint_url, intent_type, weight, status)
+VALUES ('gpt-oss:20b','GPT-OSS-20B','external','http://localhost:11434/v1','complex',100,1)
+ON CONFLICT (model_id) DO UPDATE SET intent_type = EXCLUDED.intent_type;
+INSERT INTO mas_model_config (model_id, model_name, provider, endpoint_url, intent_type, weight, status)
+VALUES ('qwen2.5:0.5b','Qwen2.5-0.5B','external','http://localhost:11434/v1','simple',100,1)
+ON CONFLICT (model_id) DO UPDATE SET intent_type = EXCLUDED.intent_type;
+-- 6) 默认测试 API Key（明文 mas-test-key-001，SHA-256 存储，绑定身份 test-user）
+INSERT INTO mas_api_key (key_hash, key_prefix, user_id, status)
+VALUES ('4967cdac0abe235793aadaf37ab545e8c40e01904687e99d87e68a9c4f6c048a', 'mas-test', 'test-user', 1)
+ON CONFLICT (key_hash) DO NOTHING;
 ```
 
 ### D. 原型运行环境（AI 工具据此一键启动）
@@ -1202,15 +1553,20 @@ services:
 spring:
   webflux:
     base-path: /smart-router
-  r2dbc:
-    url: r2dbc:postgresql://localhost:5432/mas
-    username: mas
-    password: mas123
+  datasource:
+    url: ${MAS_DB_URL:jdbc:postgresql://localhost:5432/mas}
+    username: ${MAS_DB_USERNAME:mas}
+    password: ${MAS_DB_PASSWORD:mas123}
   application:
     name: mas
 mas:
+  auth:
+    enabled: true                             # 鉴权开关：false 时身份回退 body.user → X-User-Id → anonymous
   backend:
-    default-endpoint: http://localhost:11434/v1   # 本地 Ollama；无 GPU 时改用 mock（见 F）
+    default-endpoint: ${MAS_MODEL_ENDPOINT:http://localhost:11434/v1}   # 外部推理引擎；无 GPU 时改用 mock（见 F）
+    model-overrides:                          # 逻辑名 → 物理名映射（未配置的 model_id 原样转发）
+      qwen-72b: gpt-oss:20b
+      qwen-lite: qwen2.5:0.5b
   cache:
     exact-ttl: 30m
   rate-limit:
@@ -1228,9 +1584,15 @@ mas:
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-webflux</artifactId>
   </dependency>
+  <!-- 数据访问：MyBatis-Plus + JDBC（阻塞 SQL 经 ReactiveDbAdapter 桥接至 boundedElastic） -->
+  <dependency>
+    <groupId>com.baomidou</groupId>
+    <artifactId>mybatis-plus-spring-boot3-starter</artifactId>
+    <version>3.5.7</version>
+  </dependency>
   <dependency>
     <groupId>org.springframework.boot</groupId>
-    <artifactId>spring-boot-starter-data-r2dbc</artifactId>
+    <artifactId>spring-boot-starter-jdbc</artifactId>
   </dependency>
   <dependency>
     <groupId>org.postgresql</groupId>
@@ -1238,29 +1600,19 @@ mas:
     <scope>runtime</scope>
   </dependency>
   <dependency>
-    <groupId>org.pgvector</groupId>
-    <artifactId>pgvector</artifactId>
-    <version>0.3.0</version>
-  </dependency>
-  <dependency>
     <groupId>com.github.ben-manes.caffeine</groupId>
     <artifactId>caffeine</artifactId>
-  </dependency>
-  <dependency>
-    <groupId>io.github.bucket4j</groupId>
-    <artifactId>bucket4j-core</artifactId>
-    <version>8.10.0</version>
   </dependency>
   <dependency>
     <groupId>com.knuddels</groupId>
     <artifactId>jtokkit</artifactId>
     <version>1.1.0</version>
   </dependency>
-  <!-- Aho-Corasick 敏感词；版本以 Maven Central 最新为准 -->
+  <!-- Aho-Corasick 敏感词 -->
   <dependency>
     <groupId>org.ahocorasick</groupId>
     <artifactId>ahocorasick</artifactId>
-    <version>0.6.2</version>
+    <version>0.6.3</version>
   </dependency>
   <!-- 可观测性：/actuator/health 与 /actuator/prometheus，见附录 G.9 -->
   <dependency>
@@ -1288,11 +1640,11 @@ mvn spring-boot:run                                    # 或 ./mvnw spring-boot:
 1. **意图分类模型不加载 .onnx**，但预留 `IntentClassifier` SPI 接口（默认实现为规则/关键词分类）。L3 路由按「请求显式 `model` 字段优先 → 否则按 `mas_model_config` 默认意图映射 → 否则关键词规则推断意图 → 否则默认 `mas.routing.default-model`」实现，纯配置/规则驱动。
 2. **实现精确缓存（L2.1）与语义缓存（L2.2）**：语义缓存基于 pgvector，阈值默认 0.95，细则见附录 G.4/G.7。
 3. **实现输出审核（敏感词 AC 自动机脱敏替换）与上下文压缩（截断策略）**；摘要式压缩预留接口，原型不实现。
-4. **不引入 Redis / Faiss / MySQL / 任何外部缓存或向量中间件**。原型只依赖 PostgreSQL 与本地内存（Caffeine / Bucket4j）。
+4. **不引入 Redis / Faiss / MySQL / 任何外部缓存或向量中间件**。原型只依赖 PostgreSQL 与本地内存（Caffeine）；限流为 PG 秒级窗口原子语句。
 5. **SSE 必须流式透传**：用 `WebClient` 的 `retrieve().bodyToFlux(...)` 直接转发 `Flux`，禁止缓冲整段再返回。
 6. **Token 统计**：用 jtokkit 近似计数写 `mas_call_log`；`usage` 字段若后端已返回则直接透传。流式响应按聚合后的完整文本计数（见附录 G.5）。
 7. **零配置可跑**：应用启动时自动建表（或执行 §8 DDL）并插入附录 C 种子数据（`qwen-72b → Ollama endpoint` 与 `bge-m3 → embedding endpoint`），无需手工初始化。
-8. 所有响应统一附加 `x-mas-meta`（cache_hit / cache_level / routed_to / pipeline_cost_ms / intent），便于 §10.3.1 断言。
+8. 所有响应统一附加 `x-mas-meta`（cache_hit / cache_level / routed_to / pipeline_cost_ms / intent / difficulty / content_blocked / failover），便于 §10.3.1 断言。
 9. **敏感词过滤在 L1（输入）与 L4（输出审核）均启用**，词表从 classpath `sensitive-words.txt` 加载（每行一个词），为空时跳过。
 10. **认证与身份识别、统一错误响应契约见附录 G.1/G.2**，不得自定义错误体结构。
 
@@ -1340,40 +1692,35 @@ HTTPServer(('0.0.0.0', 11434), H).serve_forever()
 
 将 `application.yml` 中 `mas.backend.default-endpoint` 指向 `http://localhost:11434/v1`（与 Ollama 路径一致），即可复用同一套转发逻辑。
 
-**一键验证脚本 `verify.sh`**（覆盖 §10.3.1 场景含语义缓存与敏感词，失败即非零退出）：
+**一键验证脚本 `verify.sh`**（已数据驱动化：100 条黑盒用例定义在 `tests/cases.json`，自动携带测试 Key 并输出报告）：
 
 ```bash
 #!/usr/bin/env bash
-set -e
-BASE=http://localhost:9090/smart-router
-BODY='{"model":"qwen-72b","messages":[{"role":"user","content":"固定问题：1+1=?"}],"stream":false}'
-echo "① 基础转发"; curl -sf -X POST $BASE/v1/chat/completions -H 'Content-Type: application/json' -d "$BODY" >/dev/null
-echo "③ 精确缓存"; curl -s -X POST $BASE/v1/chat/completions -H 'Content-Type: application/json' -d "$BODY" >/dev/null
-curl -s -X POST $BASE/v1/chat/completions -H 'Content-Type: application/json' -d "$BODY" | grep -q '"cache_hit":true' && echo "  PASS"
-echo "③-b 语义缓存"   # 先写入后用语义相似问法命中；①已写入 BODY，此处直接换问法请求
-SBODY='{"model":"qwen-72b","messages":[{"role":"user","content":"请问 1 加 1 等于几"}],"stream":false}'
-curl -s -X POST $BASE/v1/chat/completions -H 'Content-Type: application/json' -d "$SBODY" | grep -q '"cache_hit":true.*"cache_level":"semantic"' && echo "  PASS"
-echo "④ 黑名单"; [ "$(curl -s -o /dev/null -w '%{http_code}' -X POST $BASE/v1/chat/completions -H 'X-User-Id: banned-user' -H 'Content-Type: application/json' -d "$BODY")" = "403" ] && echo "  PASS"
-echo "④-b 敏感词拦截"   # 前提：sensitive-words.txt 中已加入测试词条，下方内容需与词表一致
-WORD='测试敏感词'
-WBODY="{\"model\":\"qwen-72b\",\"messages\":[{\"role\":\"user\",\"content\":\"包含${WORD}的请求\"}],\"stream\":false}"
-[ "$(curl -s -o /dev/null -w '%{http_code}' -X POST $BASE/v1/chat/completions -H 'Content-Type: application/json' -d "$WBODY")" = "400" ] && echo "  PASS"
-echo "⑤ 限流"; for i in $(seq 1 50); do c=$(curl -s -o /dev/null -w '%{http_code}' -X POST $BASE/v1/chat/completions -H 'X-User-Id: stress' -H 'Content-Type: application/json' -d "$BODY"); [ "$c" = "429" ] && { echo "  PASS"; break; }; done
-echo "ALL SCENARIOS CHECKED"
+# 一键验证入口（设计方案附录 F / §10.3.1）：已数据驱动化。
+# 用例定义在 tests/cases.json（100 条黑盒用例），执行器为 tests/run_cases.py，
+# 报告（含每条用例的路由明细）输出至 reports/test-report.md。
+cd "$(dirname "$0")"
+exec python3 tests/run_cases.py "$@"
 ```
+
+> 该套件默认不携带 API Key，适用于 `mas.auth.enabled=false` 的本地回归；鉴权开启环境（如 K8s）的验证以 §6.5 的 13 项功能清单为准，手工 curl 须带 `Authorization: Bearer mas-test-key-001`（见 §10.3.1）。
 
 ### G. 可执行编程规格（定稿，与附录 E 冲突时以本节为准）
 
 > 本节是完整 L1-L4 原型的编程定稿规格。AI 编程工具按本节逐条实现，不得自行发挥契约细节。
 
-#### G.1 认证与身份识别契约（写死）
+#### G.1 认证与身份识别契约（定稿）
 
 | 项 | 规则 |
 | --- | --- |
-| 身份来源 | 请求头 `X-User-Id`（与 §10.3.1 验证命令对齐）；缺失时视为匿名用户 `anonymous`；用于黑名单、限流、配额与调用记录 |
-| Bearer 校验 | `Authorization: Bearer` 原型阶段仅校验「若提供则非空」，非空即通过；生产由 Higress 承担真实鉴权 |
-| 认证失败 | 返回 401，错误体遵循 G.2 |
-| app_id | 请求头 `X-App-Id`，可选，写入 `mas_call_log.app_id` |
+| 鉴权开关 | `mas.auth.enabled`（默认 `true`）：开启时强制 API Key 校验；关闭时退化为内网零改造模式，身份回退链 `body.user → X-User-Id → anonymous` |
+| API Key 校验 | `Authorization: Bearer <key>` → SHA‑256 摘要查 `mas_api_key`（Caffeine 本地缓存 5 分钟）→ 校验 `status=1` 与 `expire_at` → 绑定身份 `user_id`；明文 Key 不落库 |
+| fail-closed | 缺失 Key、无效 Key、过期 Key、吊销 Key，或校验链路空信号（`Mono.empty()`），一律 401 拒绝，**禁止静默放行** |
+| 身份链 | 鉴权开启：`user_id` = Key 绑定身份（用于黑名单、限流、配额、调用记录）；鉴权关闭：按上表回退链 |
+| 智能体自报身份 | 请求体 OpenAI 标准 `user` 字段 → `mas_call_log.agent_id`，仅审计，**不作为可信身份**参与黑名单/限流 |
+| app_id | Key 绑定的 `app_id`（或 `X-App-Id` 请求头），写入 `mas_call_log.app_id` |
+| 认证失败 | 返回 401，错误体遵循 G.2（`code: invalid_api_key`） |
+| Key 生命周期 | 管理端点 `POST /internal/api-keys`（创建，返回一次性明文）/ `DELETE /internal/api-keys?prefix=`（按前缀吊销）；吊销最迟 5 分钟全局生效（本地缓存 TTL） |
 
 #### G.2 统一错误响应契约
 
@@ -1400,28 +1747,46 @@ echo "ALL SCENARIOS CHECKED"
 
 后端引擎返回的错误必须包装为上表结构，**禁止透传引擎原始错误体**。
 
-#### G.3 旧协议 `/ai/gateway/chatModel` 字段映射规格
+#### G.3 旧协议 `/ai/gateway/chatModel` 字段映射规格（定稿）
 
-旧网关协议报文结构为 `[待确认]` 项，下表给出默认假设，实现后需人工对照 ChatModelInter 实际报文一次性校准。
+兼容层已按本节实现（`LegacyCompatController`），映射表即代码事实；与真实 ChatModelInter 报文如有出入，仅需调整映射函数。
 
 **请求映射（旧协议 → OpenAI）：**
 
 | 旧字段 | OpenAI 字段 | 说明 |
 | --- | --- | --- |
-| `modelId` | `model` | 旧协议用 modelId 指定模型；缺失时走默认路由 |
-| `messages` | `messages` | 结构假设一致（role/content 数组）`[待确认]` |
-| `stream` | `stream` | 默认 false |
-| `temperature` / `maxTokens` | `temperature` / `max_tokens` | `[待确认]` |
+| `modelId` | `model` | 缺失时走默认路由 |
+| `messages` | `messages` | 结构一致（role/content 数组），原样透传 |
+| `stream` | `stream` | 默认 false；**已支持流式**（SSE 透传 chunk，末尾 `data: [DONE]`） |
+| `temperature` | `temperature` | 存在才映射 |
+| `maxTokens` | `max_tokens` | 存在才映射 |
+| `topP` | `top_p` | 存在才映射 |
+| `frequencyPenalty` | `frequency_penalty` | 存在才映射 |
+| `presencePenalty` | `presence_penalty` | 存在才映射 |
+| `stop` | `stop` | 存在才映射 |
+| `n` | `n` | 存在才映射 |
 
-**响应映射（OpenAI → 旧协议）：**
+**响应映射（OpenAI → 旧协议，非流式）：**
 
 | OpenAI 字段 | 旧字段 | 说明 |
 | --- | --- | --- |
-| `choices[0].message.content` | `data.content` | 旧响应包裹为 `{"code":0,"message":"success","data":{...}}` `[待确认]` |
-| `usage` | `data.usage` | 原样透传 `[待确认]` |
-| `id` / `model` | `data.requestId` / `data.modelId` | `[待确认]` |
+| `choices[0].message.content` | `data.content` | 旧响应包裹为 `{"code":0,"message":"success","data":{...}}` |
+| `usage` | `data.usage` | 原样透传 |
+| `id` / `model` | `data.requestId` / `data.modelId` | - |
 
-旧协议请求统一按非流式处理（旧网关不支持 SSE）；错误时返回 `{"code":<非0>,"message":"<错误信息>","data":null}`，错误原因仍按 G.2 映射 HTTP 状态码。
+**错误码映射（HTTP 状态 → 旧协议 `code`，写死）：**
+
+| HTTP | 旧 code | 含义 |
+| --- | --- | --- |
+| 400 | 1000 | 参数错误 |
+| 401 | 1001 | 鉴权失败 |
+| 403 | 1002 | 黑名单 |
+| 429 | 1003 | 限流 |
+| 504 | 1004 | 上游超时 |
+| 502 | 1005 | 上游错误 |
+| 其他 | -1 | 未分类错误 |
+
+错误响应体为 `{"code":<旧 code>,"message":"<错误信息>","data":null}`，HTTP 状态码仍按 G.2 映射；流式请求出错时同样回退为上述 JSON 错误体。
 
 #### G.4 缓存键与序列化规则（写死）
 
@@ -1434,57 +1799,71 @@ echo "ALL SCENARIOS CHECKED"
 
 #### G.5 流式处理规格
 
-1. SSE 透传：`WebClient.retrieve().bodyToFlux(String.class)` 按行转发，**禁止缓冲整段**（附录 E.5）
+1. SSE 透传：`WebClient.retrieve().bodyToFlux(String.class)` 按行转发，**禁止缓冲整段**（附录 E.5）；低延迟透传，首 token 不等待聚合
 2. 透传同时用 `doOnNext` 增量拼接各 chunk 的 `delta.content`；`onComplete` 后异步：写两级缓存（G.4）、用 jtokkit 对聚合全文统计 token、写 `mas_call_log`
 3. 流式场景缓存命中回放：将缓存的完整响应拆为单 token/chunk 序列，按 OpenAI `chat.completion.chunk` 格式逐条输出，末尾补 `data: [DONE]`
 4. 流式响应中途后端断流：已输出的 chunk 不回滚，追加一条含 `finish_reason="error"` 的 chunk 后结束（不输出 `[DONE]` 之外的错误体）
+5. **帧标准化**：MAS 自产的一切帧（缓存回放、错误帧、x-mas-meta 帧）均为合法 `chat.completion.chunk` JSON（`x-mas-meta` 内嵌于 chunk），客户端可按同一结构解析全部帧
 
 #### G.6 配置项清单（`MasProperties` 绑定，前缀 `mas`）
 
 | 配置键 | 类型 | 默认值 | 说明 |
 | --- | --- | --- | --- |
-| `mas.backend.default-endpoint` | string | `http://localhost:11434/v1` | 无模型配置时的兜底后端 |
+| `mas.auth.enabled` | bool | `true` | 鉴权开关：`false` 时跳过 API Key 校验，身份回退 `body.user → X-User-Id → anonymous` |
+| `mas.backend.default-endpoint` | string | `http://localhost:11434/v1` | 外部推理引擎兜底地址（环境变量 `MAS_MODEL_ENDPOINT` 覆盖） |
 | `mas.backend.timeout` | duration | `60s` | 后端引擎响应超时，超时按 G.2 返 504 |
+| `mas.backend.model-overrides` | map | `{qwen-72b: gpt-oss:20b, qwen-lite: qwen2.5:0.5b}` | 路由 model_id → 后端物理模型名；未配置者原样转发 |
 | `mas.cache.exact-ttl` | duration | `30m` | 精确缓存 TTL |
 | `mas.cache.max-exact-entries` | int | `100000` | Caffeine 本地上限 |
 | `mas.cache.semantic-ttl` | duration | `60m` | 语义缓存 TTL |
-| `mas.cache.semantic-threshold` | double | `0.95` | 语义命中阈值 |
+| `mas.cache.semantic-threshold` | double | `0.95` | 语义命中全局阈值 |
+| `mas.cache.semantic-threshold-by-intent` | map | `{chat: 0.93, embedding: 0.97}` | 按意图覆盖语义阈值，未配置意图回退全局值 |
 | `mas.cache.max-semantic-entries` | int | `50000` | 语义缓存表上限，超出按 TTL 清理 |
-| `mas.cache.embedding-model` | string | `bge-m3` | embedding 模型标识，需在 `mas_model_config` 中注册（provider=embedding） |
-| `mas.rate-limit.per-user-qps` | int | `20` | Bucket4j 每用户 QPS |
-| `mas.blacklist.users` | list<string> | `[banned-user]` | 配置式黑名单，与 PG 表合并生效 |
+| `mas.cache.embedding-model` | string | `bge-m3` | embedding 模型标识，需在 `mas_model_config` 中注册（intent_type=embedding） |
+| `mas.rate-limit.per-user-qps` | int | `20` | 每用户 QPS（PG 秒级窗口，多副本一致） |
+| `mas.blacklist.users` | list<string> | `[banned-user]` | 配置式黑名单，与 `mas_blacklist` 表取并集 |
 | `mas.sensitive-words.path` | string | `classpath:sensitive-words.txt` | AC 词表路径，文件缺失/为空时跳过敏感词检查 |
 | `mas.quota.per-user-per-minute` | long | `100000` | 每分钟 token 限额 |
 | `mas.quota.per-user-per-day` | long | `5000000` | 每天 token 限额 |
 | `mas.routing.default-model` | string | `qwen-72b` | 兜底路由模型 |
+| `mas.routing.difficulty.enabled` | bool | `true` | 难度路由开关：无显式 `model` 时按难度评分分流 |
+| `mas.routing.difficulty.threshold` | double | `0.5` | 评分 ≥ 阈值 → complex 档（大参数模型），否则 simple 档 |
 | `mas.compress.max-context-tokens` | int | `4096` | 超过则触发 L4 截断压缩 |
+| `mas.circuit-breaker.failure-threshold` | int | `5` | 连续失败达阈值后熔断该 endpoint |
+| `mas.circuit-breaker.open-duration` | duration | `30s` | 开路时长，到期进入半开 |
+| `mas.circuit-breaker.half-open-max-attempts` | int | `2` | 半开期试探请求数，成功即闭合 |
 
-> 管理面提示：以上除连接类（r2dbc、default-endpoint）外的配置项，后续均迁移至数据库由前端界面管理（附录 H.2）。原型阶段建议通过 `SettingProvider` 接口读取配置（默认实现读 `MasProperties`），避免后续接入管理面时重构四层流水线代码。
+> 管理面提示：以上除连接类（datasource、default-endpoint）外的配置项，后续均迁移至数据库由前端界面管理（附录 H.2）。原型阶段建议通过 `SettingProvider` 接口读取配置（默认实现读 `MasProperties`），避免后续接入管理面时重构四层流水线代码。
 
 #### G.7 L1-L4 各 Stage 实现要点
 
-- **L1**：黑名单（配置列表 + PG 表取并集）→ 敏感词（AC 自动机，启动时加载词表构建）→ Bucket4j 内存滑动窗口（按 X-User-Id 分桶）→ 参数校验；任一规则组件自身异常时 **fail-open** 放行并记录告警日志
-- **L2**：先 Caffeine 后 PG `mas_exact_cache`（命中回填 Caffeine）；未命中再走语义缓存——调用 `mas.cache.embedding-model` 对应服务取向量，pgvector `<=>` 余弦检索取 Top1 判阈值；embedding 服务或 PG 异常时**降级跳过对应层**直接进 L3
-- **L3**：显式 `model` 字段优先 → 关键词规则推断意图（`IntentClassifier` SPI 默认实现：命中代码关键词→`code`、检索关键词→`rag`，否则 `chat`）→ 按 `mas_model_config.intent_type` 匹配启用中模型 → 默认 `mas.routing.default-model`；同意图多实例时按 `weight` 加权轮询；Resilience4j 熔断器开启时自动切换同 provider 备用实例
+- **L1**：API Key 鉴权（`mas.auth.enabled` 开关，**fail-closed**）→ 黑名单（配置列表 + `mas_blacklist` 表取并集）→ 敏感词（AC 自动机，启动时加载词表构建）→ 频率限制（PG `mas_rate_limit` 秒级窗口原子计数）→ 参数校验；除鉴权外，其余规则组件自身异常时 **fail-open** 放行并记录告警日志
+- **L2**：先 Caffeine 后 PG `mas_exact_cache`（命中回填 Caffeine）；未命中再走语义缓存——调用 `mas.cache.embedding-model` 对应服务取向量，pgvector `<=>` 余弦检索取 Top1 判阈值（可按意图覆盖）；**缓存命中即短路返回，不进入 L3 难度/意图分类**（`routed_to=cache:exact/semantic`）；embedding 服务或 PG 异常时**降级跳过对应层**直接进 L3
+- **L3**：显式 `model` 字段优先（含物理名零改造直通）→ 无显式 `model` 时按难度评分分流（`RuleDifficultyClassifier`，评分 ≥ `mas.routing.difficulty.threshold` → complex 档，否则 simple 档）→ 关键词规则推断意图（`RuleIntentClassifier`）→ 按 `mas_model_config.intent_type` 匹配启用中模型 → 默认 `mas.routing.default-model`；同意图多实例时按 `weight` 加权轮询；**自研 `ModelHealthTracker` 熔断**（按 endpoint 记录失败，开路后自动切换同档备用模型，`routed_to=failover:<model>`，§5.3.4）
 - **L4**：上下文压缩按「保留全部 system message + 最近 N 轮 user/assistant」截断（jtokkit 估算 token 数，不超过 `mas.compress.max-context-tokens`）；配额检查对 `mas_token_quota` 原子累加（`UPDATE ... WHERE token_used + :delta <= token_limit`，失败返 402）；输出审核对非流式全文做 AC 敏感词替换为 `***`，流式在聚合后审核（仅记录告警，不阻断已输出内容）
 
 #### G.8 代码规范与环境
 
-- Java 17、Spring Boot 3.3.x；包名 `com.sunyard.llm.mas`（与 §9.2 一致）
-- WebFlux 全链路非阻塞，**禁止在请求路径中调用 `block()`**；JDBC 交互一律 R2DBC
-- trace_id：入口生成 UUID，写入响应头 `X-Trace-Id` 与 `mas_call_log.trace_id`，贯穿全链路日志
+- Java 17、Spring Boot 3.3.5；包名 `com.sunyard.llm.mas`（与 §9.2 一致）
+- WebFlux 请求路径保持非阻塞，**禁止在事件循环线程调用 `block()`**；数据访问为 MyBatis‑Plus 阻塞 JDBC，一律经 `ReactiveDbAdapter`（`Mono.fromCallable(...).subscribeOn(Schedulers.boundedElastic())`）桥接；注意 `fromCallable` 返回 `null` 会产生空信号，需要失败语义处必须 `switchIfEmpty(Mono.error(...))`
+- trace_id：入口生成（`TraceWebFilter`），写入响应头 `X-Trace-Id` 与 `mas_call_log.trace_id`，贯穿全链路日志
 - 日志：JSON 行格式（logback 配置），字段含 `timestamp / level / trace_id / stage / message`
 - 异常统一由 `@ControllerAdvice`（`GlobalExceptionHandler`）输出 G.2 结构；Stage 间通过 `PipelineContext` 传递 trace_id、用户身份、各层耗时
 
 #### G.9 测试与可观测性
 
-- **集成测试**：Spring Boot Test + Testcontainers PostgreSQL（pgvector 镜像）+ 附录 F `mock_llm.py`，JUnit 5 覆盖 §10.3.1 六场景，另加语义缓存命中（断言 `x-mas-meta.cache_level == "semantic"`）与敏感词拦截两场景
-- **单元测试**：缓存键生成（G.4 规则回归）、AC 敏感词匹配、Bucket4j 限流窗口、配额原子累加、旧协议字段映射（G.3）
+- **单元测试**：135 个（Spring Boot Test + reactor-test + Mockito），覆盖缓存键生成（G.4 规则回归）、AC 敏感词匹配、PG 秒级窗口限流、配额原子累加、旧协议字段映射（G.3）、API Key 鉴权（无效/过期/空信号 fail-closed）、难度评分与熔断状态机
+- **数据驱动黑盒套件**：`tests/cases.json`（100 条）+ `tests/run_cases.py`，入口 `verify.sh`，报告输出 `reports/test-report.md`；K8s 环境另有 13 项功能验证清单（§6.5）
 - **可观测性**：暴露 `/smart-router/actuator/health`（含 PG 连通性检查）与 `/smart-router/actuator/prometheus`；核心指标：请求计数/耗时（按 stage 分桶）、缓存命中率、限流触发数、后端错误率
 
-### H. 管理面设计（后续迭代预留，不在 Phase 0 原型范围）
+### H. 管理面设计（部分已实现，其余后续迭代预留）
 
 > 目标：为前端配置界面提供一套 REST 管理 API，实现模型路由、配额、黑名单、敏感词、缓存、运行参数的在线管理。**管理面是纯增量，不改变四层流水线、缓存键规则与协议契约**；数据面与管理面共用同一 PostgreSQL。
+>
+> **已实现子集**（前缀 `/smart-router/internal`，原型阶段以网络隔离保护，见 §6.4 内部端点隔离）：
+> - `POST /internal/api-keys`：创建 API Key（返回一次性明文，落库仅存 SHA‑256）
+> - `DELETE /internal/api-keys?prefix=<key_prefix>`：按前缀吊销（最迟 5 分钟全局生效）
+> - `POST /internal/cache/flush`：清空精确缓存（本地 + PG）与语义缓存（PG）
 
 #### H.1 管理 API 清单
 
@@ -1492,39 +1871,29 @@ echo "ALL SCENARIOS CHECKED"
 
 | 分组 | 端点 | 说明 |
 | --- | --- | --- |
+| API Key | `POST /internal/api-keys`；`DELETE /internal/api-keys?prefix=` | **已实现**；对应 `mas_api_key`（G.1） |
 | 模型路由 | `GET/POST/PUT/DELETE /models`；`PUT /models/{model_id}/status`；`PUT /models/{model_id}/weight` | 对应 `mas_model_config`；启停/权重调整即灰度开关 |
 | Token 配额 | `GET/PUT /quotas`；`POST /quotas/{id}/reset` | 对应 `mas_token_quota` |
-| 黑名单 | `GET/POST/DELETE /blacklist` | 对应 `mas_blacklist`（H.2 新增表），支持 user/model/ip 三类主体与过期时间 |
+| 黑名单 | `GET/POST/DELETE /blacklist` | `mas_blacklist` 表**已实现**并接入 L1（§8.1.6），管理 API 待补 |
 | 敏感词 | `GET /sensitive-words`；`PUT /sensitive-words`（整包替换） | 写入后触发各实例 AC 自动机重建（H.3） |
 | 运行参数 | `GET/PUT /settings` | 对应 `mas_setting`（H.2）：限流 QPS、缓存 TTL、语义阈值、默认模型、压缩上限等 |
-| 缓存管理 | `POST /cache/exact/clear`；`POST /cache/semantic/clear`；`GET /cache/stats` | 兑现 §12 风险表的「手动清除缓存接口」；clear 支持按 model_id 缩小范围 |
+| 缓存管理 | `POST /internal/cache/flush`（**已实现**）；后续补 `GET /cache/stats` 与按 model_id 分级清除 | 兑现 §12 风险表的「手动清除缓存接口」 |
 | 调用记录 | `GET /logs` | 分页查询 `mas_call_log`，按 app_id/user_id/model_id/时间/缓存命中筛选，供用量大盘 |
 | 审计 | `GET /audits` | 分页查询 `mas_config_audit`（H.5） |
 
 #### H.2 配置数据库化迁移表（静态配置 → 管理表）
 
-原型阶段写在 `application.yml` / classpath 的配置，接入管理面时按下表迁移；迁移后 `application.yml` 仅保留连接类配置（r2dbc、default-endpoint 兜底）。
+原型阶段写在 `application.yml` / classpath 的配置，接入管理面时按下表迁移；迁移后 `application.yml` 仅保留连接类配置（datasource、default-endpoint 兜底）。
 
 | 原静态配置 | 迁移目标 | 说明 |
 | --- | --- | --- |
-| `mas.blacklist.users` | 新表 `mas_blacklist` | 字段：subject_type(user/model/ip)、subject_key、reason、expire_at、created_by |
+| `mas.blacklist.users` | `mas_blacklist`（**已实现**，§8.1.6） | 表已落地并接入 L1，配置项与表取并集，管理 API 待补 |
 | `sensitive-words.txt` | 新表 `mas_sensitive_word` | 字段：word、status；**变更后必须重建 AC 自动机**（H.3 热加载覆盖） |
-| `mas.rate-limit.*`、`mas.cache.*`、`mas.quota.*`、`mas.routing.default-model`、`mas.compress.max-context-tokens` | 新表 `mas_setting` | KV 结构：setting_key、setting_value、version、updated_by、updated_at |
-| `mas_model_config` / `mas_token_quota` | 保持现表 | 已是数据库表，直接对接管理 API |
+| `mas.rate-limit.*`、`mas.cache.*`、`mas.quota.*`、`mas.routing.*`、`mas.compress.max-context-tokens` | 新表 `mas_setting` | KV 结构：setting_key、setting_value、version、updated_by、updated_at |
+| `mas_model_config` / `mas_token_quota` / `mas_api_key` | 保持现表 | 已是数据库表，直接对接管理 API |
 
 ```sql
--- 附录 H 新增表 DDL（并入 §8 DDL 一并执行）
-CREATE TABLE mas_blacklist (
-    id           BIGSERIAL PRIMARY KEY,
-    subject_type VARCHAR(16)  NOT NULL,          -- user / model / ip
-    subject_key  VARCHAR(128) NOT NULL,
-    reason       VARCHAR(256),
-    expire_at    TIMESTAMP,                      -- NULL 表示永久
-    created_by   VARCHAR(64)  NOT NULL,
-    created_at   TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE (subject_type, subject_key)
-);
-
+-- 附录 H 预留表 DDL（mas_blacklist 已在 §8.1.6 实现，此处仅列后续两张预留表）
 CREATE TABLE mas_sensitive_word (
     id         BIGSERIAL PRIMARY KEY,
     word       VARCHAR(128) NOT NULL UNIQUE,
@@ -1549,7 +1918,7 @@ CREATE TABLE mas_setting (
 1. **事实源 = PostgreSQL 管理表**；`application.yml` 仅作启动兜底
 2. 管理 API 写库成功后，通过 **Nacos 发布配置变更通知**（dataId：`mas-config-notify`，内容为 `mas_setting.version` 与各表 `max(updated_at)`），各实例监听后立即重载
 3. 各实例同时以 **10 秒周期轮询 DB 版本号兜底**（防 Nacos 通知丢失）；一致性窗口 ≤ 10s
-4. 重载动作：刷新模型路由内存快照（原子替换，不阻断在途请求）、重建黑名单 Set、重建 AC 自动机（敏感词）、更新 Bucket4j 参数与缓存阈值
+4. 重载动作：刷新模型路由内存快照（原子替换，不阻断在途请求）、重建黑名单 Set、重建 AC 自动机（敏感词）、更新限流参数与缓存阈值
 5. 重载失败时**保留旧配置继续服务**并告警，严禁因配置加载失败导致服务不可用
 
 #### H.4 管理员鉴权方案
@@ -1589,7 +1958,6 @@ CREATE INDEX idx_audit_created ON mas_config_audit (created_at);
 #### H.7 落地节奏
 
 - 管理面安排在 **Phase 2 能力增强阶段**同步交付，不阻塞 Phase 0/1
-- 实现时仅新增 `controller/admin/` 与管理服务层，L1-L4 流水线代码零改动；前提是原型阶段已按附录 G.6 提示通过 `SettingProvider` 接口读配置
+- 实现时仅在 `web/` 包新增管理控制器与管理服务层，L1-L4 流水线代码零改动（已实现子集即按此方式落地：`web/ApiKeyAdminController`、`web/CacheAdminController`）；前提是原型阶段已按附录 G.6 提示通过 `SettingProvider` 接口读配置
 - 验收标准：管理 API 全部可用；修改任一配置后所有实例 ≤10s 生效；审计记录完整；前端页面完成六类管理操作闭环
 
-###

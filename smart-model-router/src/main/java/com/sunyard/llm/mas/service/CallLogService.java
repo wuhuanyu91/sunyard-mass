@@ -27,6 +27,7 @@ public class CallLogService {
                         ctx.getTraceId() == null ? "" : ctx.getTraceId(),
                         emptyIfNull(ctx.getAppId()),
                         ctx.getUserId(),
+                        emptyIfNull(ctx.getAgentId()),
                         emptyIfNull(ctx.getRequestedModel()),
                         emptyIfNull(ctx.getIntent()),
                         ctx.getMeta().isCacheHit() ? 1 : 0,

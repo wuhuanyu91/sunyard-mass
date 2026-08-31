@@ -31,6 +31,8 @@ logging:
     com.sunyard.llm.mas: INFO
 
 mas:
+  auth:
+    enabled: true      # 鉴权开关：false 时跳过 API Key 校验（内网零改造接入），身份回退 body.user → X-User-Id → anonymous
   backend:
     # 外部模型推理服务端点（Ollama / vLLM / TGI 等，假设已独立部署）
     default-endpoint: ${MAS_MODEL_ENDPOINT:http://localhost:11434/v1}

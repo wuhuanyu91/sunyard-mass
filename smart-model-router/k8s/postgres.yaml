@@ -71,7 +71,11 @@ spec:
           configMap:
             name: postgres-init
 ---
-# 初始化脚本 ConfigMap
+# 初始化脚本 ConfigMap（initdb 阶段仅执行一次）
+# 时序修复：表结构与种子必须早于 MAS 应用启动就绪——
+# 否则应用自带 data.sql 会写入 localhost 端点（集群内不可达），
+# 且 initContainer 种子在无表时静默失败。
+# DDL 与 src/main/resources/db/schema.sql 保持同步。
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -81,6 +85,127 @@ data:
   init-pg.sql: |
     CREATE USER mas WITH PASSWORD 'mas123';
     CREATE DATABASE mas OWNER mas;
+    \c mas
+    -- vector 扩展需超级用户（语义缓存依赖）
+    CREATE EXTENSION IF NOT EXISTS vector;
+
+    CREATE TABLE IF NOT EXISTS mas_model_config (
+        id                  BIGSERIAL PRIMARY KEY,
+        model_id            VARCHAR(64)  NOT NULL,
+        model_name          VARCHAR(128) NOT NULL,
+        provider            VARCHAR(32)  NOT NULL,
+        endpoint_url        VARCHAR(512) NOT NULL,
+        intent_type         VARCHAR(32)  NOT NULL,
+        weight              INT          NOT NULL DEFAULT 100,
+        status              SMALLINT     NOT NULL DEFAULT 1,
+        max_context_tokens  INT,
+        created_at          TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at          TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE (model_id)
+    );
+    CREATE TABLE IF NOT EXISTS mas_call_log (
+        id                  BIGSERIAL PRIMARY KEY,
+        trace_id            VARCHAR(32)  NOT NULL,
+        app_id              VARCHAR(64),
+        user_id             VARCHAR(64),
+        agent_id            VARCHAR(64),
+        model_id            VARCHAR(64)  NOT NULL,
+        intent_type         VARCHAR(32),
+        cache_hit           SMALLINT     NOT NULL DEFAULT 0,
+        cache_level         VARCHAR(16),
+        routed_to           VARCHAR(128),
+        prompt_tokens       INT,
+        completion_tokens   INT,
+        total_tokens        INT,
+        pipeline_cost_ms    INT,
+        total_cost_ms       INT,
+        status              SMALLINT     NOT NULL DEFAULT 0,
+        created_at          TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE INDEX IF NOT EXISTS idx_call_log_created ON mas_call_log (created_at);
+    CREATE TABLE IF NOT EXISTS mas_token_quota (
+        id          BIGSERIAL PRIMARY KEY,
+        quota_type  VARCHAR(16)  NOT NULL,
+        quota_key   VARCHAR(64)  NOT NULL,
+        period      VARCHAR(16)  NOT NULL,
+        token_limit BIGINT       NOT NULL,
+        token_used  BIGINT       NOT NULL DEFAULT 0,
+        reset_at    TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE (quota_type, quota_key, period)
+    );
+    CREATE TABLE IF NOT EXISTS mas_exact_cache (
+        cache_key     VARCHAR(64) PRIMARY KEY,
+        model_id      VARCHAR(64),
+        response_json TEXT       NOT NULL,
+        created_at    TIMESTAMP  NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        expire_at     TIMESTAMP  NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_exact_cache_expire ON mas_exact_cache (expire_at);
+    CREATE TABLE IF NOT EXISTS mas_semantic_cache (
+        id            BIGSERIAL PRIMARY KEY,
+        model_id      VARCHAR(64),
+        embedding     vector(1024),
+        response_json TEXT       NOT NULL,
+        created_at    TIMESTAMP  NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        expire_at     TIMESTAMP  NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_semantic_cache_vec ON mas_semantic_cache
+        USING hnsw (embedding vector_cosine_ops);
+    CREATE TABLE IF NOT EXISTS mas_blacklist (
+        id           BIGSERIAL PRIMARY KEY,
+        subject_type VARCHAR(16)  NOT NULL,
+        subject_key  VARCHAR(128) NOT NULL,
+        reason       VARCHAR(256),
+        expire_at    TIMESTAMP,
+        created_by   VARCHAR(64)  NOT NULL DEFAULT 'system',
+        created_at   TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE (subject_type, subject_key)
+    );
+    CREATE TABLE IF NOT EXISTS mas_api_key (
+        id          BIGSERIAL PRIMARY KEY,
+        key_hash    VARCHAR(64)  NOT NULL UNIQUE,
+        key_prefix  VARCHAR(12)  NOT NULL,
+        user_id     VARCHAR(64)  NOT NULL,
+        app_id      VARCHAR(64),
+        status      SMALLINT     NOT NULL DEFAULT 1,
+        expire_at   TIMESTAMP,
+        created_at  TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE INDEX IF NOT EXISTS idx_api_key_hash ON mas_api_key (key_hash);
+    CREATE TABLE IF NOT EXISTS mas_rate_limit (
+        user_id     VARCHAR(64)  NOT NULL,
+        window_key  VARCHAR(32)  NOT NULL,
+        token_count INT          NOT NULL DEFAULT 0,
+        window_end  TIMESTAMP    NOT NULL,
+        UNIQUE (user_id, window_key)
+    );
+    CREATE INDEX IF NOT EXISTS idx_rate_limit_window ON mas_rate_limit (window_end);
+
+    -- 表由 postgres 所建，应用用户 mas 需完整权限
+    GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO mas;
+    GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO mas;
+    ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO mas;
+    ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO mas;
+
+    -- K8s 种子数据（端点占位符部署时替换为实际外部推理服务地址）
+    INSERT INTO mas_model_config (model_id, model_name, provider, endpoint_url, intent_type, weight, status)
+    VALUES ('qwen-72b','Qwen-72B','external','http://model-service.example.com/v1','complex',100,1)
+    ON CONFLICT (model_id) DO UPDATE SET intent_type = EXCLUDED.intent_type, endpoint_url = EXCLUDED.endpoint_url;
+    INSERT INTO mas_model_config (model_id, model_name, provider, endpoint_url, intent_type, weight, status)
+    VALUES ('qwen-lite','Qwen-Lite','external','http://model-service.example.com/v1','simple',100,1)
+    ON CONFLICT (model_id) DO UPDATE SET intent_type = EXCLUDED.intent_type, endpoint_url = EXCLUDED.endpoint_url;
+    INSERT INTO mas_model_config (model_id, model_name, provider, endpoint_url, intent_type, weight, status)
+    VALUES ('bge-m3','BGE-M3','external','http://model-service.example.com/v1','embedding',100,1)
+    ON CONFLICT (model_id) DO UPDATE SET endpoint_url = EXCLUDED.endpoint_url;
+    INSERT INTO mas_model_config (model_id, model_name, provider, endpoint_url, intent_type, weight, status)
+    VALUES ('gpt-oss:20b','GPT-OSS-20B','external','http://model-service.example.com/v1','complex',100,1)
+    ON CONFLICT (model_id) DO UPDATE SET intent_type = EXCLUDED.intent_type, endpoint_url = EXCLUDED.endpoint_url;
+    INSERT INTO mas_model_config (model_id, model_name, provider, endpoint_url, intent_type, weight, status)
+    VALUES ('qwen2.5:0.5b','Qwen2.5-0.5B','external','http://model-service.example.com/v1','simple',100,1)
+    ON CONFLICT (model_id) DO UPDATE SET intent_type = EXCLUDED.intent_type, endpoint_url = EXCLUDED.endpoint_url;
+    INSERT INTO mas_api_key (key_hash, key_prefix, user_id, status)
+    VALUES ('4967cdac0abe235793aadaf37ab545e8c40e01904687e99d87e68a9c4f6c048a', 'mas-test', 'test-user', 1)
+    ON CONFLICT (key_hash) DO NOTHING;
 ---
 apiVersion: v1
 kind: Service

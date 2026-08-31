@@ -24,6 +24,7 @@ CREATE TABLE IF NOT EXISTS mas_call_log (
     trace_id            VARCHAR(32)  NOT NULL,
     app_id              VARCHAR(64),
     user_id             VARCHAR(64),
+    agent_id            VARCHAR(64),
     model_id            VARCHAR(64)  NOT NULL,
     intent_type         VARCHAR(32),
     cache_hit           SMALLINT     NOT NULL DEFAULT 0,
@@ -38,6 +39,8 @@ CREATE TABLE IF NOT EXISTS mas_call_log (
     created_at          TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 CREATE INDEX IF NOT EXISTS idx_call_log_created ON mas_call_log (created_at);
+-- 存量库升级：补 agent_id 列（请求体 OpenAI 标准 user 字段，智能体自报身份）
+ALTER TABLE mas_call_log ADD COLUMN IF NOT EXISTS agent_id VARCHAR(64);
 
 -- 8.1.3 Token 配额表
 CREATE TABLE IF NOT EXISTS mas_token_quota (

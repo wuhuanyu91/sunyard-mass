@@ -14,6 +14,8 @@ public class PipelineContext {
     private String traceId;
     private String userId = "anonymous";
     private String appId;
+    /** 请求体 OpenAI 标准 user 字段：每次调用自报的智能体/终端用户标识（审计用，非可信身份） */
+    private String agentId;
     private String authorization;
 
     /** 可变请求 JSON（L4 压缩仅修改本副本，不影响缓存键计算用的原始请求） */
@@ -42,6 +44,8 @@ public class PipelineContext {
     public void setUserId(String userId) { this.userId = userId; }
     public String getAppId() { return appId; }
     public void setAppId(String appId) { this.appId = appId; }
+    public String getAgentId() { return agentId; }
+    public void setAgentId(String agentId) { this.agentId = agentId; }
     public String getAuthorization() { return authorization; }
     public void setAuthorization(String authorization) { this.authorization = authorization; }
     public ObjectNode getRequest() { return request; }

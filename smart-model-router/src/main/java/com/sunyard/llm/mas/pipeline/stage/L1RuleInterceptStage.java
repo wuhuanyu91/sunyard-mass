@@ -1,6 +1,7 @@
 package com.sunyard.llm.mas.pipeline.stage;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.sunyard.llm.mas.config.MasProperties;
 import com.sunyard.llm.mas.exception.MasException;
 import com.sunyard.llm.mas.pipeline.PipelineContext;
 import com.sunyard.llm.mas.service.ApiKeyService;
@@ -14,7 +15,7 @@ import reactor.core.publisher.Mono;
 
 /**
  * L1 规则拦截层（§5.1 / 附录 G.7）：
- * Bearer 校验（G.1）→ 黑名单 → 敏感词 AC 匹配 → 频率限制 → 参数校验。
+ * Bearer 校验（G.1，mas.auth.enabled=false 时跳过）→ 黑名单 → 敏感词 AC 匹配 → 频率限制 → 参数校验。
  * 规则组件自身异常时 fail-open 放行。
  * §8 已知限制消除：鉴权从“仅校验非空”升级为 API Key 验证体系。
  */
@@ -28,15 +29,18 @@ public class L1RuleInterceptStage {
     private final SensitiveWordFilter sensitiveWordFilter;
     private final RateLimitService rateLimitService;
     private final ApiKeyService apiKeyService;
+    private final MasProperties props;
 
     public L1RuleInterceptStage(BlacklistService blacklistService,
                                 SensitiveWordFilter sensitiveWordFilter,
                                 RateLimitService rateLimitService,
-                                ApiKeyService apiKeyService) {
+                                ApiKeyService apiKeyService,
+                                MasProperties props) {
         this.blacklistService = blacklistService;
         this.sensitiveWordFilter = sensitiveWordFilter;
         this.rateLimitService = rateLimitService;
         this.apiKeyService = apiKeyService;
+        this.props = props;
     }
 
     public Mono<Void> check(PipelineContext ctx) {
@@ -56,6 +60,13 @@ public class L1RuleInterceptStage {
 
     /** §8 改进：API Key 验证体系（替代原来的“仅校验非空”） */
     private Mono<Void> checkAuth(PipelineContext ctx) {
+        if (!props.getAuth().isEnabled()) {
+            // 鉴权关闭（内网零改造接入）：身份链 body.user → X-User-Id → anonymous
+            if (ctx.getAgentId() != null && !ctx.getAgentId().isBlank()) {
+                ctx.setUserId(ctx.getAgentId());
+            }
+            return Mono.empty();
+        }
         String auth = ctx.getAuthorization();
         if (auth == null || auth.isBlank()) {
             return Mono.error(MasException.unauthorized());
@@ -68,6 +79,8 @@ public class L1RuleInterceptStage {
             return Mono.error(MasException.unauthorized());
         }
         return apiKeyService.validate(token)
+                // fail-closed：validate 未发出任何信号（空完成）一律拒绝，杜绝静默放行
+                .switchIfEmpty(Mono.error(new IllegalStateException("api key validation returned empty")))
                 .doOnNext(info -> {
                     // 验证通过：将 userId 写入上下文
                     ctx.setUserId(info.userId());

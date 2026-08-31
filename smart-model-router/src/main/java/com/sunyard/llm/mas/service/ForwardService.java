@@ -197,9 +197,9 @@ public class ForwardService {
                         blocked[0] = true;
                         log.warn("Stream content blocked by sensitive word filter (trace={})", ctx.getTraceId());
                         ctx.getMeta().setContentBlocked(true);
-                        // 发送阻断通知帧
-                        String blockChunk = "data: {\"choices\":[{\"index\":0,\"delta\":{\"content\":\"[内容已被审核系统阻断]\"},\"finish_reason\":\"content_filter\"}]}\n\n";
-                        return Flux.just(blockChunk);
+                        // 发送阻断通知帧（合法 chunk 结构，严格 SDK 可解析）
+                        ObjectNode blockChunk = chunkFrame(ctx, "[内容已被审核系统阻断]", "content_filter");
+                        return Flux.just("data: " + blockChunk + "\n\n");
                     }
                     // 通过审核，正常透传本窗口
                     return Flux.fromIterable(batch).map(payload -> "data: " + payload + "\n\n");
@@ -207,14 +207,38 @@ public class ForwardService {
                 .concatWith(Flux.defer(() -> {
                     String full = aggregated.length() > 0 ? aggregated.toString() : reasoningBuf.toString();
                     finalizeStream(ctx, full);
-                    return Flux.just("data: " + metaChunkJson(ctx) + "\n\n", "data: [DONE]\n\n");
+                    ObjectNode metaChunk = chunkFrame(ctx, "", null);
+                    metaChunk.putPOJO("x-mas-meta", ctx.getMeta());
+                    return Flux.just("data: " + metaChunk + "\n\n", "data: [DONE]\n\n");
                 }))
                 .onErrorResume(e -> {
                     healthTracker.recordFailure(ctx.getTarget().endpointUrl());
                     log.warn("Stream broken mid-way: {}", e.getMessage());
-                    String errChunk = "data: {\"choices\":[{\"index\":0,\"delta\":{},\"finish_reason\":\"error\"}]}\n\n";
-                    return Flux.just(errChunk);
+                    ObjectNode errChunk = chunkFrame(ctx, "", "stop");
+                    errChunk.putPOJO("x-mas-meta", ctx.getMeta());
+                    return Flux.just("data: " + errChunk + "\n\n");
                 });
+    }
+
+    /** 构造合法的 chat.completion.chunk 帧（补全 id/object/created/model/choices），避免严格 SDK 解析失败 */
+    private ObjectNode chunkFrame(PipelineContext ctx, String content, String finishReason) {
+        ObjectNode chunk = mapper.createObjectNode();
+        chunk.put("id", "chatcmpl-" + UUID.randomUUID().toString().replace("-", ""));
+        chunk.put("object", "chat.completion.chunk");
+        chunk.put("created", Instant.now().getEpochSecond());
+        chunk.put("model", ctx.getRequestedModel());
+        ObjectNode c0 = chunk.putArray("choices").addObject();
+        c0.put("index", 0);
+        ObjectNode delta = c0.putObject("delta");
+        if (!content.isEmpty()) {
+            delta.put("content", content);
+        }
+        if (finishReason == null) {
+            c0.putNull("finish_reason");
+        } else {
+            c0.put("finish_reason", finishReason);
+        }
+        return chunk;
     }
 
     private void appendDelta(StringBuilder aggregated, StringBuilder reasoningBuf, String payload) {
@@ -266,12 +290,6 @@ public class ForwardService {
         } catch (Exception e) {
             log.warn("Stream finalize failed: {}", e.getMessage());
         }
-    }
-
-    private String metaChunkJson(PipelineContext ctx) {
-        ObjectNode chunk = mapper.createObjectNode();
-        chunk.putPOJO("x-mas-meta", ctx.getMeta());
-        return chunk.toString();
     }
 
     // ---------------- 公共 ----------------

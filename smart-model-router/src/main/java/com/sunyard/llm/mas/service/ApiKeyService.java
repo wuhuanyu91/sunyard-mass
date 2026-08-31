@@ -41,11 +41,10 @@ public class ApiKeyService {
         if (cached != null) {
             return Mono.just(cached);
         }
+        // Mono.fromCallable 返回 null 时产生空信号，必须显式转错，否则鉴权静默通过
         return ReactiveDbAdapter.mono(() -> mapper.selectByHash(hash))
+                .switchIfEmpty(Mono.error(new IllegalStateException("invalid api key")))
                 .flatMap(entity -> {
-                    if (entity == null) {
-                        return Mono.error(new IllegalStateException("invalid api key"));
-                    }
                     // 检查过期
                     if (entity.getExpireAt() != null && entity.getExpireAt().isBefore(LocalDateTime.now())) {
                         return Mono.error(new IllegalStateException("api key expired"));

@@ -13,16 +13,17 @@ import org.apache.ibatis.annotations.Param;
 public interface CallLogMapper extends BaseMapper<CallLogEntity> {
 
     @Insert("""
-            INSERT INTO mas_call_log (trace_id, app_id, user_id, model_id, intent_type,
+            INSERT INTO mas_call_log (trace_id, app_id, user_id, agent_id, model_id, intent_type,
                 cache_hit, cache_level, routed_to, prompt_tokens, completion_tokens,
                 total_tokens, pipeline_cost_ms, total_cost_ms, status)
-            VALUES (#{traceId}, #{appId}, #{userId}, #{modelId}, #{intentType},
+            VALUES (#{traceId}, #{appId}, #{userId}, #{agentId}, #{modelId}, #{intentType},
                 #{cacheHit}, #{cacheLevel}, #{routedTo}, #{promptTokens}, #{completionTokens},
                 #{totalTokens}, #{pipelineCostMs}, #{totalCostMs}, #{status})
             """)
     int insertCallLog(@Param("traceId") String traceId,
                       @Param("appId") String appId,
                       @Param("userId") String userId,
+                      @Param("agentId") String agentId,
                       @Param("modelId") String modelId,
                       @Param("intentType") String intentType,
                       @Param("cacheHit") Integer cacheHit,

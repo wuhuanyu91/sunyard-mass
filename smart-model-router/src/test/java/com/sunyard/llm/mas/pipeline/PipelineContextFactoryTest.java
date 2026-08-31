@@ -72,4 +72,25 @@ class PipelineContextFactoryTest {
         PipelineContext ctx = PipelineContextFactory.create(ex, PipelineContextFactory.mapper().createObjectNode());
         assertEquals("", ctx.getTraceId());
     }
+
+    @Test
+    void parsesBodyUserFieldAsAgentId() {
+        ServerWebExchange ex = exchange(MockServerHttpRequest.post("/v1/chat/completions").build());
+        ObjectNode body = PipelineContextFactory.mapper().createObjectNode();
+        body.put("model", "qwen-lite");
+        body.put("user", "agent-007");
+
+        PipelineContext ctx = PipelineContextFactory.create(ex, body);
+        assertEquals("agent-007", ctx.getAgentId());
+    }
+
+    @Test
+    void blankBodyUserLeavesAgentIdNull() {
+        ServerWebExchange ex = exchange(MockServerHttpRequest.post("/v1/chat/completions").build());
+        ObjectNode body = PipelineContextFactory.mapper().createObjectNode();
+        body.put("user", "   ");
+
+        PipelineContext ctx = PipelineContextFactory.create(ex, body);
+        assertNull(ctx.getAgentId());
+    }
 }

@@ -42,6 +42,11 @@ public final class PipelineContextFactory {
         ctx.setRequest(request);
         ctx.setRequestedModel(request.path("model").asText(""));
         ctx.setStream(request.path("stream").asBoolean(false));
+        // OpenAI 标准身份字段：请求体 user（可选），用于审计与关闭鉴权时的身份回退
+        String user = request.path("user").asText("");
+        if (!user.isBlank()) {
+            ctx.setAgentId(user);
+        }
         return ctx;
     }
 
