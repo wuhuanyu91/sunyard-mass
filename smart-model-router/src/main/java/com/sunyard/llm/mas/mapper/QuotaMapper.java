@@ -36,4 +36,14 @@ public interface QuotaMapper extends BaseMapper<TokenQuotaEntity> {
     int updateQuotaUsed(@Param("key") String key,
                         @Param("period") String period,
                         @Param("tokens") Long tokens);
+
+    @Update("""
+            UPDATE mas_token_quota
+            SET token_used = GREATEST(0, token_used - #{tokens})
+            WHERE quota_type = 'user' AND quota_key = #{key} AND period = #{period}
+              AND reset_at > now()
+            """)
+    int refundQuota(@Param("key") String key,
+                    @Param("period") String period,
+                    @Param("tokens") Long tokens);
 }

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.sunyard.llm.mas.pipeline.PipelineContext;
 import com.sunyard.llm.mas.service.CacheKeyGenerator;
 import com.sunyard.llm.mas.service.ExactCacheService;
+import com.sunyard.llm.mas.service.RuleIntentClassifier;
 import com.sunyard.llm.mas.service.SemanticCacheService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,10 +23,13 @@ public class L2MultiLevelCacheStage {
 
     private final ExactCacheService exactCache;
     private final SemanticCacheService semanticCache;
+    private final RuleIntentClassifier intentClassifier;
 
-    public L2MultiLevelCacheStage(ExactCacheService exactCache, SemanticCacheService semanticCache) {
+    public L2MultiLevelCacheStage(ExactCacheService exactCache, SemanticCacheService semanticCache,
+                                  RuleIntentClassifier intentClassifier) {
         this.exactCache = exactCache;
         this.semanticCache = semanticCache;
+        this.intentClassifier = intentClassifier;
     }
 
     public Mono<Void> lookup(PipelineContext ctx) {
@@ -56,8 +60,8 @@ public class L2MultiLevelCacheStage {
         if (text == null || text.isBlank()) {
             return Mono.empty();
         }
-        // §8 改进：按意图类型获取阈值
-        String intent = ctx.getIntent();
+        // §8 改进：L2 阶段尚无 ctx.intent，本地分类以选取阈值
+        String intent = intentClassifier.classify(text);
         return semanticCache.embed(text)
                 .flatMap(vector -> semanticCache.search(modelId, vector))
                 .filter(hit -> hit.similarity() >= semanticCache.threshold(intent))

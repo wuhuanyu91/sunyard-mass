@@ -83,7 +83,7 @@ public class ModelHealthTracker {
                     }
                     yield false;
                 }
-                case HALF_OPEN -> halfOpenAttempts.get() < props.getCircuitBreaker().getHalfOpenMaxAttempts();
+                case HALF_OPEN -> halfOpenAttempts.incrementAndGet() <= props.getCircuitBreaker().getHalfOpenMaxAttempts();
             };
         }
 

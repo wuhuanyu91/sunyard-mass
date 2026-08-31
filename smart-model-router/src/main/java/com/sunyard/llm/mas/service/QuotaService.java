@@ -49,6 +49,29 @@ public class QuotaService {
                 });
     }
 
+    /** 结算：退还预扣与实际使用之差 */
+    public Mono<Void> settle(String userId, long reservedTokens, long actualTokens) {
+        long refund = reservedTokens - actualTokens;
+        if (refund <= 0) {
+            return Mono.empty();
+        }
+        Instant now = Instant.now();
+        Instant minuteReset = now.truncatedTo(ChronoUnit.MINUTES).plus(1, ChronoUnit.MINUTES);
+        Instant dayReset = LocalDateTime.now(ZoneId.systemDefault())
+                .toLocalDate().plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant();
+        return refundQuota(userId, "minute", refund, minuteReset)
+                .then(refundQuota(userId, "day", refund, dayReset))
+                .onErrorResume(e -> {
+                    log.warn("Quota settle degraded (skip refund): {}", e.getMessage());
+                    return Mono.empty();
+                });
+    }
+
+    private Mono<Void> refundQuota(String userId, String period, long tokens, Instant resetAt) {
+        LocalDateTime resetDateTime = LocalDateTime.ofInstant(resetAt, ZoneId.systemDefault());
+        return ReactiveDbAdapter.mono(() -> mapper.refundQuota(userId, period, tokens)).then();
+    }
+
     private Mono<Void> checkAndAdd(String userId, String period, long limit, long tokens, Instant resetAt) {
         LocalDateTime resetDateTime = LocalDateTime.ofInstant(resetAt, ZoneId.systemDefault());
         return ReactiveDbAdapter.mono(() -> mapper.upsertQuota(userId, period, limit, resetDateTime))

@@ -38,6 +38,7 @@ public class ForwardService {
     private final CallLogService callLog;
     private final ModelRouter modelRouter;
     private final ModelHealthTracker healthTracker;
+    private final QuotaService quotaService;
     private final ObjectMapper mapper = new ObjectMapper();
 
     public ForwardService(WebClient masWebClient, MasProperties props,
@@ -46,7 +47,8 @@ public class ForwardService {
                           SemanticCacheService semanticCache,
                           CallLogService callLog,
                           ModelRouter modelRouter,
-                          ModelHealthTracker healthTracker) {
+                          ModelHealthTracker healthTracker,
+                          QuotaService quotaService) {
         this.webClient = masWebClient;
         this.props = props;
         this.sensitiveWordFilter = sensitiveWordFilter;
@@ -55,6 +57,7 @@ public class ForwardService {
         this.callLog = callLog;
         this.modelRouter = modelRouter;
         this.healthTracker = healthTracker;
+        this.quotaService = quotaService;
     }
 
     // ---------------- 非流式 ----------------
@@ -93,7 +96,13 @@ public class ForwardService {
                                     healthTracker.recordSuccess(fallback.endpointUrl());
                                     return finalizeNonStream(ctx, resp);
                                 })
-                                .onErrorMap(re -> re instanceof MasException ? re : mapUpstream(re));
+                                .onErrorResume(re -> {
+                                    if (re instanceof MasException) {
+                                        return Mono.error(re);
+                                    }
+                                    healthTracker.recordFailure(fallback.endpointUrl());
+                                    return Mono.error(mapUpstream(re));
+                                });
                     }
                     return Mono.error(mapUpstream(e));
                 });
@@ -143,6 +152,10 @@ public class ForwardService {
         ctx.getMeta().setPipelineCostMs(ctx.elapsedMs());
         // 缓存写入不含 x-mas-meta（命中时会重生成 id/created，附录 G.4）
         writeCaches(ctx, root.toString());
+        if (ctx.getReservedTokens() > 0) {
+            quotaService.settle(ctx.getUserId(), ctx.getReservedTokens(), totalTokens)
+                    .subscribe(null, e -> log.warn("Quota settle failed (skip): {}", e.getMessage()));
+        }
         callLog.logAsync(ctx, promptTokens, completionTokens, totalTokens, ctx.elapsedMs(), true);
 
         root.putPOJO("x-mas-meta", ctx.getMeta());
@@ -284,9 +297,16 @@ public class ForwardService {
             u.put("prompt_tokens", promptTokens);
             u.put("completion_tokens", completionTokens);
             u.put("total_tokens", promptTokens + completionTokens);
-            writeCaches(ctx, root.toString());
+            if (isBlocked == null || !isBlocked) {
+                writeCaches(ctx, root.toString());
+            }
+            int totalTokens = promptTokens + completionTokens;
+            if (ctx.getReservedTokens() > 0) {
+                quotaService.settle(ctx.getUserId(), ctx.getReservedTokens(), totalTokens)
+                        .subscribe(null, e -> log.warn("Quota settle failed (skip): {}", e.getMessage()));
+            }
             callLog.logAsync(ctx, promptTokens, completionTokens,
-                    promptTokens + completionTokens, ctx.elapsedMs(), true);
+                    totalTokens, ctx.elapsedMs(), true);
         } catch (Exception e) {
             log.warn("Stream finalize failed: {}", e.getMessage());
         }

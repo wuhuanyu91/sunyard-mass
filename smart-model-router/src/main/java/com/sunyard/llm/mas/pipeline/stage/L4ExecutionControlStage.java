@@ -33,7 +33,9 @@ public class L4ExecutionControlStage {
         int maxTokens = ctx.getRequest().path("max_tokens").isInt()
                 ? ctx.getRequest().path("max_tokens").asInt()
                 : 1024;
-        return quotaService.reserve(ctx.getUserId(), promptTokens + maxTokens);
+        int reserved = promptTokens + maxTokens;
+        return quotaService.reserve(ctx.getUserId(), reserved)
+                .doOnSuccess(v -> ctx.setReservedTokens(reserved));
     }
 
     /** 截断压缩：token 超限时从最早的非 system 消息开始丢弃 */

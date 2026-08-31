@@ -30,6 +30,7 @@ public class PipelineContext {
     private ModelConfig target;
 
     private int promptTokens;
+    private int reservedTokens;
 
     private final MasMeta meta = new MasMeta();
 
@@ -64,5 +65,7 @@ public class PipelineContext {
     public void setTarget(ModelConfig target) { this.target = target; }
     public int getPromptTokens() { return promptTokens; }
     public void setPromptTokens(int promptTokens) { this.promptTokens = promptTokens; }
+    public int getReservedTokens() { return reservedTokens; }
+    public void setReservedTokens(int reservedTokens) { this.reservedTokens = reservedTokens; }
     public MasMeta getMeta() { return meta; }
 }
