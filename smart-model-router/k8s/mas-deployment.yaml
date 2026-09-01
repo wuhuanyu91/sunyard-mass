@@ -1,6 +1,7 @@
 # MAS 智能模型路由访问平台
 # 模型推理服务（Ollama / vLLM / TGI 等）假设已在外部独立部署，
 # MAS 通过 ConfigMap 中的 MAS_MODEL_ENDPOINT 环境变量访问对应接口。
+# OmniRoute 作为 sidecar 容器部署，MAS 经其转发请求至推理引擎。
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -64,6 +65,37 @@ spec:
             limits:
               memory: "512Mi"
               cpu: "500m"
+        # OmniRoute AI 网关 sidecar：与 MAS 共享 Pod network namespace，localhost:20128 可达
+        - name: omniroute
+          image: diegosouzapw/omniroute:latest
+          ports:
+            - containerPort: 20128
+          env:
+            - name: OMNIRoute_PROVIDER
+              value: "openai-compatible"
+            - name: OMNIRoute_BASE_URL
+              value: "$(MAS_MODEL_ENDPOINT)"
+            - name: OMNIRoute_API_KEY
+              value: "not-needed"
+          livenessProbe:
+            httpGet:
+              path: /livez
+              port: 20128
+            initialDelaySeconds: 10
+            periodSeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 20128
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "200m"
       volumes:
         - name: seed-sql
           configMap:

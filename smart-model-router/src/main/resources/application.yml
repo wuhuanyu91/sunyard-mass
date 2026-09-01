@@ -33,6 +33,9 @@ logging:
 mas:
   auth:
     enabled: true      # 鉴权开关：false 时跳过 API Key 校验（内网零改造接入），身份回退 body.user → X-User-Id → anonymous
+  omniroute:
+    enabled: ${MAS_OMNIROUTE_ENABLED:false}    # true 时请求经 OmniRoute 网关转发至推理引擎
+    endpoint: ${MAS_OMNIROUTE_ENDPOINT:http://localhost:20128}
   backend:
     # 外部模型推理服务端点（Ollama / vLLM / TGI 等，假设已独立部署）
     default-endpoint: ${MAS_MODEL_ENDPOINT:http://localhost:11434/v1}

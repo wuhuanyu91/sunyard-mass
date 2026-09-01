@@ -315,6 +315,9 @@ public class ForwardService {
     // ---------------- 公共 ----------------
 
     private String chatUrl(PipelineContext ctx) {
+        if (props.getOmniroute().isEnabled()) {
+            return props.getOmniroute().getEndpoint() + "/v1/chat/completions";
+        }
         return ctx.getTarget().endpointUrl() + "/chat/completions";
     }
 

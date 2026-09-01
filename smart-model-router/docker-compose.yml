@@ -4,6 +4,7 @@ version: "3.9"
 # MAS 智能模型路由访问平台 — Docker Compose
 # 模型推理服务（Ollama 等）假设已在外部独立部署，
 # 通过 MAS_MODEL_ENDPOINT 环境变量指定其地址。
+# OmniRoute 作为 AI 网关层，MAS 经其转发请求至推理引擎。
 # ============================================================
 
 services:
@@ -27,6 +28,23 @@ services:
       retries: 10
     restart: unless-stopped
 
+  # ---- OmniRoute AI 网关 ----
+  omniroute:
+    image: diegosouzapw/omniroute:latest
+    container_name: mas-omniroute
+    ports:
+      - "20128:20128"
+    environment:
+      OMNIRoute_PROVIDER: "openai-compatible"
+      OMNIRoute_BASE_URL: "${MAS_MODEL_ENDPOINT:-http://host.docker.internal:11434/v1}"
+      OMNIRoute_API_KEY: "not-needed"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:20128/healthz || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+
   # ---- MAS 智能模型路由 ----
   mas:
     build: .
@@ -39,8 +57,13 @@ services:
       MAS_DB_PASSWORD: mas123
       # 外部模型推理服务地址（部署时按实际环境覆盖）
       MAS_MODEL_ENDPOINT: "http://host.docker.internal:11434/v1"
+      # OmniRoute 网关（经 omniroute 容器转发至推理引擎）
+      MAS_OMNIROUTE_ENABLED: "true"
+      MAS_OMNIROUTE_ENDPOINT: "http://omniroute:20128"
     depends_on:
       postgres:
+        condition: service_healthy
+      omniroute:
         condition: service_healthy
     restart: unless-stopped
 

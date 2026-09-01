@@ -13,6 +13,9 @@ data:
   # 假设模型服务（Ollama / vLLM / TGI 等）已在 K8s 集群外或集群内独立部署，
   # MAS 路由平台仅通过此地址访问对应接口。
   MAS_MODEL_ENDPOINT: "http://model-service.example.com/v1"
+  # ---- OmniRoute AI 网关（sidecar 模式，localhost 共享 Pod 网络） ----
+  MAS_OMNIROUTE_ENABLED: "true"
+  MAS_OMNIROUTE_ENDPOINT: "http://localhost:20128"
 ---
 # K8s 环境种子数据
 # endpoint_url 按模型分组指向外部推理服务（部署前请替换为实际地址）

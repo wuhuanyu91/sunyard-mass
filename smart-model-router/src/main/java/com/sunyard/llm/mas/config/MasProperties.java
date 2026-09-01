@@ -25,6 +25,7 @@ public class MasProperties {
     private Compress compress = new Compress();
     private CircuitBreakerConfig circuitBreaker = new CircuitBreakerConfig();
     private Auth auth = new Auth();
+    private OmniRouteConfig omniroute = new OmniRouteConfig();
 
     public Backend getBackend() { return backend; }
     public void setBackend(Backend backend) { this.backend = backend; }
@@ -46,6 +47,8 @@ public class MasProperties {
     public void setCircuitBreaker(CircuitBreakerConfig circuitBreaker) { this.circuitBreaker = circuitBreaker; }
     public Auth getAuth() { return auth; }
     public void setAuth(Auth auth) { this.auth = auth; }
+    public OmniRouteConfig getOmniroute() { return omniroute; }
+    public void setOmniroute(OmniRouteConfig omniroute) { this.omniroute = omniroute; }
 
     public static class Backend {
         /** 无模型配置时的兜底后端 */
@@ -175,5 +178,16 @@ public class MasProperties {
 
         public boolean isEnabled() { return enabled; }
         public void setEnabled(boolean enabled) { this.enabled = enabled; }
+    }
+
+    /** OmniRoute AI 网关集成配置：enabled=true 时请求经 OmniRoute 转发至推理引擎 */
+    public static class OmniRouteConfig {
+        private boolean enabled = false;
+        private String endpoint = "http://localhost:20128";
+
+        public boolean isEnabled() { return enabled; }
+        public void setEnabled(boolean enabled) { this.enabled = enabled; }
+        public String getEndpoint() { return endpoint; }
+        public void setEndpoint(String endpoint) { this.endpoint = endpoint; }
     }
 }
