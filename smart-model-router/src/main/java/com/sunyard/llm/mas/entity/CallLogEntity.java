@@ -47,6 +47,12 @@ public class CallLogEntity {
 
     private LocalDateTime createdAt;
 
+    private String tenantId;
+
+    private String slaLevel;
+
+    private String dataLevel;
+
     public Long getId() {
         return id;
     }
@@ -181,5 +187,29 @@ public class CallLogEntity {
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public String getTenantId() {
+        return tenantId;
+    }
+
+    public void setTenantId(String tenantId) {
+        this.tenantId = tenantId;
+    }
+
+    public String getSlaLevel() {
+        return slaLevel;
+    }
+
+    public void setSlaLevel(String slaLevel) {
+        this.slaLevel = slaLevel;
+    }
+
+    public String getDataLevel() {
+        return dataLevel;
+    }
+
+    public void setDataLevel(String dataLevel) {
+        this.dataLevel = dataLevel;
     }
 }

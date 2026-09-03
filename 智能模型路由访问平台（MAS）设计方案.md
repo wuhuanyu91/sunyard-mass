@@ -1,8 +1,8 @@
 # 智能模型路由访问平台设计方案
 
-> **版本**：v1.4  
-> **状态**：与已实现原型（含 API Key 鉴权、容器化 K8s 部署、Higress 集成）对齐  
-> **日期**：2026-09-01
+> **版本**：v1.5  
+> **状态**：与已实现原型（含 API Key 鉴权、容器化 K8s 部署、Higress 集成、应用身份管控阶段 1）对齐  
+> **日期**：2026-09-02
 
 ***
 
@@ -128,6 +128,353 @@
 ### 1.3 接入方式
 
 > 高码智能体只需将 从旧网关地址改为 MAS 平台地址，即可完成接入。不需要改动任何业务逻辑代码。
+
+### 1.4 智能体接入与 API Key 自助申请
+
+> 当前原型仅暴露 `POST /internal/api-keys` 管理端点（附录 H.1），API Key 的创建依赖运维人员手工调用，智能体团队无法自助申请。随着接入团队增多，这一流程将成为瓶颈。本节设计自助申请流程，使各智能体团队可快速、规范地获取接入凭证。
+
+#### 1.4.1 现状与痛点
+
+| 现状 | 痛点 |
+|------|------|
+| Key 创建仅 `/internal/api-keys` 一个入口，靠网络隔离保护 | 智能体团队需联系运维手动创建，响应慢、流程不可追溯 |
+| 创建时仅传 `user_id` + `app_id`，无更多元数据 | 无法按团队/用途/智能体类型维度统计用量和归集成本 |
+| Key 不自动关联配额，创建后需另走配额管理 | 新 Key 默认共享全局配额，无法按团队隔离用量保障 |
+| 无 Key 列表/查询接口 | 团队无法查看自己名下有哪些 Key、何时过期、用量多少 |
+| 吊销仅按 `key_prefix` 单条操作 | 批量吊销（如团队离职）需逐条操作 |
+
+#### 1.4.2 自助申请流程设计
+
+```mermaid
+sequenceDiagram
+    participant Team as 智能体团队
+    participant Portal as MAS 管理面<br/>（Web UI / API）
+    participant MAS as MAS 数据面
+    participant PG as PostgreSQL
+
+    Team->>Portal: ① 提交申请（团队/智能体名称/用途/预期用量）
+    Portal->>Portal: ② 自动审批（内部系统，校验团队合法性）
+    Portal->>MAS: ③ POST /admin/v1/api-keys（携带完整元数据）
+    MAS->>PG: ④ 写入 mas_api_key + 关联默认配额
+    PG-->>MAS: 返回记录
+    MAS->>PG: ⑤ 写入 mas_token_quota（按团队独立配额行）
+    MAS-->>Portal: 返回 Key 明文 + 元数据
+    Portal-->>Team: ⑥ 展示 Key（一次性）+ 接入指南
+    Note over Team: 配置 base_url + Bearer Key 即完成接入
+```
+
+#### 1.4.3 申请信息模型
+
+智能体团队申请 Key 时需提交以下信息：
+
+| 字段 | 必填 | 说明 | 示例 |
+|------|------|------|------|
+| `team_name` | 是 | 申请团队名称，作为成本归集维度 | `AI平台部-对话组` |
+| `agent_name` | 是 | 智能体名称，写入 `mas_call_log.agent_id` 便于审计 | `customer-service-bot` |
+| `agent_type` | 是 | 智能体类型（对应 §3.2-3.4 三类） | `agentscope` / `boc_ai` / `agentkit` |
+| `purpose` | 否 | 用途说明 | `客服场景自动问答` |
+| `expected_daily_tokens` | 否 | 预期日用量，用于自动匹配配额档位 | `50000` |
+| `expire_days` | 否 | 有效期天数，默认 365，NULL=永不过期 | `365` |
+| `quota_tier` | 否 | 配额档位：`default` / `high` / `unlimited`（需审批），默认 `default` | `default` |
+
+#### 1.4.4 配额档位与自动关联
+
+Key 创建时按 `quota_tier` 自动绑定预定义配额，无需运维手工配置：
+
+| 配额档位 | 每分钟 Token 上限 | 每日 Token 上限 | 适用场景 | 审批要求 |
+|---------|-----------------|---------------|---------|----------|
+| `default` | 100,000 | 2,000,000 | 一般业务智能体 | 自动审批 |
+| `high` | 500,000 | 10,000,000 | 高频/大上下文场景 | 团队负责人审批 |
+| `unlimited` | 不限 | 不限 | 核心保障业务 | 平台管理员审批 |
+
+> 配额档位的具体数值后续迁移至 `mas_setting` 管理表（附录 H.2），支持管理面在线调整。
+
+#### 1.4.5 管理 API 增强
+
+在现有附录 H.1 管理 API 基础上，新增以下端点以支撑自助申请：
+
+| 端点 | 方法 | 说明 | 状态 |
+|------|------|------|------|
+| `/admin/v1/api-keys` | POST | 创建 Key（携带 §1.4.3 完整元数据），自动关联配额 | 增强现有 |
+| `/admin/v1/api-keys/list` | GET | 按 `team_name` / `user_id` / `status` 筛选 Key 列表（不返回明文 Key，仅展示 prefix + 元数据 + 用量摘要） | 新增 |
+| `/admin/v1/api-keys/{prefix}/rotate` | POST | Key 轮换：生成新 Key 并关联相同配额/身份，旧 Key 进入 grace period（默认 10 分钟）后自动吊销 | 新增 |
+| `/admin/v1/api-keys/batch-revoke` | POST | 批量吊销：按 `team_name` 或 `user_id` 批量吊销名下所有 Key | 新增 |
+| `/admin/v1/api-keys/{prefix}/usage` | GET | 查询单个 Key 的用量摘要（今日/本周/本月 token 消耗、调用次数、缓存命中率） | 新增 |
+
+#### 1.4.6 数据库变更
+
+`mas_api_key` 表新增字段以承载自助申请元数据：
+
+```sql
+-- §1.4 自助申请元数据扩展（幂等 DDL）
+ALTER TABLE mas_api_key ADD COLUMN IF NOT EXISTS team_name    VARCHAR(128);
+ALTER TABLE mas_api_key ADD COLUMN IF NOT EXISTS agent_name   VARCHAR(128);
+ALTER TABLE mas_api_key ADD COLUMN IF NOT EXISTS agent_type   VARCHAR(32);
+ALTER TABLE mas_api_key ADD COLUMN IF NOT EXISTS purpose      VARCHAR(256);
+ALTER TABLE mas_api_key ADD COLUMN IF NOT EXISTS quota_tier   VARCHAR(16) DEFAULT 'default';
+ALTER TABLE mas_api_key ADD COLUMN IF NOT EXISTS created_by   VARCHAR(64) DEFAULT 'admin';
+```
+
+> 现有记录 `team_name` / `agent_name` 等新增字段为 NULL，不影响已发放 Key 的鉴权链路。`quota_tier` 默认 `default` 与现有行为一致。
+
+#### 1.4.7 三类智能体接入 Checklist
+
+各类型智能体完成接入的完整步骤：
+
+**Type A — AgentScope Java 高码智能体：**
+
+1. 团队负责人通过管理面提交申请（§1.4.3 信息），获得 API Key
+2. 在 Nacos 配置中修改模型服务 base URL 为 MAS 地址
+3. 在 Nacos 配置中添加 `Authorization: Bearer <api-key>` 请求头
+4. 验证：发送测试请求，检查响应中 `x-mas-meta` 字段确认路由正常
+
+**Type B — BOC AI 低代码平台智能体：**
+
+1. 团队负责人通过管理面提交申请，获得 API Key
+2. 在低代码平台模型配置管理界面修改模型服务 URL 为 MAS 地址
+3. 在平台「自定义请求头」配置中添加 `Authorization: Bearer <api-key>`
+4. 验证：通过平台测试对话功能，确认响应正常
+
+**Type C — AgentKit Python 智能体：**
+
+1. 团队负责人通过管理面提交申请，获得 API Key
+2. 修改 `LLMClient` 配置：
+   ```python
+   client = LLMClient(
+       base_url="http://mas-host:port/smart-router",
+       api_key="mas-xxxxxxxx",     # 自助申请获得的 Key
+       model="qwen-72b"
+   )
+   ```
+3. 验证：运行测试脚本，确认响应正常
+
+#### 1.4.8 安全与治理
+
+| 维度 | 措施 |
+|------|------|
+| **Key 存储** | 明文不落库，仅存 SHA-256 摘要（已实现）；管理面展示仅显示 `key_prefix`（前 12 字符） |
+| **传输安全** | 管理面 API 经 Higress TLS 终止 + 内网 IP 白名单；数据面 Bearer Key 经 HTTPS 传输 |
+| **过期策略** | 默认 365 天过期；到期前 7 天通过管理面告警提醒；过期后 Key 自动失效（`ApiKeyService.validate` 已实现过期检查） |
+| **轮换机制** | `/rotate` 端点支持零停机轮换：新 Key 立即生效，旧 Key 保留 grace period（默认 10 分钟），期间两个 Key 同时可用 |
+| **审计追踪** | 所有 Key 操作（创建/吊销/轮换/配额变更）写入审计日志，记录操作人 + 时间 + 变更内容 |
+| **成本归集** | `mas_call_log` 按 `app_id` + `team_name` 维度聚合用量，支持按团队出账单 |
+
+### 1.5 应用身份（app_id）统一管控设计
+
+> 当前 `app_id` 的获取方式分散：实时请求从 HTTP Header `X-App-Id` 读取，API Key 鉴权时从 Key 关联信息读取，历史测试数据通过 SQL 按 `model_id` 回填。应用中文名则硬编码在后端 SQL 的 CASE 语句中。本节设计统一的应用身份管控方案，分三阶段演进。
+
+#### 1.5.1 现状与问题
+
+| 问题 | 影响 |
+|------|------|
+| `app_id` 来源分散（Header / API Key / SQL 回填） | 数据一致性难保证，审计追溯困难 |
+| 应用中文名硬编码在 SQL CASE 语句中 | 新增应用需改代码，无法动态管理 |
+| 无应用注册/审批流程 | 无法管控接入质量，成本归集维度缺失 |
+| `app_id` 与 API Key 无强制关联 | 无法按应用维度做配额隔离和用量统计 |
+
+#### 1.5.2 管控模式对比
+
+| 维度 | 模式 A：平台注册制 | 模式 B：智能体自声明 | **推荐：混合模式** |
+|------|-------------------|---------------------|-------------------|
+| **管控力度** | 强（平台审批） | 弱（信任调用方） | 中（注册 + 校验） |
+| **数据一致性** | 高（单一来源） | 低（可能重复/冲突） | 高（注册表为准） |
+| **接入成本** | 高（需注册流程） | 低（直接调用） | 中（一次注册） |
+| **审计追溯** | 完整（有审批记录） | 有限（仅日志） | 完整 |
+| **适用场景** | 生产环境、金融合规 | 开发测试、内部工具 | 全场景 |
+
+**推荐方案：混合模式（注册 + 自声明校验）**
+
+- 生产环境：应用必须在平台注册，审批后生成 API Key
+- 开发测试：允许 Header 自声明，但标记为"未认证"
+- 应用名称：统一由平台维护，智能体不可自定义
+
+#### 1.5.3 整体架构
+
+```mermaid
+flowchart TB
+    subgraph "阶段 1：兼容期（当前）"
+        A1["智能体请求<br/>X-App-Id Header"] --> B1["MAS 读取 app_id"]
+        C1["SQL CASE 硬编码<br/>应用中文名"] --> D1["前端展示"]
+    end
+    
+    subgraph "阶段 2：过渡期（1-2 个月）"
+        A2["智能体请求<br/>API Key + app_id"] --> B2["MAS 校验 mas_app 表"]
+        B2 --> C2["mas_app 表<br/>统一应用名/配额"]
+        C2 --> D2["前端展示"]
+    end
+    
+    subgraph "阶段 3：正式期（3 个月后）"
+        A3["智能体请求<br/>仅 API Key"] --> B3["MAS 从 Key 解析 app_id"]
+        B3 --> C3["mas_app 表<br/>唯一数据源"]
+        C3 --> D3["前端展示"]
+    end
+```
+
+#### 1.5.4 数据库设计
+
+```sql
+-- 应用注册表（核心）
+CREATE TABLE IF NOT EXISTS mas_app (
+    app_id          VARCHAR(32) PRIMARY KEY,
+    app_name        VARCHAR(128) NOT NULL,      -- 中文应用名（平台统一维护）
+    app_name_en     VARCHAR(64),                -- 英文名（可选）
+    dept_id         VARCHAR(32) NOT NULL,       -- 归属部门
+    owner_id        VARCHAR(64) NOT NULL,       -- 负责人
+    owner_email     VARCHAR(128),               -- 负责人邮箱
+    sla_level       VARCHAR(8) DEFAULT 'P1',    -- 默认 SLA 等级
+    data_level      VARCHAR(8) DEFAULT 'L2',    -- 默认数据等级
+    status          SMALLINT DEFAULT 0,         -- 0=待审批, 1=已启用, 2=已停用, 3=已驳回
+    month_quota     BIGINT DEFAULT 0,           -- 月度 Token 配额（0=不限制）
+    description     TEXT,                       -- 应用描述/用途说明
+    approved_by     VARCHAR(64),                -- 审批人
+    approved_at     TIMESTAMP,                  -- 审批时间
+    created_at      TIMESTAMP DEFAULT now(),
+    updated_at      TIMESTAMP DEFAULT now()
+);
+
+-- API Key 表增加 app_id 外键关联
+ALTER TABLE mas_api_key ADD COLUMN IF NOT EXISTS app_id VARCHAR(32);
+ALTER TABLE mas_api_key ADD CONSTRAINT fk_api_key_app 
+    FOREIGN KEY (app_id) REFERENCES mas_app(app_id);
+
+-- 应用接入申请表（审批流程留痕）
+CREATE TABLE IF NOT EXISTS mas_app_application (
+    apply_id        VARCHAR(32) PRIMARY KEY,
+    app_id          VARCHAR(32),                -- 审批通过后写入 mas_app
+    applicant_id    VARCHAR(64) NOT NULL,       -- 申请人
+    applicant_dept  VARCHAR(32) NOT NULL,
+    app_name        VARCHAR(128) NOT NULL,
+    purpose         TEXT NOT NULL,              -- 用途说明
+    est_month_calls BIGINT,                     -- 预估月调用量
+    status          VARCHAR(16) DEFAULT 'PENDING', -- PENDING/APPROVED/REJECTED
+    reviewer_id     VARCHAR(64),                -- 审批人
+    review_opinion  TEXT,                       -- 审批意见
+    created_at      TIMESTAMP DEFAULT now(),
+    reviewed_at     TIMESTAMP
+);
+```
+
+#### 1.5.5 三阶段迁移计划
+
+##### 阶段 1：兼容期（当前实施）
+
+**目标**：建立 `mas_app` 表，导入现有应用数据，保留所有现有调用方式
+
+**变更清单**：
+
+| 序号 | 变更项 | 说明 |
+|------|--------|------|
+| 1 | 创建 `mas_app` 表 | 执行 DDL，创建应用注册表 |
+| 2 | 导入种子数据 | 将现有 4 个应用（APP-CSR 等）写入 `mas_app` |
+| 3 | 保留 SQL CASE 映射 | `DashboardService.getAppTcoRank()` 暂时保持硬编码 |
+| 4 | 保留 Header 读取 | `PipelineContextFactory` 继续支持 `X-App-Id` |
+| 5 | 新增管理 API（可选） | `/internal/apps` 端点，支持应用列表查询 |
+
+**验收标准**：
+- `mas_app` 表创建成功，包含 4 条种子数据
+- 现有功能（驾驶舱、计量、路由等页面）正常运行
+- 应用中文名仍从 SQL CASE 获取（阶段 2 再切换）
+
+##### 阶段 2：过渡期（1-2 个月后）
+
+**目标**：新应用必须注册，应用名从 `mas_app` 表查询
+
+**变更清单**：
+
+| 序号 | 变更项 | 说明 |
+|------|--------|------|
+| 1 | 修改 `DashboardService` | 移除 SQL CASE，JOIN `mas_app` 获取应用名 |
+| 2 | 新增应用注册 API | `POST /internal/apps/apply` 提交申请 |
+| 3 | 新增应用审批 API | `POST /internal/apps/{apply_id}/review` |
+| 4 | 前端新增应用管理页面 | 应用列表、申请审批、配置编辑 |
+| 5 | API Key 强制关联 app_id | 创建 Key 时必须选择已注册应用 |
+
+##### 阶段 3：正式期（3 个月后）
+
+**目标**：废弃 Header 方式，API Key 为唯一身份凭证
+
+**变更清单**：
+
+| 序号 | 变更项 | 说明 |
+|------|--------|------|
+| 1 | 移除 `X-App-Id` Header 支持 | `PipelineContextFactory` 仅从 API Key 解析 |
+| 2 | 清理 SQL CASE 硬编码 | 所有应用名从 `mas_app` 查询 |
+| 3 | 未关联 app_id 的 Key 停用 | 批量更新或通知相关团队补充 |
+
+#### 1.5.6 调用时校验逻辑（阶段 2+ 实施）
+
+```java
+// PipelineContextFactory.java - 阶段 2 增强版
+public PipelineContext create(ServerWebExchange exchange, ObjectNode request) {
+    PipelineContext ctx = new PipelineContext();
+    
+    // 1. 从 Header 获取 app_id（阶段 1 兼容，阶段 3 移除）
+    String appIdFromHeader = exchange.getRequest().getHeaders().getFirst("X-App-Id");
+    
+    // 2. 从 API Key 解析 app_id（推荐方式）
+    String auth = exchange.getRequest().getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
+    String appIdFromKey = null;
+    if (auth != null && auth.startsWith("Bearer ")) {
+        String key = auth.substring(7);
+        appIdFromKey = apiKeyService.resolveAppId(key);  // 从 mas_api_key 表查询
+    }
+    
+    // 3. 优先级：API Key 关联 > Header 声明
+    String finalAppId = appIdFromKey != null ? appIdFromKey : appIdFromHeader;
+    
+    // 4. 校验 app_id 是否有效（阶段 2+ 实施）
+    if (finalAppId != null) {
+        AppEntity app = appService.getApp(finalAppId);
+        if (app == null || app.getStatus() != 1) {
+            throw MasException.unauthorized("应用未注册或已停用：" + finalAppId);
+        }
+        // 5. 从 mas_app 获取标准中文名（不再硬编码）
+        ctx.setAppName(app.getAppName());
+    }
+    
+    ctx.setAppId(finalAppId);
+    return ctx;
+}
+```
+
+#### 1.5.7 前端管理界面（阶段 2+ 实施）
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  应用管理 - 路由平台管理后台                                      │
+├─────────────────────────────────────────────────────────────────┤
+│  ─────────────────────────────────────────────────────────┐   │
+│  │  [+ 新建应用]  [筛选：部门▼] [状态：全部▼]  [搜索...]   │   │
+│  └─────────────────────────────────────────────────────────┘   │
+│                                                                 │
+│  ┌──────────┬──────────┬──────────┬──────────┬──────────┐   │
+│  │ 应用 ID   │ 应用名称  │ 归属部门  │ 月度配额  │ 状态     │   │
+│  ├──────────┼──────────┼──────────┼──────────┼──────────┤   │
+│  │ APP-CSR  │ 智能客服  │ 零售银行  │ 30 亿     │ ✅ 启用  │   │
+│  │ APP-AICODING│AI代码助手│信息科技 │ 20 亿     │ ✅ 启用  │   │
+│  │ APP-CREDIT│信贷审批  │ 公司银行  │ 15 亿     │ ✅ 启用  │   │
+│  │ APP-NEW  │ 新应用    │ 风险管理  │ 0        │ ⏳ 待审批 │   │
+│  └──────────┴──────────┴──────────┴──────────┴──────────┘   │
+│                                                                 │
+│  ┌─────────────────────────────────────────────────────────┐   │
+│  │  待审批申请 (2)                                          │   │
+│  │  ┌──────────────────────────────────────────────────┐  │   │
+│  │  │ APP-NEW | 智能风控助手 | 风险管理部 | 张三         │  │   │
+│  │  │ 用途：用于信贷风控报告自动生成，预计月调用 50 万次   │  │   │
+│  │  │ [通过] [驳回]                                     │  │   │
+│  │  └──────────────────────────────────────────────────┘  │   │
+│  └─────────────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+#### 1.5.8 核心原则
+
+| 原则 | 说明 |
+|------|------|
+| **单一来源** | 应用名、配额、SLA 等配置只在 `mas_app` 表维护 |
+| **审批管控** | 新应用接入需平台审批，防止滥用 |
+| **向后兼容** | 阶段 1 保留 Header 方式，逐步迁移到 API Key 关联 |
+| **审计留痕** | 所有申请/审批操作记录在 `mas_app_application` 表 |
 
 ***
 

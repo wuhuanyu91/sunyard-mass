@@ -1,0 +1,955 @@
+openapi: 3.0.3
+info:
+  title: MAS 智能路由 API 契约
+  description: |
+    智能模型路由访问平台（MAS）后端 API 契约。
+    本文件定义前端（MaaS 运营中心）与后端（智能路由）之间的数据接口。
+    仅包含智能路由相关的端点，不含 MaaS 平台层功能（用户/RBAC/K8s/工单等）。
+    
+    仅包含为前端提供真实数据的端点（基于 mas_call_log / mas_routing_rule / mas_dept_quota / mas_security_event / mas_alert / mas_model_config 等表查询）。
+    不含硬编码配置类端点（如熔断器状态、队列视图、节点热区、护栏配置等）。
+    
+    约定：
+    - 所有管理端点前缀 `/internal/`
+    - OpenAI 兼容端点前缀 `/v1/`
+    - 时间格式 ISO 8601
+    - 错误格式 `{ "error": { "type": "...", "code": "...", "message": "..." } }`
+    
+    维护规则：
+    - 类型定义源头：sunyard-maas/maas/src/types/index.ts（前端 types）
+    - 本文件为后端视角的接口规格，字段名使用 snake_case
+    - 任何端点变更必须先改本文件，再各自实现
+    - 前端新增字段需求 → 先改 types/index.ts → 同步本文件
+    - 后端新增/调整端点 → 先改本文件 → 通知前端同步 types
+  version: 1.5.0
+  contact:
+    name: MAS Team
+
+servers:
+  - url: http://localhost:9090/smart-router
+    description: 本地开发
+  - url: https://mas-api.example.com/smart-router
+    description: 生产环境
+
+tags:
+  - name: Dashboard
+    description: 运营驾驶舱指标（mas_call_log 聚合）
+  - name: Metering
+    description: 计量运营（调用日志/配额/模型统计）
+  - name: Routing
+    description: 路由配置（引擎/聚合组/弹性切换/熔断）
+  - name: ModelAsset
+    description: 模型资产管理（模型/接入/评测/灰度）
+  - name: Cache
+    description: 缓存管理（精确/语义缓存）
+  - name: Security
+    description: 安全审计（护栏/安全事件/告警）
+
+# ============================================================
+# 端点定义
+# ============================================================
+paths:
+
+  # ──────────────── Dashboard ────────────────
+
+  /internal/dashboard/summary:
+    get:
+      tags: [Dashboard]
+      summary: 平台概览（近 24h 聚合）
+      operationId: getDashboardSummary
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlatformSummary'
+
+  /internal/dashboard/token-series:
+    get:
+      tags: [Dashboard]
+      summary: Token 时序（24h，1h 粒度）
+      operationId: getTokenSeries
+      parameters:
+        - name: hours
+          in: query
+          schema: { type: integer, default: 24 }
+        - name: step
+          in: query
+          description: 步长（分钟）
+          schema: { type: integer, default: 60 }
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TokenPoint'
+
+  /internal/dashboard/trend-series:
+    get:
+      tags: [Dashboard]
+      summary: 性能趋势时序（GPU 利用率/TTFT/P95）
+      operationId: getTrendSeries
+      parameters:
+        - name: hours
+          in: query
+          schema: { type: integer, default: 24 }
+        - name: step
+          in: query
+          schema: { type: integer, default: 60 }
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TrendPoint'
+
+  /internal/dashboard/dept-tco:
+    get:
+      tags: [Dashboard]
+      summary: 部门 TCO 排行
+      operationId: getDeptTco
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DeptTco'
+
+  /internal/dashboard/app-tco-rank:
+    get:
+      tags: [Dashboard]
+      summary: 应用 TCO 排行
+      operationId: getAppTcoRank
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AppTcoRank'
+
+  /internal/dashboard/model-tco-rank:
+    get:
+      tags: [Dashboard]
+      summary: 模型 TCO 排行
+      operationId: getModelTcoRank
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ModelTcoRank'
+
+  /internal/dashboard/funnel:
+    get:
+      tags: [Dashboard]
+      summary: 路由漏斗（入站→识别→限流→派发）
+      operationId: getFunnelData
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FunnelStage'
+
+  /internal/dashboard/rate-limit-hits:
+    get:
+      tags: [Dashboard]
+      summary: 限流命中记录（近 24h）
+      operationId: getRateLimitHits
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RateLimitHit'
+
+
+  /internal/dashboard/batch-trend:
+    get:
+      tags: [Dashboard]
+      summary: 批处理与 TTFT 联动时序
+      operationId: getBatchTrend
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/BatchPoint'
+
+
+  /internal/dashboard/optimize-advice:
+    get:
+      tags: [Dashboard]
+      summary: 成本优化建议（闭环：识别→采纳→执行→验证→关闭）
+      operationId: getOptimizeAdvice
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/OptimizeAdvice'
+
+
+  # ──────────────── Metering ────────────────
+
+  /internal/metering/call-logs:
+    get:
+      tags: [Metering]
+      summary: 调用日志列表（分页）
+      operationId: listCallLogs
+      parameters:
+        - name: user_id
+          in: query
+          schema: { type: string }
+        - name: app_id
+          in: query
+          schema: { type: string }
+        - name: model
+          in: query
+          schema: { type: string }
+        - name: status
+          in: query
+          schema: { type: string, enum: [SUCCESS, FAILED, RATE_LIMITED, BLOCKED] }
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: size
+          in: query
+          schema: { type: integer, default: 20 }
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  logs:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/CallLog'
+                  total:
+                    type: integer
+
+  /internal/metering/model-stats:
+    get:
+      tags: [Metering]
+      summary: 模型调用统计（按模型聚合）
+      operationId: getModelUsageStats
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ModelUsageStat'
+
+  /internal/metering/quotas:
+    get:
+      tags: [Metering]
+      summary: 配额列表（按部门）
+      operationId: listQuotas
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/QuotaProfile'
+
+  /internal/metering/quotas/{deptId}:
+    put:
+      tags: [Metering]
+      summary: 调整配额
+      operationId: setQuota
+      parameters:
+        - name: deptId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                month_token_quota:
+                  type: integer
+                reason:
+                  type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OperationRecord'
+
+  /internal/metering/monthly-bills:
+    get:
+      tags: [Metering]
+      summary: 月度账单
+      operationId: listMonthlyBills
+      parameters:
+        - name: month
+          in: query
+          description: YYYY-MM
+          schema: { type: string }
+        - name: dept_id
+          in: query
+          schema: { type: string }
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MonthlyBill'
+
+  /internal/metering/personal-usage:
+    get:
+      tags: [Metering]
+      summary: 个人用量
+      operationId: getPersonalUsage
+      parameters:
+        - name: user_id
+          in: query
+          schema: { type: string }
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PersonalUsage'
+
+  /internal/metering/model-recommends:
+    get:
+      tags: [Metering]
+      summary: 模型推荐（场景→更优模型→预估节省）
+      operationId: getModelRecommends
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ModelRecommend'
+
+  # ──────────────── Routing ────────────────
+
+  /internal/routing/engine:
+    get:
+      tags: [Routing]
+      summary: 路由引擎配置（四维评分权重 + 开关）
+      operationId: getRoutingEngine
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoutingEngineConfig'
+    put:
+      tags: [Routing]
+      summary: 保存路由引擎配置
+      operationId: saveRoutingEngine
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RoutingEngineConfig'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OperationRecord'
+
+  /internal/routing/rate-limit-rules:
+    get:
+      tags: [Routing]
+      summary: 限流规则列表
+      operationId: listRateLimitRules
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RateLimitRule'
+    post:
+      tags: [Routing]
+      summary: 新建限流规则
+      operationId: createRateLimitRule
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RateLimitRule'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OperationRecord'
+
+  /internal/routing/rate-limit-rules/{ruleId}:
+    put:
+      tags: [Routing]
+      summary: 更新限流规则
+      operationId: updateRateLimitRule
+      parameters:
+        - name: ruleId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RateLimitRule'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OperationRecord'
+    delete:
+      tags: [Routing]
+      summary: 删除限流规则
+      operationId: deleteRateLimitRule
+      parameters:
+        - name: ruleId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OperationRecord'
+
+
+  /internal/routing/router-logs:
+    get:
+      tags: [Routing]
+      summary: 路由日志（含完整决策过程）
+      operationId: listRouterLogs
+      parameters:
+        - name: trace_id
+          in: query
+          schema: { type: string }
+        - name: app_id
+          in: query
+          schema: { type: string }
+        - name: status
+          in: query
+          schema: { type: string, enum: [SUCCESS, BLOCKED, DEGRADED, FAILED] }
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RouterLog'
+
+  # ──────────────── ModelAsset ────────────────
+
+  /internal/models:
+    get:
+      tags: [ModelAsset]
+      summary: 模型资产列表
+      operationId: listModelAssets
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ModelAsset'
+
+
+  /internal/models/benefits:
+    get:
+      tags: [ModelAsset]
+      summary: 模型效益评估（保留/优化/替换/归档建议）
+      operationId: listModelBenefits
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ModelBenefit'
+
+  # ──────────────── Cache ────────────────
+
+  /internal/cache/flush:
+    post:
+      tags: [Cache]
+      summary: 清空精确+语义两级缓存
+      operationId: flushCache
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  exact_flushhed:
+                    type: boolean
+                  semantic_flushed:
+                    type: boolean
+
+  # ──────────────── Security ────────────────
+
+  /internal/security/events:
+    get:
+      tags: [Security]
+      summary: 安全事件列表（注入/脱敏/异常）
+      operationId: listSecurityEvents
+      parameters:
+        - name: event_type
+          in: query
+          schema: { type: string }
+        - name: event_level
+          in: query
+          schema: { type: string, enum: [INFO, WARN, ERROR, CRITICAL] }
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SecurityEvent'
+
+  /internal/security/alerts:
+    get:
+      tags: [Security]
+      summary: 告警列表
+      operationId: listAlerts
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PlatformAlert'
+
+
+
+# ============================================================
+# 数据模型（对应前端 types/index.ts）
+# ============================================================
+components:
+  schemas:
+
+    # ──── Dashboard ────
+
+    PlatformSummary:
+      type: object
+      required: [requests, input_tokens, output_tokens, cache_hit_tokens, qps, success_rate]
+      properties:
+        requests: { type: integer, description: 总请求数 }
+        input_tokens: { type: integer }
+        output_tokens: { type: integer }
+        cache_hit_tokens: { type: integer }
+        gpu_hours: { type: number }
+        tco: { type: number, description: 日 TCO（元） }
+        qps: { type: number, description: 实时 QPS }
+        ttft_p50: { type: number, description: 首字时延 P50（ms） }
+        p95: { type: number, description: 平均响应 P95（ms） }
+        gpu_util: { type: number, description: GPU 时间利用率 % }
+        cache_hit_rate: { type: number, description: 缓存命中率 % }
+        success_rate: { type: number, description: 请求成功率 % }
+        abnormal: { type: integer, description: 今日异常数 }
+        degraded: { type: integer }
+        blocked: { type: integer }
+        circuit_open: { type: integer, description: 熔断中数量 }
+        nodes: { type: integer }
+        pools: { type: integer }
+        models: { type: integer }
+        prod_models: { type: integer }
+        apps: { type: integer }
+        alert_open: { type: integer, description: 待处置告警 }
+        security_events: { type: integer }
+
+    TokenPoint:
+      type: object
+      properties:
+        t: { type: string, description: HH:mm }
+        input: { type: integer }
+        output: { type: integer }
+        cache_hit: { type: integer }
+
+    TrendPoint:
+      type: object
+      properties:
+        t: { type: string, description: HH:mm }
+        gpu_util: { type: integer }
+        ttft_p50: { type: integer }
+        avg_p95: { type: integer }
+
+    DeptTco:
+      type: object
+      properties:
+        dept_id: { type: string }
+        dept_name: { type: string }
+        tco: { type: number }
+        tokens: { type: integer }
+
+    AppTcoRank:
+      type: object
+      properties:
+        app_id: { type: string }
+        name: { type: string }
+        tokens: { type: integer }
+        tco: { type: number }
+
+    ModelTcoRank:
+      type: object
+      properties:
+        asset_id: { type: string }
+        name: { type: string }
+        calls: { type: integer }
+        tco: { type: number }
+
+    FunnelStage:
+      type: object
+      properties:
+        name: { type: string }
+        value: { type: integer }
+        detail: { type: string }
+
+    RateLimitHit:
+      type: object
+      properties:
+        rate_limit_id: { type: string }
+        dimension: { type: string, enum: [QPS, TOKEN, COST, CONCURRENCY] }
+        threshold: { type: number }
+        current_value: { type: number }
+        action: { type: string, enum: [LIMIT, BLOCK] }
+        policy_id: { type: string }
+        policy_name: { type: string }
+        app_id: { type: string }
+        tenant_id: { type: string }
+        trace_id: { type: string, nullable: true }
+        created_at: { type: string, format: date-time }
+
+
+    BatchPoint:
+      type: object
+      properties:
+        t: { type: string }
+        throughput: { type: integer, description: tokens/s }
+        batch_size: { type: integer }
+        ttft_ms: { type: integer }
+
+    OptimizeAdvice:
+      type: object
+      properties:
+        advice_id: { type: string }
+        title: { type: string }
+        description: { type: string }
+        estimated_saving: { type: number, description: 元/月 }
+        basis:
+          type: array
+          items:
+            type: object
+            properties:
+              data: { type: string }
+              metric: { type: string }
+              calc: { type: string }
+        status: { type: string, enum: [IDENTIFIED, ACCEPTED, EXECUTED, VERIFIED, CLOSED] }
+        work_order_id: { type: string, nullable: true }
+        created_at: { type: string, format: date-time }
+
+    # ──── Metering ────
+
+    CallLog:
+      type: object
+      properties:
+        log_id: { type: string }
+        ts: { type: string, format: date-time }
+        status: { type: string, enum: [SUCCESS, FAILED, RATE_LIMITED, BLOCKED] }
+        status_code: { type: integer }
+        api_key_masked: { type: string }
+        route_name: { type: string }
+        model: { type: string }
+        provider: { type: string }
+        app_type: { type: string }
+        behavior_tag: { type: string }
+        input_tokens: { type: integer }
+        output_tokens: { type: integer }
+        request_content: { type: string }
+        response_content: { type: string }
+
+    ModelUsageStat:
+      type: object
+      properties:
+        asset_id: { type: string }
+        name: { type: string }
+        calls: { type: integer }
+        input_tokens: { type: integer }
+        output_tokens: { type: integer }
+        cost: { type: number }
+
+    QuotaProfile:
+      type: object
+      required: [dept_id, dept_name, month_token_quota, used_tokens]
+      properties:
+        dept_id: { type: string }
+        dept_name: { type: string }
+        month_token_quota: { type: integer }
+        used_tokens: { type: integer }
+        month_cost: { type: number }
+        over_limit_stop: { type: boolean }
+        warn_threshold: { type: integer, enum: [80, 90, 95] }
+        notify_channels:
+          type: array
+          items: { type: string, enum: [SITE, MAIL, SMS] }
+        status: { type: string, enum: [NORMAL, WARNING, STOPPED] }
+        resume_pending: { type: boolean }
+
+    OperationRecord:
+      type: object
+      properties:
+        op_id: { type: string }
+        op_type: { type: string }
+        operator: { type: string }
+        target_id: { type: string }
+        detail: { type: string }
+        created_at: { type: string, format: date-time }
+
+    MonthlyBill:
+      type: object
+      properties:
+        month: { type: string, description: YYYY-MM }
+        dept_id: { type: string }
+        dept_name: { type: string }
+        tokens: { type: integer }
+        calls: { type: integer }
+        cost: { type: number }
+        mom: { type: number, description: 环比 % }
+
+    PersonalUsage:
+      type: object
+      properties:
+        user_id: { type: string }
+        name: { type: string }
+        dept_id: { type: string }
+        tokens: { type: integer }
+        cost: { type: number }
+        tag_dist:
+          type: array
+          items:
+            type: object
+            properties:
+              tag: { type: string }
+              pct: { type: number }
+
+    ModelRecommend:
+      type: object
+      properties:
+        rec_id: { type: string }
+        scene: { type: string }
+        current_model: { type: string }
+        recommend_model: { type: string }
+        est_saving: { type: number, description: 月节省 }
+
+    # ──── Routing ────
+
+    RoutingEngineConfig:
+      type: object
+      required: [weights, cache_first, budget_guard, sla_priority, auto_fallback, openai_compat]
+      properties:
+        weights:
+          type: object
+          required: [latency, cost, risk, load]
+          properties:
+            latency: { type: number }
+            cost: { type: number }
+            risk: { type: number }
+            load: { type: number }
+        cache_first: { type: boolean }
+        budget_guard: { type: boolean }
+        sla_priority: { type: boolean }
+        auto_fallback: { type: boolean }
+        openai_compat: { type: boolean }
+
+    RateLimitRule:
+      type: object
+      required: [rule_id, name, target_type, target_id, enabled]
+      properties:
+        rule_id: { type: string }
+        name: { type: string }
+        target_type: { type: string, enum: [GLOBAL, DEPT, APP, API_KEY] }
+        target_id: { type: string }
+        enabled: { type: boolean }
+        qps_per_min: { type: integer }
+        input_token_limit: { type: integer }
+        output_token_limit: { type: integer }
+        concurrency: { type: integer }
+        ip_whitelist:
+          type: array
+          items: { type: string }
+        over_action: { type: string, enum: [REJECT, QUEUE, DOWNGRADE] }
+        hits_24h: { type: integer }
+
+    RouterLog:
+      type: object
+      properties:
+        trace_id: { type: string }
+        request_id: { type: string }
+        app_id: { type: string }
+        tenant_id: { type: string }
+        user_id: { type: string }
+        business_scenario: { type: string }
+        task_type: { type: string }
+        data_level: { type: string, enum: [L1, L2, L3, L4] }
+        request_mode: { type: string, enum: [SYNC, ASYNC, STREAM] }
+        prompt_tokens: { type: integer }
+        expected_output_tokens: { type: integer }
+        context_length: { type: integer }
+        sla_level: { type: string, enum: [P0, P1, P2, P3] }
+        budget_class: { type: string }
+        decision: { $ref: '#/components/schemas/RoutingDecision' }
+        status: { type: string, enum: [SUCCESS, BLOCKED, DEGRADED, FAILED] }
+        total_duration_ms: { type: integer }
+        created_at: { type: string, format: date-time }
+
+    RoutingDecision:
+      type: object
+      properties:
+        candidate_models:
+          type: array
+          items:
+            $ref: '#/components/schemas/CandidateModel'
+        selected_model: { type: string }
+        selected_version: { type: string }
+        selected_engine: { type: string, enum: [VLLM, SGLANG, OTHER] }
+        selected_pool: { type: string }
+        selected_node: { type: string }
+        route_reason: { type: string }
+        score_latency: { type: number }
+        score_cost: { type: number }
+        score_risk: { type: number }
+        score_load: { type: number }
+        fallback_triggered: { type: boolean }
+        fallback_reason: { type: string }
+
+    CandidateModel:
+      type: object
+      properties:
+        asset_id: { type: string }
+        version: { type: string }
+        score: { type: number, nullable: true }
+        eliminate_reason: { type: string }
+
+    # ──── ModelAsset ────
+
+    ModelAsset:
+      type: object
+      required: [asset_id, asset_name, asset_type, lifecycle_status]
+      properties:
+        asset_id: { type: string }
+        asset_code: { type: string }
+        asset_name: { type: string }
+        asset_type: { type: string, enum: [BASE_LLM, SMALL_LLM, MULTIMODAL, OCR, VOICE, EXTERNAL] }
+        source_type: { type: string, enum: [OPEN_SOURCE, PROPRIETARY, THIRD_PARTY] }
+        base_model_id: { type: string, nullable: true }
+        derivation_type: { type: string, enum: [SFT, DISTILLATION, QUANTIZATION, NONE] }
+        owner_dept: { type: string }
+        maintainer: { type: string }
+        risk_level: { type: string, enum: [A, B, C, D] }
+        security_level: { type: string, enum: [L1, L2, L3, L4] }
+        version: { type: string }
+        lifecycle_status: { type: string, enum: [DRAFT, TESTING, GRAY, PRODUCTION, ROLLBACK, OFFLINE, ARCHIVED] }
+        supported_tasks:
+          type: array
+          items: { type: string }
+        supported_hardware:
+          type: array
+          items: { type: string }
+        context_window: { type: integer }
+        cost_per_1k_tokens: { type: number }
+        avg_latency_ms: { type: number }
+        success_rate: { type: number }
+        active_apps: { type: integer }
+
+    ModelBenefit:
+      type: object
+      properties:
+        asset_id: { type: string }
+        active_apps: { type: integer }
+        user_scale: { type: number }
+        month_cost: { type: number }
+        unit_cost: { type: number }
+        adopt_rate: { type: number }
+        success_rate: { type: number }
+        value_score: { type: string, enum: [A, B, C, D] }
+        suggestion: { type: string, enum: [KEEP, OPTIMIZE, REPLACE, ARCHIVE] }
+
+    # ──── Security ────
+
+    SecurityEvent:
+      type: object
+      properties:
+        security_event_id: { type: string }
+        trace_id: { type: string }
+        tenant_id: { type: string }
+        user_id: { type: string }
+        app_id: { type: string }
+        asset_id: { type: string }
+        event_type: { type: string, enum: [PROMPT_INJECTION, VIOLATION, MASKING, UNAUTHORIZED, ABNORMAL] }
+        event_level: { type: string, enum: [INFO, WARN, ERROR, CRITICAL] }
+        guardrail_stage: { type: string, enum: [INPUT, OUTPUT, TOOL, KNOWLEDGE] }
+        rule_id: { type: string }
+        rule_name: { type: string }
+        masked: { type: boolean }
+        blocked: { type: boolean }
+        reason_code: { type: string }
+        reason_text: { type: string }
+        log_storage_type: { type: string, enum: [FULL, MASKED, HASH_ONLY] }
+        hash_signature: { type: string }
+        created_at: { type: string, format: date-time }
+
+    PlatformAlert:
+      type: object
+      properties:
+        alert_id: { type: string }
+        alert_status: { type: string, enum: [OPEN, ACKNOWLEDGED, RESOLVING, CLOSED] }
+        event_level: { type: string, enum: [INFO, WARN, ERROR, CRITICAL] }
+        title: { type: string }
+        detail: { type: string }
+        trace_id: { type: string, nullable: true }
+        created_at: { type: string, format: date-time }
+
+

@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.HashMap;
 
 /**
  * 配置属性绑定（附录 G.6 配置项清单，前缀 mas）。
@@ -116,11 +117,48 @@ public class MasProperties {
     public static class Quota {
         private long perUserPerMinute = 100_000L;
         private long perUserPerDay = 5_000_000L;
+        /** §1.4 配额档位定义：tier_name → {per-minute, per-day}，-1 表示不限 */
+        private Map<String, TierDef> tiers = defaultTiers();
+        /** §1.4 Key 轮换 grace period（旧 Key 保留时长） */
+        private Duration rotateGracePeriod = Duration.ofMinutes(10);
 
         public long getPerUserPerMinute() { return perUserPerMinute; }
         public void setPerUserPerMinute(long perUserPerMinute) { this.perUserPerMinute = perUserPerMinute; }
         public long getPerUserPerDay() { return perUserPerDay; }
         public void setPerUserPerDay(long perUserPerDay) { this.perUserPerDay = perUserPerDay; }
+        public Map<String, TierDef> getTiers() { return tiers; }
+        public void setTiers(Map<String, TierDef> tiers) { this.tiers = tiers; }
+        public Duration getRotateGracePeriod() { return rotateGracePeriod; }
+        public void setRotateGracePeriod(Duration rotateGracePeriod) { this.rotateGracePeriod = rotateGracePeriod; }
+
+        /** 根据档位名获取配额限制，未找到时回退 default */
+        public TierDef resolveTier(String tierName) {
+            return tiers.getOrDefault(tierName, tiers.getOrDefault("default", new TierDef(100_000, 5_000_000)));
+        }
+
+        private static Map<String, TierDef> defaultTiers() {
+            Map<String, TierDef> m = new HashMap<>();
+            m.put("default", new TierDef(100_000, 2_000_000));
+            m.put("high", new TierDef(500_000, 10_000_000));
+            m.put("unlimited", new TierDef(-1, -1));
+            return m;
+        }
+
+        public static class TierDef {
+            private long perMinute = 100_000;
+            private long perDay = 2_000_000;
+
+            public TierDef() {}
+            public TierDef(long perMinute, long perDay) {
+                this.perMinute = perMinute;
+                this.perDay = perDay;
+            }
+
+            public long getPerMinute() { return perMinute; }
+            public void setPerMinute(long perMinute) { this.perMinute = perMinute; }
+            public long getPerDay() { return perDay; }
+            public void setPerDay(long perDay) { this.perDay = perDay; }
+        }
     }
 
     public static class Routing {

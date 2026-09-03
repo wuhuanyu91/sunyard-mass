@@ -26,6 +26,7 @@ VALUES ('qwen2.5:0.5b','Qwen2.5-0.5B','external','http://localhost:11434/v1','si
 ON CONFLICT (model_id) DO UPDATE SET intent_type = EXCLUDED.intent_type;
 
 -- §8 已知限制消除 — 默认测试 API Key（明文: mas-test-key-001，SHA-256 存储）
-INSERT INTO mas_api_key (key_hash, key_prefix, user_id, status)
-VALUES ('4967cdac0abe235793aadaf37ab545e8c40e01904687e99d87e68a9c4f6c048a', 'mas-test', 'test-user', 1)
+INSERT INTO mas_api_key (key_hash, key_prefix, user_id, status, team_name, agent_name, agent_type, quota_tier, created_by)
+VALUES ('4967cdac0abe235793aadaf37ab545e8c40e01904687e99d87e68a9c4f6c048a', 'mas-test', 'test-user', 1,
+        '平台测试组', 'test-agent', 'agentscope', 'default', 'seed')
 ON CONFLICT (key_hash) DO NOTHING;

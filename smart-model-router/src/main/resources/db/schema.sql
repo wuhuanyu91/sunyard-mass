@@ -102,6 +102,14 @@ CREATE TABLE IF NOT EXISTS mas_api_key (
 );
 CREATE INDEX IF NOT EXISTS idx_api_key_hash ON mas_api_key (key_hash);
 
+-- §1.4 自助申请元数据扩展（幂等 DDL，存量记录新增字段为 NULL 不影响鉴权链路）
+ALTER TABLE mas_api_key ADD COLUMN IF NOT EXISTS team_name   VARCHAR(128);
+ALTER TABLE mas_api_key ADD COLUMN IF NOT EXISTS agent_name  VARCHAR(128);
+ALTER TABLE mas_api_key ADD COLUMN IF NOT EXISTS agent_type  VARCHAR(32);
+ALTER TABLE mas_api_key ADD COLUMN IF NOT EXISTS purpose     VARCHAR(256);
+ALTER TABLE mas_api_key ADD COLUMN IF NOT EXISTS quota_tier  VARCHAR(16) DEFAULT 'default';
+ALTER TABLE mas_api_key ADD COLUMN IF NOT EXISTS created_by  VARCHAR(64) DEFAULT 'admin';
+
 -- §8 已知限制消除 — 分布式限流（替代 Bucket4j 内存桶，支持多实例部署）
 CREATE TABLE IF NOT EXISTS mas_rate_limit (
     user_id     VARCHAR(64)  NOT NULL,

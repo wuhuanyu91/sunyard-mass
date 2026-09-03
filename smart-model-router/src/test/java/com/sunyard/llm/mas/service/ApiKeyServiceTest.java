@@ -1,7 +1,9 @@
 package com.sunyard.llm.mas.service;
 
+import com.sunyard.llm.mas.config.MasProperties;
 import com.sunyard.llm.mas.entity.ApiKeyEntity;
 import com.sunyard.llm.mas.mapper.ApiKeyMapper;
+import com.sunyard.llm.mas.mapper.QuotaMapper;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDateTime;
@@ -14,9 +16,15 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
- * API Key 服务测试（§8 已知限制消除 — 鉴权体系）。
+ * API Key 服务测试（§8 鉴权体系 + §1.4 自助申请增强）。
  */
 class ApiKeyServiceTest {
+
+    private ApiKeyService newService(ApiKeyMapper mapper) {
+        QuotaMapper quotaMapper = mock(QuotaMapper.class);
+        MasProperties props = new MasProperties();
+        return new ApiKeyService(mapper, quotaMapper, props);
+    }
 
     @Test
     void sha256Deterministic() {
@@ -51,7 +59,7 @@ class ApiKeyServiceTest {
         // 回归：selectByHash 返回 null 时 Mono.fromCallable 产生空信号，必须以错误终止，不得静默通过鉴权
         ApiKeyMapper mapper = mock(ApiKeyMapper.class);
         when(mapper.selectByHash(anyString())).thenReturn(null);
-        ApiKeyService service = new ApiKeyService(mapper);
+        ApiKeyService service = newService(mapper);
         assertThrows(IllegalStateException.class, () -> service.validate("unknown-key").block());
     }
 
@@ -63,7 +71,7 @@ class ApiKeyServiceTest {
         entity.setKeyPrefix("mas-test");
         ApiKeyMapper mapper = mock(ApiKeyMapper.class);
         when(mapper.selectByHash(anyString())).thenReturn(entity);
-        ApiKeyService service = new ApiKeyService(mapper);
+        ApiKeyService service = newService(mapper);
 
         ApiKeyService.ApiKeyInfo info = service.validate("some-valid-key").block();
 
@@ -79,7 +87,7 @@ class ApiKeyServiceTest {
         entity.setExpireAt(LocalDateTime.now().minusDays(1));
         ApiKeyMapper mapper = mock(ApiKeyMapper.class);
         when(mapper.selectByHash(anyString())).thenReturn(entity);
-        ApiKeyService service = new ApiKeyService(mapper);
+        ApiKeyService service = newService(mapper);
         assertThrows(IllegalStateException.class, () -> service.validate("expired-key").block());
     }
 }

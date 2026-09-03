@@ -63,6 +63,18 @@ mas:
   quota:
     per-user-per-minute: 100000
     per-user-per-day: 5000000
+    # §1.4 配额档位定义（-1 表示不限）
+    tiers:
+      default:
+        per-minute: 100000
+        per-day: 2000000
+      high:
+        per-minute: 500000
+        per-day: 10000000
+      unlimited:
+        per-minute: -1
+        per-day: -1
+    rotate-grace-period: 10m
   routing:
     default-model: qwen-72b
     difficulty:

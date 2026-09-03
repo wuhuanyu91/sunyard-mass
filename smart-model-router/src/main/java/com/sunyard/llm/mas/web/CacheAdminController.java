@@ -28,6 +28,6 @@ public class CacheAdminController {
     public Mono<Map<String, Object>> flush() {
         return exactCache.flush()
                 .then(semanticCache.flush())
-                .thenReturn(Map.of("flushed", "exact+semantic"));
+                .thenReturn(Map.of("exact_flushed", true, "semantic_flushed", true));
     }
 }

@@ -29,6 +29,13 @@ public class ApiKeyEntity {
 
     private LocalDateTime createdAt;
 
+    /** §1.4 自助申请元数据 */
+    private String teamName;
+    private String agentName;
+    private String agentType;
+    private String purpose;
+    private String quotaTier;
+    private String createdBy;
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     public String getKeyHash() { return keyHash; }
@@ -45,4 +52,17 @@ public class ApiKeyEntity {
     public void setExpireAt(LocalDateTime expireAt) { this.expireAt = expireAt; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+
+    public String getTeamName() { return teamName; }
+    public void setTeamName(String teamName) { this.teamName = teamName; }
+    public String getAgentName() { return agentName; }
+    public void setAgentName(String agentName) { this.agentName = agentName; }
+    public String getAgentType() { return agentType; }
+    public void setAgentType(String agentType) { this.agentType = agentType; }
+    public String getPurpose() { return purpose; }
+    public void setPurpose(String purpose) { this.purpose = purpose; }
+    public String getQuotaTier() { return quotaTier; }
+    public void setQuotaTier(String quotaTier) { this.quotaTier = quotaTier; }
+    public String getCreatedBy() { return createdBy; }
+    public void setCreatedBy(String createdBy) { this.createdBy = createdBy; }
 }
