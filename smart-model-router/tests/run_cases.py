@@ -14,7 +14,7 @@
 - 报告含：总体统计、分类统计、每条用例的路由明细（intent/difficulty/后端模型/缓存/耗时）、
   以及 target/surefire-reports 中的单元测试明细（如存在）。
 
-用法：python3 tests/run_cases.py [--base http://localhost:9090/smart-router] [--report reports/test-report.md]
+用法：python3 tests/run_cases.py [--base http://localhost:9090/smart-router] [--report reports/test-report.md] [--api-key mas-xxx]
 退出码：0=全部通过；1=存在失败；2=应用不可达。
 """
 import argparse
@@ -234,8 +234,11 @@ def run_case(case, ctx):
                            "stream": False, "max_tokens": 8}, ensure_ascii=False)
 
         def burst(_):
+            h = {"X-User-Id": case.get("user", "rate-suite")}
+            if ctx.get("api_key"):
+                h["Authorization"] = f"Bearer {ctx['api_key']}"
             status, _, _, _ = http_call(base + "/v1/chat/completions",
-                                        body=body, headers={"X-User-Id": case.get("user", "rate-suite")}, timeout=120)
+                                        body=body, headers=h, timeout=120)
             return status
 
         t0 = time.time()
@@ -262,6 +265,8 @@ def run_case(case, ctx):
     headers = {}
     if case.get("user"):
         headers["X-User-Id"] = case["user"]
+    if ctx.get("api_key"):
+        headers["Authorization"] = f"Bearer {ctx['api_key']}"
     stream = bool(case.get("stream"))
     # ref 用例继承被引用用例的 max_tokens：精确缓存键含 max_tokens，不一致会导致键漂移
     max_tokens = case.get("max_tokens") or (
@@ -461,6 +466,7 @@ def main():
     ap.add_argument("--cases", default=os.path.join(os.path.dirname(__file__), "cases.json"))
     ap.add_argument("--report", default=os.path.join(os.path.dirname(__file__), "..", "reports", "test-report.md"))
     ap.add_argument("--surefire", default=os.path.join(os.path.dirname(__file__), "..", "target", "surefire-reports"))
+    ap.add_argument("--api-key", default=os.environ.get("MAS_API_KEY", ""), help="API Key for Bearer auth (or set MAS_API_KEY env)")
     args = ap.parse_args()
 
     status, _, _, _ = http_call(args.base + "/actuator/health", method="GET", timeout=10)
@@ -471,7 +477,11 @@ def main():
     with open(args.cases, encoding="utf-8") as f:
         cases = json.load(f)
     truncate_caches(args.base)
-    ctx = {"base": args.base, "registry": {}}
+    ctx = {"base": args.base, "registry": {}, "api_key": args.api_key}
+    if args.api_key:
+        print(f"已配置 API Key：{args.api_key[:12]}...（将携带 Authorization 头）")
+    else:
+        print("警告：未提供 --api-key，需要认证的端点将返回 401")
     print(f"加载用例 {len(cases)} 条")
 
     results = []

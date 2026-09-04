@@ -15,10 +15,10 @@ public interface CallLogMapper extends BaseMapper<CallLogEntity> {
     @Insert("""
             INSERT INTO mas_call_log (trace_id, app_id, user_id, agent_id, model_id, intent_type,
                 cache_hit, cache_level, routed_to, prompt_tokens, completion_tokens,
-                total_tokens, pipeline_cost_ms, total_cost_ms, status)
+                total_tokens, pipeline_cost_ms, total_cost_ms, status, tenant_id)
             VALUES (#{traceId}, #{appId}, #{userId}, #{agentId}, #{modelId}, #{intentType},
                 #{cacheHit}, #{cacheLevel}, #{routedTo}, #{promptTokens}, #{completionTokens},
-                #{totalTokens}, #{pipelineCostMs}, #{totalCostMs}, #{status})
+                #{totalTokens}, #{pipelineCostMs}, #{totalCostMs}, #{status}, #{tenantId})
             """)
     int insertCallLog(@Param("traceId") String traceId,
                       @Param("appId") String appId,
@@ -34,5 +34,6 @@ public interface CallLogMapper extends BaseMapper<CallLogEntity> {
                       @Param("totalTokens") Integer totalTokens,
                       @Param("pipelineCostMs") Integer pipelineCostMs,
                       @Param("totalCostMs") Integer totalCostMs,
-                      @Param("status") Integer status);
+                      @Param("status") Integer status,
+                      @Param("tenantId") String tenantId);
 }

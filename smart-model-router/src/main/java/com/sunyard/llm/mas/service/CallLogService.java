@@ -23,9 +23,11 @@ public class CallLogService {
 
     public void logAsync(PipelineContext ctx, int promptTokens, int completionTokens,
                          int totalTokens, long totalCostMs, boolean success) {
+        String appId = emptyIfNull(ctx.getAppId());
+        String tenantId = appToTenant(appId);
         ReactiveDbAdapter.monoVoid(() -> mapper.insertCallLog(
                         ctx.getTraceId() == null ? "" : ctx.getTraceId(),
-                        emptyIfNull(ctx.getAppId()),
+                        appId,
                         ctx.getUserId(),
                         emptyIfNull(ctx.getAgentId()),
                         emptyIfNull(ctx.getRequestedModel()),
@@ -38,8 +40,21 @@ public class CallLogService {
                         totalTokens,
                         (int) ctx.getMeta().getPipelineCostMs(),
                         (int) totalCostMs,
-                        success ? 0 : 1))
+                        success ? 0 : 1,
+                        tenantId))
                 .subscribe(null, e -> log.warn("Call log write failed: {}", e.getMessage()));
+    }
+
+    /** 根据 app_id 推导 tenant_id（用于配额统计） */
+    private static String appToTenant(String appId) {
+        if (appId == null || appId.isBlank()) return "";
+        return switch (appId) {
+            case "APP-CSR" -> "TENANT-RETAIL";
+            case "APP-AICODING" -> "TENANT-TECH";
+            case "APP-CREDIT" -> "TENANT-CORP";
+            case "APP-RISK" -> "TENANT-RISK";
+            default -> "";
+        };
     }
 
     /** MyBatis 不接受 null，统一以空串占位 */
