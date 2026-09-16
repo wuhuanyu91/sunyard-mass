@@ -116,6 +116,19 @@ CREATE TABLE IF NOT EXISTS mas_app_application (
 -- API Key 表增加 app_id 关联字段
 ALTER TABLE mas_api_key ADD COLUMN IF NOT EXISTS app_id VARCHAR(32);
 
+-- API Key 表增加 §1.4 元数据字段（与 jar 内 schema.sql 保持一致）
+-- 注意: 这 6 列【必须】由本迁移脚本添加——jar 内 schema.sql 的同名 ALTER
+-- 在应用启动时以 mas 账号执行,但表属主是 postgres(部署脚本所建),
+-- PG 要求 ALTER TABLE 必须是表属主,GRANT ALL 不含此权限,
+-- 应用启动时的 ALTER 会静默失败(continueOnError),导致鉴权查询
+-- (selectByHash 选取这些列)报 column does not exist → 全部 Key 401。
+ALTER TABLE mas_api_key ADD COLUMN IF NOT EXISTS team_name   VARCHAR(128);
+ALTER TABLE mas_api_key ADD COLUMN IF NOT EXISTS agent_name  VARCHAR(128);
+ALTER TABLE mas_api_key ADD COLUMN IF NOT EXISTS agent_type  VARCHAR(32);
+ALTER TABLE mas_api_key ADD COLUMN IF NOT EXISTS purpose     VARCHAR(256);
+ALTER TABLE mas_api_key ADD COLUMN IF NOT EXISTS quota_tier  VARCHAR(16) DEFAULT 'default';
+ALTER TABLE mas_api_key ADD COLUMN IF NOT EXISTS created_by  VARCHAR(64) DEFAULT 'admin';
+
 -- 5. 种子数据 - 限流规则
 INSERT INTO mas_routing_rule (rule_id, name, target_type, target_id, enabled, qps_limit, input_token_limit, output_token_limit, concurrency, over_action, hits_24h)
 VALUES
