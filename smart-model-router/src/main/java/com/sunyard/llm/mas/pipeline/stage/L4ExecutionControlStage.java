@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.sunyard.llm.mas.config.MasProperties;
 import com.sunyard.llm.mas.pipeline.PipelineContext;
+import com.sunyard.llm.mas.service.DeptQuotaService;
 import com.sunyard.llm.mas.service.QuotaService;
 import com.sunyard.llm.mas.service.TokenCounter;
 import org.springframework.stereotype.Component;
@@ -19,10 +20,13 @@ import reactor.core.publisher.Mono;
 public class L4ExecutionControlStage {
 
     private final QuotaService quotaService;
+    private final DeptQuotaService deptQuotaService;
     private final MasProperties props;
 
-    public L4ExecutionControlStage(QuotaService quotaService, MasProperties props) {
+    public L4ExecutionControlStage(QuotaService quotaService, DeptQuotaService deptQuotaService,
+                                   MasProperties props) {
         this.quotaService = quotaService;
+        this.deptQuotaService = deptQuotaService;
         this.props = props;
     }
 
@@ -34,7 +38,9 @@ public class L4ExecutionControlStage {
                 ? ctx.getRequest().path("max_tokens").asInt()
                 : 1024;
         int reserved = promptTokens + maxTokens;
-        return quotaService.reserve(ctx.getUserId(), reserved)
+        // 部门/租户级配额闸口（over_limit_stop 在此真正生效），随后才是用户级配额预扣
+        return deptQuotaService.check(ctx.getAppId(), reserved)
+                .then(quotaService.reserve(ctx.getUserId(), reserved))
                 .doOnSuccess(v -> ctx.setReservedTokens(reserved));
     }
 

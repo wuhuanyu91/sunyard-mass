@@ -26,6 +26,7 @@ public class MasProperties {
     private Compress compress = new Compress();
     private CircuitBreakerConfig circuitBreaker = new CircuitBreakerConfig();
     private Auth auth = new Auth();
+    private Governance governance = new Governance();
 
     public Backend getBackend() { return backend; }
     public void setBackend(Backend backend) { this.backend = backend; }
@@ -47,6 +48,8 @@ public class MasProperties {
     public void setCircuitBreaker(CircuitBreakerConfig circuitBreaker) { this.circuitBreaker = circuitBreaker; }
     public Auth getAuth() { return auth; }
     public void setAuth(Auth auth) { this.auth = auth; }
+    public Governance getGovernance() { return governance; }
+    public void setGovernance(Governance governance) { this.governance = governance; }
 
     public static class Backend {
         /** 无模型配置时的兜底后端 */
@@ -213,5 +216,21 @@ public class MasProperties {
 
         public boolean isEnabled() { return enabled; }
         public void setEnabled(boolean enabled) { this.enabled = enabled; }
+    }
+
+    /**
+     * 治理增强配置（宁波银行需求补齐）：
+     * failClosed    —— 管控组件（租户配额/部门配额）在 DB 异常时是否阻断。银行生产建议 true（fail-closed）。
+     * deptQuotaEnabled —— 是否在 L4 执行部门/租户级配额检查（over_limit_stop 真正接入运行时）。
+     * 注：/internal/* 管理端点鉴权为强制项（AdminAuthFilter），不提供配置开关。
+     */
+    public static class Governance {
+        private boolean failClosed = false;
+        private boolean deptQuotaEnabled = true;
+
+        public boolean isFailClosed() { return failClosed; }
+        public void setFailClosed(boolean failClosed) { this.failClosed = failClosed; }
+        public boolean isDeptQuotaEnabled() { return deptQuotaEnabled; }
+        public void setDeptQuotaEnabled(boolean deptQuotaEnabled) { this.deptQuotaEnabled = deptQuotaEnabled; }
     }
 }

@@ -43,8 +43,9 @@ public class MeteringController {
     @PutMapping("/internal/metering/quotas/{deptId}")
     public Mono<Map<String, Object>> setQuota(
             @PathVariable("deptId") String deptId,
-            @RequestBody Map<String, Object> body) {
-        return meteringService.setQuota(deptId, body);
+            @RequestBody Map<String, Object> body,
+            @RequestHeader(value = "X-Operator", required = false) String operator) {
+        return meteringService.setQuota(deptId, body, operator);
     }
 
     @GetMapping("/internal/metering/monthly-bills")

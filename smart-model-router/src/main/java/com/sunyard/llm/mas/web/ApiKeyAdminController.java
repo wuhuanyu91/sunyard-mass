@@ -96,8 +96,9 @@ public class ApiKeyAdminController {
     /** §1.4 批量吊销 */
     @PostMapping("/internal/api-keys/batch-revoke")
     public Mono<Map<String, Object>> batchRevoke(@RequestBody Map<String, String> body) {
-        String teamName = body.get("team_name");
-        String userId = body.get("user_id");
+        // 兼容 camel（前端原生）与 snake（历史契约）两种 key
+        String teamName = body.get("teamName") != null ? body.get("teamName") : body.get("team_name");
+        String userId = body.get("userId") != null ? body.get("userId") : body.get("user_id");
         return apiKeyService.batchRevoke(teamName, userId)
                 .map(revoked -> Map.<String, Object>of(
                         "revoked_count", revoked,

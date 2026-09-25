@@ -21,10 +21,13 @@ public class RoutingService {
 
     private final RoutingRuleMapper routingRuleMapper;
     private final CallLogMapper callLogMapper;
+    private final OpLogService opLogService;
 
-    public RoutingService(RoutingRuleMapper routingRuleMapper, CallLogMapper callLogMapper) {
+    public RoutingService(RoutingRuleMapper routingRuleMapper, CallLogMapper callLogMapper,
+                          OpLogService opLogService) {
         this.routingRuleMapper = routingRuleMapper;
         this.callLogMapper = callLogMapper;
+        this.opLogService = opLogService;
     }
 
     /** 路由引擎配置（系统配置，保持） */
@@ -64,7 +67,7 @@ public class RoutingService {
                 rule.put("input_token_limit", r.getInputTokenLimit());
                 rule.put("output_token_limit", r.getOutputTokenLimit());
                 rule.put("concurrency", r.getConcurrency());
-                rule.put("ip_whitelist", List.of());
+                rule.put("ip_whitelist", splitList(r.getIpWhitelist()));
                 rule.put("over_action", r.getOverAction());
                 rule.put("hits_24h", r.getHits24h());
                 list.add(rule);
@@ -73,16 +76,108 @@ public class RoutingService {
         });
     }
 
+    /**
+     * 新建限流规则：【已改造】此前只返回 opRecord 假留痕、不落库（页面提示保存成功、刷新回原值），
+     * 现真实写入 mas_routing_rule，并落操作审计。
+     */
+    public Mono<Map<String, Object>> createRateLimitRule(Map<String, Object> body, String operator) {
+        return ReactiveDbAdapter.mono(() -> {
+            RoutingRuleEntity e = new RoutingRuleEntity();
+            e.setRuleId(str(body.getOrDefault("ruleId", "RL-" + System.currentTimeMillis())));
+            e.setName(str(body.getOrDefault("name", e.getRuleId())));
+            e.setTargetType(str(body.getOrDefault("targetType", "GLOBAL")));
+            e.setTargetId(str(body.getOrDefault("targetId", "*")));
+            e.setEnabled(boolVal(body.get("enabled"), true));
+            e.setQpsLimit(intVal(body.get("qpsPerMin"), intVal(body.get("qpsLimit"), 60)));
+            e.setInputTokenLimit(intVal(body.get("inputTokenLimit"), 0));
+            e.setOutputTokenLimit(intVal(body.get("outputTokenLimit"), 0));
+            e.setConcurrency(intVal(body.get("concurrency"), 0));
+            e.setOverAction(str(body.getOrDefault("overAction", "REJECT")));
+            e.setIpWhitelist(joinList(body.get("ipWhitelist")));
+            e.setHits24h(0);
+            routingRuleMapper.insert(e);
+            return e.getRuleId();
+        }).flatMap(id -> opLogService.record("routing", "新建限流规则", operator, id,
+                "限流规则 " + body.getOrDefault("name", id) + " 已创建并落库"));
+    }
+
+    public Mono<Map<String, Object>> updateRateLimitRule(String ruleId, Map<String, Object> body, String operator) {
+        return ReactiveDbAdapter.mono(() -> {
+            RoutingRuleEntity e = routingRuleMapper.selectById(ruleId);
+            if (e == null) throw new IllegalArgumentException("限流规则不存在：" + ruleId);
+            String before = e.getName() + "/" + e.getQpsLimit();
+            if (body.get("name") != null) e.setName(str(body.get("name")));
+            if (body.get("targetType") != null) e.setTargetType(str(body.get("targetType")));
+            if (body.get("targetId") != null) e.setTargetId(str(body.get("targetId")));
+            if (body.get("enabled") != null) e.setEnabled(boolVal(body.get("enabled"), true));
+            if (body.get("qpsPerMin") != null) e.setQpsLimit(intVal(body.get("qpsPerMin"), 60));
+            if (body.get("qpsLimit") != null) e.setQpsLimit(intVal(body.get("qpsLimit"), 60));
+            if (body.get("inputTokenLimit") != null) e.setInputTokenLimit(intVal(body.get("inputTokenLimit"), 0));
+            if (body.get("outputTokenLimit") != null) e.setOutputTokenLimit(intVal(body.get("outputTokenLimit"), 0));
+            if (body.get("concurrency") != null) e.setConcurrency(intVal(body.get("concurrency"), 0));
+            if (body.get("overAction") != null) e.setOverAction(str(body.get("overAction")));
+            if (body.get("ipWhitelist") != null) e.setIpWhitelist(joinList(body.get("ipWhitelist")));
+            routingRuleMapper.updateById(e);
+            return new String[]{ruleId, before, e.getName() + "/" + e.getQpsLimit()};
+        }).flatMap(arr -> opLogService.record("routing", "更新限流规则", operator, arr[0],
+                "限流规则由 " + arr[1] + " 更新为 " + arr[2], arr[1], arr[2], null));
+    }
+
+    public Mono<Map<String, Object>> deleteRateLimitRule(String ruleId, String operator) {
+        return ReactiveDbAdapter.mono(() -> {
+            int n = routingRuleMapper.deleteById(ruleId);
+            if (n == 0) throw new IllegalArgumentException("限流规则不存在：" + ruleId);
+            return ruleId;
+        }).flatMap(id -> opLogService.record("routing", "删除限流规则", operator, id, "限流规则已删除"));
+    }
+
+    // ---- helpers ----
+
+    private static String str(Object v) {
+        return v == null ? "" : String.valueOf(v);
+    }
+
+    private static Integer intVal(Object v, int def) {
+        if (v == null) return def;
+        if (v instanceof Number n) return n.intValue();
+        try {
+            return Integer.parseInt(v.toString());
+        } catch (Exception e) {
+            return def;
+        }
+    }
+
+    private static Boolean boolVal(Object v, boolean def) {
+        if (v == null) return def;
+        if (v instanceof Boolean b) return b;
+        return Boolean.parseBoolean(String.valueOf(v));
+    }
+
+    private static String joinList(Object v) {
+        if (v == null) return null;
+        if (v instanceof java.util.Collection<?> c) {
+            return String.join(",", c.stream().map(String::valueOf).toList());
+        }
+        return String.valueOf(v);
+    }
+
+    private static java.util.List<String> splitList(String v) {
+        if (v == null || v.isBlank()) return List.of();
+        return java.util.Arrays.stream(v.split(","))
+                .map(String::trim).filter(s -> !s.isEmpty()).toList();
+    }
+
+    // 兼容旧签名（无操作人）
     public Mono<Map<String, Object>> createRateLimitRule(Map<String, Object> body) {
-        return opRecord("新建限流规则", "RL-CFG-NEW", body.getOrDefault("name", "").toString());
+        return createRateLimitRule(body, null);
     }
 
     public Mono<Map<String, Object>> updateRateLimitRule(String ruleId, Map<String, Object> body) {
-        return opRecord("更新限流规则", ruleId, body.getOrDefault("name", "").toString());
+        return updateRateLimitRule(ruleId, body, null);
     }
 
     public Mono<Map<String, Object>> deleteRateLimitRule(String ruleId) {
-        return opRecord("删除限流规则", ruleId, "规则已删除");
+        return deleteRateLimitRule(ruleId, null);
     }
 
     /** 场景路由规则集（配置数据，保持） */

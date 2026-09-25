@@ -10,6 +10,8 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.*;
 
 /**
@@ -20,10 +22,18 @@ public class MeteringService {
 
     private final CallLogMapper callLogMapper;
     private final DeptQuotaMapper deptQuotaMapper;
+    private final TenantService tenantService;
+    private final PricingService pricingService;
+    private final OpLogService opLogService;
 
-    public MeteringService(CallLogMapper callLogMapper, DeptQuotaMapper deptQuotaMapper) {
+    public MeteringService(CallLogMapper callLogMapper, DeptQuotaMapper deptQuotaMapper,
+                           TenantService tenantService, PricingService pricingService,
+                           OpLogService opLogService) {
         this.callLogMapper = callLogMapper;
         this.deptQuotaMapper = deptQuotaMapper;
+        this.tenantService = tenantService;
+        this.pricingService = pricingService;
+        this.opLogService = opLogService;
     }
 
     /** 调用日志列表（分页 + 筛选） */
@@ -55,8 +65,21 @@ public class MeteringService {
                 row.put("behavior_tag", "业务办公");
                 row.put("input_tokens", e.getPromptTokens() != null ? e.getPromptTokens() : 0);
                 row.put("output_tokens", e.getCompletionTokens() != null ? e.getCompletionTokens() : 0);
-                row.put("request_content", "");
-                row.put("response_content", "");
+                // 计量维度与成本（此前前端硬编码 TENANT-TECH / 0.00025，两套口径对不上）
+                row.put("tenant_id", e.getTenantId() == null ? "" : e.getTenantId());
+                row.put("dept_id", deptIdOfTenant(e.getTenantId()));
+                row.put("scenario", e.getScenario() == null ? "" : e.getScenario());
+                row.put("service_type", e.getServiceType() == null ? "chat" : e.getServiceType());
+                row.put("cost", e.getCostAmount() != null ? e.getCostAmount()
+                        : pricingService.price(null, e.getAppId(), e.getScenario(),
+                        e.getServiceType() == null ? "chat" : e.getServiceType(), e.getModelId(),
+                        e.getPromptTokens() == null ? 0 : e.getPromptTokens(),
+                        e.getCompletionTokens() == null ? 0 : e.getCompletionTokens()));
+                // 审计内容留存（二-8）：返回是否留存 + 内容摘要，不再恒返回空串
+                row.put("has_content", e.getRequestContent() != null && !e.getRequestContent().isEmpty());
+                row.put("request_content", e.getRequestContent() == null ? "" : e.getRequestContent());
+                row.put("response_content", e.getResponseContent() == null ? "" : e.getResponseContent());
+                row.put("content_hash", e.getContentHash() == null ? "" : e.getContentHash());
                 logs.add(row);
             }
 
@@ -74,24 +97,35 @@ public class MeteringService {
         });
     }
 
-    /** 模型统计（从 call_log 按 model_id 聚合） */
+    /**
+     * 模型统计（从 call_log 按 model_id 聚合）：
+     * 【已改造】成本不再使用 SQL 里写死的 *0.0016，改由计价引擎按维度实时计算。
+     */
     public Mono<List<Map<String, Object>>> getModelStats() {
-        return ReactiveDbAdapter.mono(() ->
-            callLogMapper.selectMaps(
+        return ReactiveDbAdapter.mono(() -> {
+            List<Map<String, Object>> rows = callLogMapper.selectMaps(
                 new QueryWrapper<CallLogEntity>()
                     .select(
                         "model_id as asset_id",
                         "model_id as name",
+                        "COALESCE(service_type,'chat') as service_type",
                         "COUNT(*) as calls",
                         "COALESCE(SUM(prompt_tokens),0) as input_tokens",
                         "COALESCE(SUM(completion_tokens),0) as output_tokens",
-                        "COALESCE(SUM(total_tokens),0)::numeric * 0.0016 as cost"
+                        "COALESCE(SUM(total_tokens),0) as total_tokens"
                     )
                     .isNotNull("model_id").ne("model_id", "")
-                    .groupBy("model_id")
+                    .groupBy("model_id", "service_type")
                     .orderByDesc("calls")
-            )
-        );
+            );
+            for (Map<String, Object> r : rows) {
+                BigDecimal cost = pricingService.price(null, null, null,
+                        String.valueOf(r.get("service_type")), String.valueOf(r.get("model_id")),
+                        toLong(r.get("input_tokens")), toLong(r.get("output_tokens")));
+                r.put("cost", cost);
+            }
+            return rows;
+        });
     }
 
     /** 配额列表（从 mas_dept_quota 查询，used_tokens 从 call_log 实时计算） */
@@ -113,7 +147,7 @@ public class MeteringService {
                 row.put("dept_name", q.getDeptName());
                 row.put("month_token_quota", q.getMonthTokenQuota());
                 row.put("used_tokens", realUsed);
-                row.put("month_cost", realUsed * 0.0016);
+                row.put("month_cost", costOfTenant(tenantId));
                 row.put("over_limit_stop", q.getOverLimitStop());
                 row.put("warn_threshold", q.getWarnThreshold());
                 row.put("notify_channels", List.of("SITE", "MAIL"));
@@ -128,16 +162,45 @@ public class MeteringService {
         });
     }
 
-    /** 设置配额（写操作，返回操作记录） */
+    /**
+     * 设置部门配额：
+     * 【已改造】此前为"返回一条操作留痕但不 UPDATE"的桩实现（演示环境点是成功、刷新回原值）。
+     * 现真实落库 mas_dept_quota，并写入操作审计 mas_op_log。
+     */
+    public Mono<Map<String, Object>> setQuota(String deptId, Map<String, Object> body, String operator) {
+        return ReactiveDbAdapter.mono(() -> {
+            DeptQuotaEntity entity = deptQuotaMapper.selectById(deptId);
+            String before = entity == null ? null : String.valueOf(entity.getMonthTokenQuota());
+            if (entity == null) {
+                entity = new DeptQuotaEntity();
+                entity.setDeptId(deptId);
+                entity.setDeptName(str(body.getOrDefault("deptName", deptId)));
+                entity.setMonthTokenQuota(longVal(body.get("monthTokenQuota"), longVal(body.get("month_token_quota"), 0L)));
+                entity.setOverLimitStop(boolVal(body.get("overLimitStop"), boolVal(body.get("over_limit_stop"), false)));
+                entity.setWarnThreshold(intVal(body.get("warnThreshold"), intVal(body.get("warn_threshold"), 80)));
+                entity.setStatus("NORMAL");
+                deptQuotaMapper.insert(entity);
+            } else {
+                if (body.get("monthTokenQuota") != null || body.get("month_token_quota") != null) {
+                    entity.setMonthTokenQuota(longVal(body.get("monthTokenQuota"), longVal(body.get("month_token_quota"), 0L)));
+                }
+                if (body.get("deptName") != null) entity.setDeptName(str(body.get("deptName")));
+                if (body.get("overLimitStop") != null || body.get("over_limit_stop") != null) {
+                    entity.setOverLimitStop(boolVal(body.get("overLimitStop"), boolVal(body.get("over_limit_stop"), false)));
+                }
+                if (body.get("warnThreshold") != null || body.get("warn_threshold") != null) {
+                    entity.setWarnThreshold(intVal(body.get("warnThreshold"), intVal(body.get("warn_threshold"), 80)));
+                }
+                deptQuotaMapper.updateById(entity);
+            }
+            return new String[]{deptId, before, String.valueOf(entity.getMonthTokenQuota())};
+        }).flatMap(arr -> opLogService.record("metering", "调整配额", operator, arr[0],
+                "月度 Token 配额由 " + arr[1] + " 调整为 " + arr[2], arr[1], arr[2], null));
+    }
+
+    /** 兼容旧签名（无操作人） */
     public Mono<Map<String, Object>> setQuota(String deptId, Map<String, Object> body) {
-        Map<String, Object> record = new LinkedHashMap<>();
-        record.put("op_id", "OP-" + System.currentTimeMillis());
-        record.put("op_type", "调整配额");
-        record.put("operator", "平台管理员");
-        record.put("target_id", deptId);
-        record.put("detail", "月度 Token 配额调整为 " + body.get("month_token_quota"));
-        record.put("created_at", java.time.Instant.now().toString());
-        return Mono.just(record);
+        return setQuota(deptId, body, null);
     }
 
     /** 月度账单（从 call_log 按月份 + 租户聚合） */
@@ -150,21 +213,15 @@ public class MeteringService {
                 .select(
                     "TO_CHAR(created_at, 'YYYY-MM') as month",
                     "COALESCE(tenant_id, 'UNKNOWN') as tenant_id",
-                    "CASE COALESCE(tenant_id,'UNKNOWN') " +
-                        "WHEN 'TENANT-TECH' THEN '信息科技部' " +
-                        "WHEN 'TENANT-RETAIL' THEN '零售银行总部' " +
-                        "WHEN 'TENANT-CORP' THEN '公司银行总部' " +
-                        "WHEN 'TENANT-RISK' THEN '风险管理部' " +
-                        "WHEN 'TENANT-OPS' THEN '运营管理部' " +
-                        "WHEN 'TENANT-INVEST' THEN '金融市场部' " +
-                        "ELSE tenant_id END as dept_name",
+                    "COALESCE(service_type,'chat') as service_type",
+                    "model_id",
+                    "COALESCE(SUM(prompt_tokens),0) as input_tokens",
+                    "COALESCE(SUM(completion_tokens),0) as output_tokens",
                     "COALESCE(SUM(total_tokens),0) as tokens",
-                    "COUNT(*) as calls",
-                    "COALESCE(SUM(total_tokens),0)::numeric * 0.0016 as cost"
+                    "COUNT(*) as calls"
                 )
                 .isNotNull("tenant_id").ne("tenant_id", "")
-                .groupBy("TO_CHAR(created_at, 'YYYY-MM')", "tenant_id")
-                .orderByDesc("month");
+                .groupBy("TO_CHAR(created_at, 'YYYY-MM')", "tenant_id", "service_type", "model_id");
 
             if (monthFilter != null) {
                 wrapper.apply("TO_CHAR(created_at, 'YYYY-MM') = {0}", monthFilter);
@@ -173,8 +230,49 @@ public class MeteringService {
                 wrapper.eq("tenant_id", tenantFilter);
             }
 
-            return callLogMapper.selectMaps(wrapper);
+            List<Map<String, Object>> rows = callLogMapper.selectMaps(wrapper);
+
+            // 按 月×租户 折叠，成本由计价引擎按 (服务类型, 模型) 维度计算
+            Map<String, Map<String, Object>> bills = new LinkedHashMap<>();
+            for (Map<String, Object> r : rows) {
+                String key = r.get("month") + "|" + r.get("tenant_id");
+                Map<String, Object> bill = bills.computeIfAbsent(key, k -> {
+                    Map<String, Object> b = new LinkedHashMap<>();
+                    b.put("month", r.get("month"));
+                    b.put("tenant_id", r.get("tenant_id"));
+                    b.put("dept_name", tenantName(String.valueOf(r.get("tenant_id"))));
+                    b.put("tokens", 0L);
+                    b.put("calls", 0L);
+                    b.put("cost", BigDecimal.ZERO);
+                    return b;
+                });
+                bill.put("tokens", toLong(bill.get("tokens")) + toLong(r.get("tokens")));
+                bill.put("calls", toLong(bill.get("calls")) + toLong(r.get("calls")));
+                BigDecimal cost = pricingService.price(null, null, null,
+                        String.valueOf(r.get("service_type")), String.valueOf(r.get("model_id")),
+                        toLong(r.get("input_tokens")), toLong(r.get("output_tokens")));
+                bill.put("cost", ((BigDecimal) bill.get("cost")).add(cost));
+            }
+            List<Map<String, Object>> result = new ArrayList<>(bills.values());
+            for (Map<String, Object> b : result) {
+                b.put("cost", ((BigDecimal) b.get("cost")).setScale(2, java.math.RoundingMode.HALF_UP));
+            }
+            result.sort((a, b) -> String.valueOf(b.get("month")).compareTo(String.valueOf(a.get("month"))));
+            return result;
         });
+    }
+
+    /** 租户 → 部门（反查映射表，取不到时为空串） */
+    private String deptIdOfTenant(String tenantId) {
+        if (tenantId == null || tenantId.isEmpty() || tenantService == null) return "";
+        return tenantService.deptOfTenant(tenantId);
+    }
+
+    /** 租户显示名：取 mas_tenant 表，查不到时回退为 tenant_id */
+    private String tenantName(String tenantId) {
+        if (tenantService == null) return tenantId;
+        String name = tenantService.tenantName(tenantId);
+        return name == null ? tenantId : name;
     }
 
     /** 个人用量（从 call_log 按 user_id 聚合） */
@@ -186,20 +284,36 @@ public class MeteringService {
                     .select(
                         "user_id",
                         "COUNT(*) as calls",
-                        "COALESCE(SUM(total_tokens),0) as tokens",
-                        "COALESCE(SUM(total_tokens),0)::numeric * 0.0016 as cost"
+                        "COALESCE(SUM(total_tokens),0) as tokens"
                     )
                     .eq("user_id", uid)
                     .groupBy("user_id")
             );
             Map<String, Object> row = rows.isEmpty() ? Map.of() : rows.get(0);
 
+            // 成本由计价引擎按 (服务类型, 模型) 维度计算，取代 *0.0016 硬编码
+            BigDecimal cost = BigDecimal.ZERO;
+            for (Map<String, Object> g : callLogMapper.selectMaps(
+                    new QueryWrapper<CallLogEntity>()
+                        .select(
+                            "COALESCE(service_type,'chat') as service_type",
+                            "model_id",
+                            "COALESCE(SUM(prompt_tokens),0) as input_tokens",
+                            "COALESCE(SUM(completion_tokens),0) as output_tokens"
+                        )
+                        .eq("user_id", uid)
+                        .groupBy("service_type", "model_id"))) {
+                cost = cost.add(pricingService.price(null, null, null,
+                        String.valueOf(g.get("service_type")), String.valueOf(g.get("model_id")),
+                        toLong(g.get("input_tokens")), toLong(g.get("output_tokens"))));
+            }
+
             Map<String, Object> usage = new LinkedHashMap<>();
             usage.put("user_id", uid);
             usage.put("name", uid);
             usage.put("dept_id", "DEPT-TECH");
             usage.put("tokens", toLong(row.get("tokens")));
-            usage.put("cost", toDouble(row.get("cost")));
+            usage.put("cost", cost.setScale(2, RoundingMode.HALF_UP));
 
             // 按 intent_type 统计行为分布
             long userTotal = callLogMapper.selectCount(
@@ -265,17 +379,45 @@ public class MeteringService {
     }
 
     // ---- helpers ----
+
+    /**
+     * 按计价引擎计算某租户的成本总额（替代 total_tokens * 0.0016 硬编码口径）。
+     * 逐 (service_type, model_id, scenario) 分组计价后累加，保证与费率规则一致。
+     */
+    private BigDecimal costOfTenant(String tenantId) {
+        if (tenantId == null || tenantId.isEmpty()) return BigDecimal.ZERO;
+        List<Map<String, Object>> groups = callLogMapper.selectMaps(
+            new QueryWrapper<CallLogEntity>()
+                .select(
+                    "COALESCE(service_type,'chat') as service_type",
+                    "model_id",
+                    "COALESCE(scenario,'') as scenario",
+                    "COALESCE(SUM(prompt_tokens),0) as input_tokens",
+                    "COALESCE(SUM(completion_tokens),0) as output_tokens"
+                )
+                .eq("tenant_id", tenantId)
+                .groupBy("service_type", "model_id", "scenario")
+        );
+        BigDecimal total = BigDecimal.ZERO;
+        for (Map<String, Object> g : groups) {
+            total = total.add(pricingService.price(null, null,
+                    String.valueOf(g.get("scenario")),
+                    String.valueOf(g.get("service_type")),
+                    String.valueOf(g.get("model_id")),
+                    toLong(g.get("input_tokens")), toLong(g.get("output_tokens"))));
+        }
+        return total.setScale(2, java.math.RoundingMode.HALF_UP);
+    }
+
+    /**
+     * 部门 → 租户：
+     * 【已改造】原为 6 个租户写死在 Java 的硬编码 switch（招标二-1），
+     * 现改为查询 mas_dept_tenant 映射表（TenantService 带 60s 缓存），支持在线维护。
+     */
     private String deptToTenant(String deptId) {
         if (deptId == null) return "UNKNOWN";
-        return switch (deptId) {
-            case "DEPT-TECH" -> "TENANT-TECH";
-            case "DEPT-RETAIL" -> "TENANT-RETAIL";
-            case "DEPT-CORP" -> "TENANT-CORP";
-            case "DEPT-RISK" -> "TENANT-RISK";
-            case "DEPT-OPS" -> "TENANT-OPS";
-            case "DEPT-INVEST" -> "TENANT-INVEST";
-            default -> "UNKNOWN";
-        };
+        if (tenantService == null) return "UNKNOWN";
+        return tenantService.resolveTenantByDept(deptId);
     }
 
     private String mapStatus(Integer status) {
@@ -304,6 +446,36 @@ public class MeteringService {
         if (v == null) return 0;
         if (v instanceof Number) return ((Number) v).longValue();
         try { return Long.parseLong(v.toString()); } catch (Exception e) { return 0; }
+    }
+
+    private static String str(Object v) {
+        return v == null ? "" : String.valueOf(v);
+    }
+
+    private static long longVal(Object v, long def) {
+        if (v == null) return def;
+        if (v instanceof Number n) return n.longValue();
+        try {
+            return Long.parseLong(v.toString());
+        } catch (Exception e) {
+            return def;
+        }
+    }
+
+    private static boolean boolVal(Object v, boolean def) {
+        if (v == null) return def;
+        if (v instanceof Boolean b) return b;
+        return Boolean.parseBoolean(String.valueOf(v));
+    }
+
+    private static Integer intVal(Object v, int def) {
+        if (v == null) return def;
+        if (v instanceof Number n) return n.intValue();
+        try {
+            return Integer.parseInt(v.toString());
+        } catch (Exception e) {
+            return def;
+        }
     }
 
     private double toDouble(Object v) {

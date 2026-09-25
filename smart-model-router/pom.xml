@@ -98,6 +98,13 @@
             <version>1.18.12</version>
             <scope>test</scope>
         </dependency>
+        <!-- 端到端冒烟：原生 PostgreSQL（自动下载，不污染系统） -->
+        <dependency>
+            <groupId>io.zonky.test</groupId>
+            <artifactId>embedded-postgres</artifactId>
+            <version>2.1.0</version>
+            <scope>test</scope>
+        </dependency>
         <dependency>
             <groupId>net.bytebuddy</groupId>
             <artifactId>byte-buddy-agent</artifactId>

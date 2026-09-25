@@ -48,6 +48,11 @@ public class MasException extends RuntimeException {
         return new MasException(HttpStatus.BAD_REQUEST, "invalid_request_error", "invalid_param", message);
     }
 
+    /** 资源冲突（如客户端指定的单号已存在）：409，明确拒绝而非静默忽略 */
+    public static MasException conflict(String message) {
+        return new MasException(HttpStatus.CONFLICT, "conflict_error", "conflict", message);
+    }
+
     public static MasException modelNotFound(String model) {
         return new MasException(HttpStatus.NOT_FOUND, "invalid_request_error", "model_not_found",
                 "Model not registered: " + model);

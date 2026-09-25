@@ -22,6 +22,7 @@ public interface AppMapper extends BaseMapper<AppEntity> {
             "  approved_by, approved_at, created_at, updated_at",
             "FROM mas_app WHERE 1=1",
             "<if test='status != null'> AND status = #{status}</if>",
+            "<if test='status == null'> AND (status IS NULL OR status != -1)</if>",
             "<if test='deptId != null'> AND dept_id = #{deptId}</if>",
             "ORDER BY created_at DESC",
             "</script>"})

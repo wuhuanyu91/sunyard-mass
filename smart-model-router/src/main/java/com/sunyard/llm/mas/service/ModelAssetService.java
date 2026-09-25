@@ -4,6 +4,7 @@ import com.sunyard.llm.mas.entity.CallLogEntity;
 import com.sunyard.llm.mas.entity.ModelConfigEntity;
 import com.sunyard.llm.mas.mapper.CallLogMapper;
 import com.sunyard.llm.mas.mapper.ModelConfigMapper;
+import com.sunyard.llm.mas.mapper.ModelConnectionMapper;
 import com.sunyard.llm.mas.util.ReactiveDbAdapter;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import org.springframework.stereotype.Service;
@@ -19,10 +20,15 @@ public class ModelAssetService {
 
     private final ModelConfigMapper modelConfigMapper;
     private final CallLogMapper callLogMapper;
+    private final ModelConnectionMapper modelConnectionMapper;
+    private final OpLogService opLogService;
 
-    public ModelAssetService(ModelConfigMapper modelConfigMapper, CallLogMapper callLogMapper) {
+    public ModelAssetService(ModelConfigMapper modelConfigMapper, CallLogMapper callLogMapper,
+                             ModelConnectionMapper modelConnectionMapper, OpLogService opLogService) {
         this.modelConfigMapper = modelConfigMapper;
         this.callLogMapper = callLogMapper;
+        this.modelConnectionMapper = modelConnectionMapper;
+        this.opLogService = opLogService;
     }
 
     /** 模型资产列表（从 mas_model_config 查询，补充 call_log 统计） */
@@ -73,26 +79,57 @@ public class ModelAssetService {
         });
     }
 
-    /** 模型接入列表（配置数据，保持） */
+    /** 模型接入列表：【已改造】从 mas_model_connection 真实读取（此前为 4 条硬编码） */
     public Mono<List<Map<String, Object>>> listModelConnections() {
-        List<Map<String, Object>> list = new ArrayList<>();
-        list.add(buildConn("CONN-001", "阿里云百炼-Qwen-Max", "CLOUD", "阿里云百炼", "ONLINE", 238));
-        list.add(buildConn("CONN-002", "火山引擎-Doubao-Pro", "CLOUD", "火山引擎", "ONLINE", 312));
-        list.add(buildConn("CONN-004", "本地 H20 生产集群", "LOCAL", "行内数据中心", "ONLINE", 42));
-        list.add(buildConn("CONN-005", "本地 L20/4090 推理集群", "LOCAL", "行内数据中心", "ONLINE", 38));
-        return Mono.just(list);
+        return ReactiveDbAdapter.mono(() -> modelConnectionMapper.listConnections());
     }
 
+    public Mono<Map<String, Object>> createModelConnection(Map<String, Object> body, String operator) {
+        return ReactiveDbAdapter.mono(() -> {
+            String connId = str(body.getOrDefault("connId", "CONN-" + System.currentTimeMillis()));
+            modelConnectionMapper.insertConnection(connId, str(body.getOrDefault("name", connId)),
+                    str(body.get("provider")), str(body.get("accessType")), str(body.get("endpointUrl")),
+                    str(body.get("modelId")), str(body.get("status")), operator);
+            return connId;
+        }).flatMap(id -> opLogService.record("modelAsset", "新建模型接入", operator, id,
+                "接入 " + body.getOrDefault("name", id) + " 已落库"));
+    }
+
+    public Mono<Map<String, Object>> updateModelConnection(String connId, Map<String, Object> body, String operator) {
+        return ReactiveDbAdapter.mono(() -> {
+            if (modelConnectionMapper.selectConnection(connId) == null) {
+                throw new IllegalArgumentException("模型接入不存在：" + connId);
+            }
+            modelConnectionMapper.updateConnection(connId, str(body.get("name")), str(body.get("provider")),
+                    str(body.get("accessType")), str(body.get("endpointUrl")), str(body.get("modelId")),
+                    str(body.get("status")), operator);
+            return connId;
+        }).flatMap(id -> opLogService.record("modelAsset", "更新模型接入", operator, id, "接入配置已落库"));
+    }
+
+    public Mono<Map<String, Object>> deleteModelConnection(String connId, String operator) {
+        return ReactiveDbAdapter.mono(() -> {
+            int n = modelConnectionMapper.deleteConnection(connId);
+            if (n == 0) throw new IllegalArgumentException("模型接入不存在：" + connId);
+            return connId;
+        }).flatMap(id -> opLogService.record("modelAsset", "删除模型接入", operator, id, "接入已删除"));
+    }
+
+    // 兼容旧签名
     public Mono<Map<String, Object>> createModelConnection(Map<String, Object> body) {
-        return opRecord("新建模型接入", "CONN-NEW", body.getOrDefault("name", "").toString());
+        return createModelConnection(body, null);
     }
 
     public Mono<Map<String, Object>> updateModelConnection(String connId, Map<String, Object> body) {
-        return opRecord("更新模型接入", connId, body.getOrDefault("name", "").toString());
+        return updateModelConnection(connId, body, null);
     }
 
     public Mono<Map<String, Object>> deleteModelConnection(String connId) {
-        return opRecord("删除模型接入", connId, "接入已删除");
+        return deleteModelConnection(connId, null);
+    }
+
+    private static String str(Object v) {
+        return v == null ? "" : String.valueOf(v);
     }
 
     public Mono<Map<String, Object>> testModelConnection(String connId) {

@@ -1,12 +1,18 @@
 package com.sunyard.llm.mas.service;
 
 import com.sunyard.llm.mas.entity.CallLogEntity;
+import com.sunyard.llm.mas.mapper.AlertMapper;
 import com.sunyard.llm.mas.mapper.CallLogMapper;
+import com.sunyard.llm.mas.mapper.CollectionMapper;
 import com.sunyard.llm.mas.mapper.DeptQuotaMapper;
+import com.sunyard.llm.mas.mapper.PolicyMapper;
 import com.sunyard.llm.mas.mapper.RoutingRuleMapper;
+import com.sunyard.llm.mas.mapper.SecurityEventMapper;
 import com.sunyard.llm.mas.util.ReactiveDbAdapter;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
@@ -19,16 +25,33 @@ import java.util.*;
 @Service
 public class DashboardService {
 
+    private static final Logger log = LoggerFactory.getLogger(DashboardService.class);
+
     private final CallLogMapper callLogMapper;
     private final DeptQuotaMapper deptQuotaMapper;
     private final RoutingRuleMapper routingRuleMapper;
+    private final SecurityEventMapper securityEventMapper;
+    private final AlertMapper alertMapper;
+    private final PolicyMapper policyMapper;
+    private final CollectionMapper collectionMapper;
+    private final PricingService pricingService;
 
     public DashboardService(CallLogMapper callLogMapper,
                             DeptQuotaMapper deptQuotaMapper,
-                            RoutingRuleMapper routingRuleMapper) {
+                            RoutingRuleMapper routingRuleMapper,
+                            SecurityEventMapper securityEventMapper,
+                            AlertMapper alertMapper,
+                            PolicyMapper policyMapper,
+                            CollectionMapper collectionMapper,
+                            PricingService pricingService) {
         this.callLogMapper = callLogMapper;
         this.deptQuotaMapper = deptQuotaMapper;
         this.routingRuleMapper = routingRuleMapper;
+        this.securityEventMapper = securityEventMapper;
+        this.alertMapper = alertMapper;
+        this.policyMapper = policyMapper;
+        this.collectionMapper = collectionMapper;
+        this.pricingService = pricingService;
     }
 
     /** 运营总览 KPI */
@@ -53,9 +76,23 @@ public class DashboardService {
             );
             Map<String, Object> row = rows.isEmpty() ? Map.of() : rows.get(0);
 
-            // GPU 利用率（模拟：基于请求量推算）
+            // GPU 利用率：【已改造】原为 min(95, 40 + 请求数×0.005) 的请求量反推模拟值，
+            // 现优先取真实采集的 mas_compute_metric 均值；无采集数据时回退为 0 并标注 ESTIMATED。
             long totalRequests = toLong(row.get("requests"));
-            double gpuUtil = totalRequests > 0 ? Math.min(95, 40 + totalRequests * 0.005) : 0;
+            double gpuUtil = 0;
+            String gpuSource = "ESTIMATED";
+            try {
+                Map<String, Object> cs = collectionMapper.computeSummary(LocalDateTime.now().minusHours(24));
+                if (cs != null && cs.get("avg_gpu_util") != null) {
+                    double real = ((Number) cs.get("avg_gpu_util")).doubleValue();
+                    if (real > 0) {
+                        gpuUtil = real;
+                        gpuSource = "COLLECTED";
+                    }
+                }
+            } catch (Exception e) {
+                log.warn("compute summary unavailable, gpu_util fallback", e);
+            }
 
             // 模型/应用/节点数
             long modelCount = callLogMapper.selectMaps(
@@ -72,11 +109,14 @@ public class DashboardService {
             summary.put("output_tokens", toLong(row.get("output_tokens")));
             summary.put("cache_hit_tokens", toLong(row.get("cache_hit_tokens")));
             summary.put("total_tokens", toLong(row.get("total_tokens")));
-            summary.put("tco", toDouble(row.get("total_tokens")) * 0.0016);
+            // TCO 由计价引擎按维度计算（此前为 total_tokens * 0.0016 硬编码）
+            summary.put("tco", pricingService.price(null, null, null, "chat", null,
+                    toLong(row.get("input_tokens")), toLong(row.get("output_tokens"))));
             summary.put("qps", totalRequests > 0 ? Math.round(totalRequests / 86400.0 * 100) / 100.0 : 0);
             summary.put("ttft_p50", toDouble(row.get("avg_latency")));
             summary.put("p95", toDouble(row.get("p95_latency")));
             summary.put("gpu_util", Math.round(gpuUtil * 10) / 10.0);
+            summary.put("gpu_util_source", gpuSource);   // COLLECTED=真实采集 / ESTIMATED=无采集数据
             summary.put("cache_hit_rate", Math.round(toDouble(row.get("cache_hit_rate")) * 100) / 100.0);
             summary.put("success_rate", Math.round(toDouble(row.get("success_rate")) * 100) / 100.0);
             summary.put("abnormal", toLong(row.get("abnormal")));
@@ -88,11 +128,37 @@ public class DashboardService {
             summary.put("models", modelCount);
             summary.put("prod_models", modelCount);
             summary.put("apps", appCount);
-            summary.put("alert_open", 1);
-            summary.put("approval_pending", 0);
-            summary.put("security_events", 10);
-            summary.put("masked_events", 8);
-            summary.put("critical_events", 2);
+            // 【已改造】告警与安全事件数不再写死，改为实时统计
+            long alertOpen = 0;
+            try {
+                alertOpen = alertMapper.listAlerts().stream()
+                        .filter(a -> "OPEN".equals(String.valueOf(a.get("alert_status"))))
+                        .count();
+            } catch (Exception e) {
+                log.warn("alert count unavailable", e);
+            }
+            long securityEvents = 0;
+            long maskedEvents = 0;
+            long criticalEvents = 0;
+            try {
+                securityEvents = securityEventMapper.countEvents(null, null, null);
+                criticalEvents = securityEventMapper.countEvents(null, "CRITICAL", null)
+                        + securityEventMapper.countEvents(null, "HIGH", null);
+                maskedEvents = securityEventMapper.countEvents("MASKING", null, null);
+            } catch (Exception e) {
+                log.warn("security event count unavailable", e);
+            }
+            long approvalPending = 0;
+            try {
+                approvalPending = policyMapper.listPolicies(null, "PENDING").size();
+            } catch (Exception e) {
+                log.warn("policy count unavailable", e);
+            }
+            summary.put("alert_open", alertOpen);
+            summary.put("approval_pending", approvalPending);
+            summary.put("security_events", securityEvents);
+            summary.put("masked_events", maskedEvents);
+            summary.put("critical_events", criticalEvents);
             return summary;
         });
     }
@@ -151,7 +217,7 @@ public class DashboardService {
                             "WHEN 'TENANT-INVEST' THEN '金融市场部' " +
                             "ELSE tenant_id END as name",
                         "COALESCE(SUM(total_tokens),0) as tokens",
-                        "COALESCE(SUM(total_tokens),0)::numeric * 0.0016 as tco"
+                        "COALESCE(SUM(cost_amount),0) as tco"
                     )
                     .isNotNull("tenant_id").ne("tenant_id", "")
                     .groupBy("tenant_id")
@@ -174,7 +240,7 @@ public class DashboardService {
                             "WHEN 'APP-RISK' THEN '风控报告生成' " +
                             "ELSE app_id END as name",
                         "COALESCE(SUM(total_tokens),0) as tokens",
-                        "COALESCE(SUM(total_tokens),0)::numeric * 0.0016 as tco"
+                        "COALESCE(SUM(cost_amount),0) as tco"
                     )
                     .isNotNull("app_id").ne("app_id", "")
                     .groupBy("app_id")
@@ -192,7 +258,7 @@ public class DashboardService {
                         "model_id as asset_id",
                         "model_id as name",
                         "COUNT(*) as calls",
-                        "COALESCE(SUM(total_tokens),0)::numeric * 0.0016 as tco"
+                        "COALESCE(SUM(cost_amount),0) as tco"
                     )
                     .isNotNull("model_id").ne("model_id", "")
                     .groupBy("model_id")

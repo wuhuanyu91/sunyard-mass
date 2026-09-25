@@ -195,18 +195,35 @@ public class AppService {
         }
     }
 
-    private static String strOr(Map<String, Object> body, String key, String defaultVal) {
+    /** 兼容 camel（前端原生 JSON）与 snake（历史契约）两种请求体 key：先取 snake 原样，再取 camel 变体 */
+    private static Object pick(Map<String, Object> body, String key) {
         Object v = body.get(key);
+        if (v != null) return v;
+        if (key.contains("_")) {
+            StringBuilder sb = new StringBuilder();
+            boolean up = false;
+            for (char c : key.toCharArray()) {
+                if (c == '_') { up = true; continue; }
+                sb.append(up ? Character.toUpperCase(c) : c);
+                up = false;
+            }
+            return body.get(sb.toString());
+        }
+        return null;
+    }
+
+    private static String strOr(Map<String, Object> body, String key, String defaultVal) {
+        Object v = pick(body, key);
         return v != null ? v.toString() : defaultVal;
     }
 
     private static String strOrNull(Map<String, Object> body, String key) {
-        Object v = body.get(key);
+        Object v = pick(body, key);
         return v != null ? v.toString() : null;
     }
 
     private static Long longOrNull(Map<String, Object> body, String key) {
-        Object v = body.get(key);
+        Object v = pick(body, key);
         if (v == null) return null;
         if (v instanceof Number n) return n.longValue();
         try {

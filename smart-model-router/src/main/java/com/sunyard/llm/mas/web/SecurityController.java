@@ -19,18 +19,6 @@ public class SecurityController {
         this.securityService = securityService;
     }
 
-    @GetMapping("/internal/security/events")
-    public Mono<List<Map<String, Object>>> listSecurityEvents(
-            @RequestParam(value = "event_type", required = false) String eventType,
-            @RequestParam(value = "event_level", required = false) String eventLevel) {
-        return securityService.listSecurityEvents(eventType, eventLevel);
-    }
-
-    @GetMapping("/internal/security/alerts")
-    public Mono<List<Map<String, Object>>> listAlerts() {
-        return securityService.listAlerts();
-    }
-
     @GetMapping("/internal/security/guardrail")
     public Mono<Map<String, Object>> getGuardrailConfig() {
         return securityService.getGuardrailConfig();

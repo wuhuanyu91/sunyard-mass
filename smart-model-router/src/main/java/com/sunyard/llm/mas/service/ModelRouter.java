@@ -4,9 +4,10 @@ import com.sunyard.llm.mas.config.MasProperties;
 import com.sunyard.llm.mas.entity.ModelConfigEntity;
 import com.sunyard.llm.mas.mapper.ModelConfigMapper;
 import com.sunyard.llm.mas.util.ReactiveDbAdapter;
-import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
@@ -40,7 +41,7 @@ public class ModelRouter {
         this.healthTracker = healthTracker;
     }
 
-    @PostConstruct
+    @EventListener(ApplicationReadyEvent.class)
     public void init() {
         refresh().subscribe(null, e -> log.warn("Model config initial load failed (fallback only): {}", e.getMessage()));
     }

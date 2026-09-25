@@ -53,6 +53,96 @@ public class CallLogEntity {
 
     private String dataLevel;
 
+    /** 差异化计量维度（公告一-5） */
+    private String deptId;
+    private String scenario;
+    private String serviceType;
+
+    /** 计价引擎写入的单笔成本（元），取代前端 0.0016 / 0.00025 硬算 */
+    private java.math.BigDecimal costAmount;
+
+    /** 审计内容留存（公告二-8） */
+    private String requestContent;
+    private String responseContent;
+    private String contentHash;
+
+    /** 归属账期 YYYY-MM（计费结算） */
+    private String billMonth;
+
+    private Integer billed;
+
+    public String getDeptId() {
+        return deptId;
+    }
+
+    public void setDeptId(String deptId) {
+        this.deptId = deptId;
+    }
+
+    public String getScenario() {
+        return scenario;
+    }
+
+    public void setScenario(String scenario) {
+        this.scenario = scenario;
+    }
+
+    public String getServiceType() {
+        return serviceType;
+    }
+
+    public void setServiceType(String serviceType) {
+        this.serviceType = serviceType;
+    }
+
+    public java.math.BigDecimal getCostAmount() {
+        return costAmount;
+    }
+
+    public void setCostAmount(java.math.BigDecimal costAmount) {
+        this.costAmount = costAmount;
+    }
+
+    public String getRequestContent() {
+        return requestContent;
+    }
+
+    public void setRequestContent(String requestContent) {
+        this.requestContent = requestContent;
+    }
+
+    public String getResponseContent() {
+        return responseContent;
+    }
+
+    public void setResponseContent(String responseContent) {
+        this.responseContent = responseContent;
+    }
+
+    public String getContentHash() {
+        return contentHash;
+    }
+
+    public void setContentHash(String contentHash) {
+        this.contentHash = contentHash;
+    }
+
+    public String getBillMonth() {
+        return billMonth;
+    }
+
+    public void setBillMonth(String billMonth) {
+        this.billMonth = billMonth;
+    }
+
+    public Integer getBilled() {
+        return billed;
+    }
+
+    public void setBilled(Integer billed) {
+        this.billed = billed;
+    }
+
     public Long getId() {
         return id;
     }

@@ -20,9 +20,14 @@ public class RoutingRuleEntity {
     private Integer outputTokenLimit;
     private Integer concurrency;
     private String overAction;
+    /** IP/CIDR 白名单，逗号分隔；空 = 不限制 */
+    private String ipWhitelist;
     @TableField("hits_24h")
     private Integer hits24h;
     private LocalDateTime createdAt;
+
+    public String getIpWhitelist() { return ipWhitelist; }
+    public void setIpWhitelist(String ipWhitelist) { this.ipWhitelist = ipWhitelist; }
 
     public String getRuleId() { return ruleId; }
     public void setRuleId(String ruleId) { this.ruleId = ruleId; }

@@ -3,6 +3,7 @@ package com.sunyard.llm.mas.service;
 import com.sunyard.llm.mas.entity.AlertEntity;
 import com.sunyard.llm.mas.entity.SecurityEventEntity;
 import com.sunyard.llm.mas.mapper.AlertMapper;
+import com.sunyard.llm.mas.mapper.GuardrailMapper;
 import com.sunyard.llm.mas.mapper.SecurityEventMapper;
 import com.sunyard.llm.mas.util.ReactiveDbAdapter;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
@@ -20,10 +21,15 @@ public class SecurityService {
 
     private final SecurityEventMapper securityEventMapper;
     private final AlertMapper alertMapper;
+    private final GuardrailMapper guardrailMapper;
+    private final OpLogService opLogService;
 
-    public SecurityService(SecurityEventMapper securityEventMapper, AlertMapper alertMapper) {
+    public SecurityService(SecurityEventMapper securityEventMapper, AlertMapper alertMapper,
+                           GuardrailMapper guardrailMapper, OpLogService opLogService) {
         this.securityEventMapper = securityEventMapper;
         this.alertMapper = alertMapper;
+        this.guardrailMapper = guardrailMapper;
+        this.opLogService = opLogService;
     }
 
     /** 安全事件列表（从 mas_security_event 查询） */
@@ -83,50 +89,98 @@ public class SecurityService {
         });
     }
 
-    /** 护栏配置（系统配置，保持） */
+    /**
+     * 护栏配置：【已改造】此前返回写死的常量 Map，现从 mas_guardrail_config 真实读取；
+     * 无配置时返回库内默认（enabled=true, MEDIUM）而非编造 api_url 等字段。
+     */
     public Mono<Map<String, Object>> getGuardrailConfig() {
-        Map<String, Object> config = new LinkedHashMap<>();
-        config.put("enabled", true);
-        config.put("api_url", "https://guardrail.nbmaas.local/api/v1");
-        config.put("api_key_masked", "gd-****f3a9");
-        config.put("text_latency_ms", 200);
-        config.put("multimodal_latency_ms", 1200);
-        return Mono.just(config);
+        return ReactiveDbAdapter.mono(() -> {
+            Map<String, Object> row = guardrailMapper.selectConfig();
+            Map<String, Object> config = new LinkedHashMap<>();
+            config.put("enabled", row == null || Integer.valueOf(1).equals(row.get("enabled")));
+            config.put("default_model", row == null ? "" : String.valueOf(row.getOrDefault("default_model", "")));
+            config.put("sensitivity", row == null ? "MEDIUM" : String.valueOf(row.getOrDefault("sensitivity", "MEDIUM")));
+            config.put("modules_json", row == null ? "[]" : String.valueOf(row.getOrDefault("modules_json", "[]")));
+            config.put("updated_at", row == null ? "" : String.valueOf(row.getOrDefault("updated_at", "")));
+            return config;
+        });
     }
 
-    public Mono<Map<String, Object>> saveGuardrailConfig(Map<String, Object> body) {
-        return opRecord("保存护栏规则", "GUARDRAIL",
-                "护栏" + (Boolean.TRUE.equals(body.get("enabled")) ? "已开启" : "已关闭"));
+    public Mono<Map<String, Object>> saveGuardrailConfig(Map<String, Object> body, String operator) {
+        return ReactiveDbAdapter.mono(() -> {
+            Integer enabled = body.get("enabled") == null ? null
+                    : (Boolean.TRUE.equals(body.get("enabled")) ? 1 : 0);
+            String modulesJson = body.get("modules") == null ? null : String.valueOf(body.get("modules"));
+            if (guardrailMapper.selectConfig() == null) {
+                guardrailMapper.insertConfig(enabled, str(body.get("defaultModel")),
+                        str(body.get("sensitivity")), modulesJson, operator);
+            } else {
+                guardrailMapper.updateConfig(enabled, str(body.get("defaultModel")),
+                        str(body.get("sensitivity")), modulesJson, operator);
+            }
+            return "GUARDRAIL";
+        }).flatMap(t -> opLogService.record("security", "保存护栏配置", operator, t,
+                "护栏" + (Boolean.TRUE.equals(body.get("enabled")) ? "已开启" : "已关闭") + "，配置已落库"));
     }
 
-    /** 护栏策略列表（配置数据，保持） */
+    /** 护栏策略列表：【已改造】从 mas_guardrail_policy 真实读取（此前为 3 条硬编码 Map） */
     public Mono<List<Map<String, Object>>> listGuardrailPolicies() {
-        List<Map<String, Object>> list = new ArrayList<>();
-        list.add(Map.of("policy_id", "GD-001", "name", "零售客服输出护栏",
-                "desc", "客服场景输出脱敏 + 合规检测",
-                "modules", List.of("PRIVACY", "COMPLIANCE", "BAD_INFO"),
-                "action", "MASK", "bind_apps", List.of("APP-CSR")));
-        list.add(Map.of("policy_id", "GD-002", "name", "研发输入强校验",
-                "desc", "防提示注入 + 恶意代码识别",
-                "modules", List.of("INJECTION", "MALCODE", "ABUSE"),
-                "action", "BLOCK", "bind_apps", List.of("APP-AICODING")));
-        list.add(Map.of("policy_id", "GD-003", "name", "全行输入合规底线",
-                "desc", "违法/不良信息全场景拦截",
-                "modules", List.of("ILLEGAL", "BAD_INFO", "COMPLIANCE"),
-                "action", "BLOCK", "bind_apps", List.of()));
-        return Mono.just(list);
+        return ReactiveDbAdapter.mono(guardrailMapper::listPolicies);
+    }
+
+    public Mono<Map<String, Object>> createGuardrailPolicy(Map<String, Object> body, String operator) {
+        return ReactiveDbAdapter.mono(() -> {
+            String policyId = str(body.getOrDefault("policyId", "GD-" + System.currentTimeMillis()));
+            guardrailMapper.insertPolicy(policyId, str(body.getOrDefault("name", policyId)),
+                    str(body.get("stage")), str(body.get("action")), str(body.get("libType")),
+                    str(body.get("keywordLib")),
+                    body.get("enabled") == null ? 1 : (Boolean.TRUE.equals(body.get("enabled")) ? 1 : 0),
+                    operator);
+            return policyId;
+        }).flatMap(id -> opLogService.record("security", "新建安全策略", operator, id,
+                "策略 " + body.getOrDefault("name", id) + " 已落库"));
+    }
+
+    public Mono<Map<String, Object>> updateGuardrailPolicy(String policyId, Map<String, Object> body, String operator) {
+        return ReactiveDbAdapter.mono(() -> {
+            if (guardrailMapper.selectPolicy(policyId) == null) {
+                throw new IllegalArgumentException("安全策略不存在：" + policyId);
+            }
+            guardrailMapper.updatePolicy(policyId, str(body.get("name")), str(body.get("stage")),
+                    str(body.get("action")), str(body.get("libType")), str(body.get("keywordLib")),
+                    body.get("enabled") == null ? null : (Boolean.TRUE.equals(body.get("enabled")) ? 1 : 0),
+                    operator);
+            return policyId;
+        }).flatMap(id -> opLogService.record("security", "更新安全策略", operator, id, "策略已更新并落库"));
+    }
+
+    public Mono<Map<String, Object>> deleteGuardrailPolicy(String policyId, String operator) {
+        return ReactiveDbAdapter.mono(() -> {
+            int n = guardrailMapper.deletePolicy(policyId);
+            if (n == 0) throw new IllegalArgumentException("安全策略不存在：" + policyId);
+            return policyId;
+        }).flatMap(id -> opLogService.record("security", "删除安全策略", operator, id, "策略已删除"));
+    }
+
+    // 兼容旧签名
+    public Mono<Map<String, Object>> saveGuardrailConfig(Map<String, Object> body) {
+        return saveGuardrailConfig(body, null);
     }
 
     public Mono<Map<String, Object>> createGuardrailPolicy(Map<String, Object> body) {
-        return opRecord("新建安全策略", "GD-NEW", body.getOrDefault("name", "").toString());
+        return createGuardrailPolicy(body, null);
     }
 
     public Mono<Map<String, Object>> updateGuardrailPolicy(String policyId, Map<String, Object> body) {
-        return opRecord("更新安全策略", policyId, body.getOrDefault("name", "").toString());
+        return updateGuardrailPolicy(policyId, body, null);
     }
 
     public Mono<Map<String, Object>> deleteGuardrailPolicy(String policyId) {
-        return opRecord("删除安全策略", policyId, "策略已删除");
+        return deleteGuardrailPolicy(policyId, null);
+    }
+
+    private static String str(Object v) {
+        return v == null ? "" : String.valueOf(v);
     }
 
     private Mono<Map<String, Object>> opRecord(String opType, String targetId, String detail) {

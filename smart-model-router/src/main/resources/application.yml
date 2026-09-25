@@ -87,3 +87,11 @@ mas:
     failure-threshold: 5
     open-duration: 30s
     half-open-max-attempts: 2
+  # 治理增强（宁波银行需求补齐，DDL 见 db/schema.sql 治理段）
+  governance:
+    # 管控组件（租户/部门配额）在 DB 异常时是否阻断。银行生产建议 true（fail-closed）；
+    # 原型默认 false，与既有限流/配额降级策略保持一致。
+    fail-closed: ${MAS_GOVERNANCE_FAIL_CLOSED:false}
+    # 部门/租户级配额是否在 L4 运行时执行（over_limit_stop 真正生效）
+    dept-quota-enabled: ${MAS_GOVERNANCE_DEPT_QUOTA:true}
+    # /internal/* 管理端点鉴权为强制项（AdminAuthFilter 硬编码生效），不提供关闭开关
