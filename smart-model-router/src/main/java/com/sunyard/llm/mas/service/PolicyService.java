@@ -63,6 +63,48 @@ public class PolicyService {
         }).flatMap(t -> opLogService.record(MODULE, "提交审批", operator, policyId, "提交版本 " + t));
     }
 
+    /** 编辑策略：更新元数据并生成新草稿版本（DRAFT → PENDING_APPROVAL） */
+    public Mono<Map<String, Object>> updatePolicy(String policyId, Map<String, Object> body, String operator) {
+        return ReactiveDbAdapter.mono(() -> {
+            // 未提供的字段传 null：mapper 侧 COALESCE(#{x}, x) 保留库中原值；
+            // 此前 str(null)="" 会把缺省字段清成空串
+            String name = body.get("policyName") == null ? null : str(body.get("policyName"));
+            String category = body.get("policyType") == null ? null : str(body.get("policyType"));
+            String scope = body.get("scope") == null ? null : String.valueOf(body.get("scope"));
+            String contentJson = body.get("content") == null ? "{}" : String.valueOf(body.get("content"));
+            int version = nextVersion(policyId);
+            policyMapper.updatePolicy(policyId, name, category, scope, null, null);
+            policyMapper.insertVersion(policyId, version, contentJson, operator);
+            policyMapper.updateVersionStatus(policyId, version, "PENDING", null, null);
+            policyMapper.updatePolicy(policyId, null, null, null, "PENDING_APPROVAL", version);
+            return Map.of("policyId", policyId, "version", version);
+        }).flatMap(t -> opLogService.record(MODULE, "编辑策略", operator, policyId,
+                "修改已保存为 v" + t.get("version") + "，重新走审批"));
+    }
+
+    /** 启用/停用策略（INACTIVE ↔ ACTIVE） */
+    public Mono<Map<String, Object>> setStatus(String policyId, boolean active, String operator) {
+        String status = active ? "ACTIVE" : "INACTIVE";
+        return ReactiveDbAdapter.mono(() -> {
+            policyMapper.updatePolicy(policyId, null, null, null, status, null);
+            return Map.of("policyId", policyId, "status", status);
+        }).flatMap(t -> opLogService.record(MODULE, active ? "启用策略" : "停用策略", operator, policyId, "策略状态=" + status));
+    }
+
+    /** 启用/停用策略：按当前状态翻转（前端 togglePolicy 不传目标态） */
+    public Mono<Map<String, Object>> toggleStatus(String policyId, String operator) {
+        return ReactiveDbAdapter.mono(() -> {
+            Map<String, Object> cur = policyMapper.selectPolicy(policyId);
+            if (cur == null) return Map.of("policyId", policyId, "status", "UNKNOWN");
+            boolean active = !"ACTIVE".equals(String.valueOf(cur.get("status")));
+            String status = active ? "ACTIVE" : "INACTIVE";
+            policyMapper.updatePolicy(policyId, null, null, null, status, null);
+            return Map.of("policyId", policyId, "status", status);
+        }).flatMap(t -> opLogService.record(MODULE,
+                "ACTIVE".equals(String.valueOf(t.get("status"))) ? "启用策略" : "停用策略",
+                operator, policyId, "策略状态=" + t.get("status")));
+    }
+
     /** 审批（PENDING → PUBLISHED / 驳回回 DRAFT） */
     public Mono<Map<String, Object>> approve(String policyId, int version, boolean approved,
                                              String comment, String operator) {

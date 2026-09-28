@@ -156,7 +156,8 @@ public class ForwardService {
             quotaService.settle(ctx.getUserId(), ctx.getReservedTokens(), totalTokens)
                     .subscribe(null, e -> log.warn("Quota settle failed (skip): {}", e.getMessage()));
         }
-        callLog.logAsync(ctx, promptTokens, completionTokens, totalTokens, ctx.elapsedMs(), true);
+        // 审计留存：响应原文随调用记录一并落库（此前 response_content 恒为空串）
+        callLog.logAsync(ctx, promptTokens, completionTokens, totalTokens, ctx.elapsedMs(), true, masked);
 
         root.putPOJO("x-mas-meta", ctx.getMeta());
         try {
@@ -306,7 +307,7 @@ public class ForwardService {
                         .subscribe(null, e -> log.warn("Quota settle failed (skip): {}", e.getMessage()));
             }
             callLog.logAsync(ctx, promptTokens, completionTokens,
-                    totalTokens, ctx.elapsedMs(), true);
+                    totalTokens, ctx.elapsedMs(), true, fullContent);
         } catch (Exception e) {
             log.warn("Stream finalize failed: {}", e.getMessage());
         }

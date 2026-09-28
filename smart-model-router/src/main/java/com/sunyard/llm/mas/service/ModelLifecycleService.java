@@ -24,10 +24,13 @@ public class ModelLifecycleService {
 
     private final ModelLifecycleMapper lifecycleMapper;
     private final OpLogService opLogService;
+    private final GrayReleaseService grayRelease;
 
-    public ModelLifecycleService(ModelLifecycleMapper lifecycleMapper, OpLogService opLogService) {
+    public ModelLifecycleService(ModelLifecycleMapper lifecycleMapper, OpLogService opLogService,
+                                 GrayReleaseService grayRelease) {
         this.lifecycleMapper = lifecycleMapper;
         this.opLogService = opLogService;
+        this.grayRelease = grayRelease;
     }
 
     // ---------------- 版本 ----------------
@@ -96,6 +99,8 @@ public class ModelLifecycleService {
                 throw MasException.conflict("发布单号已存在，请更换 releaseId：" + releaseId);
             }
             log.info("gray release started: {} -> {}", releaseId, body.get("toVersion"));
+            // 运行时灰度快照立即失效，新单据下一次请求即生效
+            if (grayRelease != null) grayRelease.evict();
             return releaseId;
         }).flatMap(id -> opLogService.record(MODULE, "发起灰度发布", operator, id,
                 "灰度 " + body.get("grayPercent") + "%"));
@@ -105,6 +110,7 @@ public class ModelLifecycleService {
     public Mono<Map<String, Object>> adjustRelease(String releaseId, int percent, String operator) {
         return ReactiveDbAdapter.mono(() -> {
             lifecycleMapper.updateRelease(releaseId, percent, percent >= 100 ? "FULL" : "GRAYING");
+            if (grayRelease != null) grayRelease.evict();
             return releaseId + "=" + percent + "%";
         }).flatMap(t -> opLogService.record(MODULE, "调整灰度比例", operator, releaseId, t));
     }
@@ -121,6 +127,8 @@ public class ModelLifecycleService {
                 lifecycleMapper.updateVersionStatus(modelId, from, "ONLINE");
             }
             log.warn("gray release rolled back: {}", releaseId);
+            // 回滚立即从运行时快照移除，后续请求全部回到原版本
+            if (grayRelease != null) grayRelease.evict();
             return releaseId;
         }).flatMap(id -> opLogService.record(MODULE, "灰度回滚", operator, id, "一键回滚"));
     }

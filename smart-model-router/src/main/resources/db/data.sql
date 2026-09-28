@@ -193,3 +193,10 @@ ON CONFLICT (conn_id) DO NOTHING;
 -- 8. 管理端点令牌（改由启动期 DatabaseConfig 依据环境变量 MAS_ADMIN_TOKEN /
 --    mas.admin-token 注入并 SHA-256 落库；缺省仅本地开发使用演示令牌，生产必须覆盖）
 -- -----------------------------------------------------------------------------
+-- -----------------------------------------------------------------------------
+-- 9. 部门配额补列：通知渠道 / 恢复审批（配额预警与超限恢复此前只在前端内存里）
+--    放在 data.sql（最后加载），因为 mas_dept_quota 由 migration-real-data.sql 创建
+-- -----------------------------------------------------------------------------
+ALTER TABLE mas_dept_quota ADD COLUMN IF NOT EXISTS notify_channels VARCHAR(32) DEFAULT 'SITE'; -- SITE/MAIL/SMS，逗号分隔
+ALTER TABLE mas_dept_quota ADD COLUMN IF NOT EXISTS resume_pending SMALLINT NOT NULL DEFAULT 0; -- 超限停发后是否待审批恢复
+ALTER TABLE mas_dept_quota ADD COLUMN IF NOT EXISTS resume_reason VARCHAR(256);

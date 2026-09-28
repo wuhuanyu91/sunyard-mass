@@ -33,6 +33,14 @@ public class MasMeta {
     @JsonProperty("failover")
     private Boolean failover;
 
+    /** 命中的灰度发布单号（POC 第 9 问：灰度可追溯到具体发布单） */
+    @JsonProperty("gray_release")
+    private String grayRelease;
+
+    /** 该请求所属应用的 SLA 等级（P0 关键业务享有优先保障） */
+    @JsonProperty("sla_level")
+    private String slaLevel;
+
     public boolean isCacheHit() { return cacheHit; }
     public void setCacheHit(boolean cacheHit) { this.cacheHit = cacheHit; }
     public String getCacheLevel() { return cacheLevel; }
@@ -49,4 +57,8 @@ public class MasMeta {
     public void setContentBlocked(Boolean contentBlocked) { this.contentBlocked = contentBlocked; }
     public Boolean getFailover() { return failover; }
     public void setFailover(Boolean failover) { this.failover = failover; }
+    public String getGrayRelease() { return grayRelease; }
+    public void setGrayRelease(String grayRelease) { this.grayRelease = grayRelease; }
+    public String getSlaLevel() { return slaLevel; }
+    public void setSlaLevel(String slaLevel) { this.slaLevel = slaLevel; }
 }

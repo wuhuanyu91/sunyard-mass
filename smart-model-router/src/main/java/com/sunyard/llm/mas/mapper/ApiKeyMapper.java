@@ -107,4 +107,25 @@ public interface ApiKeyMapper extends BaseMapper<ApiKeyEntity> {
             """)
     Map<String, Object> usageSummary(@Param("userId") String userId,
                                      @Param("since") LocalDateTime since);
+
+    /** 启用/禁用：按 prefix 切换 status（1=active, 0=revoked） */
+    @Update("UPDATE mas_api_key SET status = #{status} WHERE key_prefix = #{prefix}")
+    int setStatusByPrefix(@Param("prefix") String prefix, @Param("status") int status);
+
+    /** 按 prefix 查当前状态（toggle 前置读取，避免全表拉取再过滤） */
+    @Select("SELECT status FROM mas_api_key WHERE key_prefix = #{prefix}")
+    Integer selectStatusByPrefix(@Param("prefix") String prefix);
+
+    /** 编辑元数据：按 prefix 更新归属/描述/可用模型等 */
+    @Update("""
+            UPDATE mas_api_key
+            SET team_name = #{teamName}, purpose = #{purpose},
+                app_id = #{appId}, agent_name = #{agentName}
+            WHERE key_prefix = #{prefix}
+            """)
+    int updateMetaByPrefix(@Param("prefix") String prefix,
+                           @Param("teamName") String teamName,
+                           @Param("purpose") String purpose,
+                           @Param("appId") String appId,
+                           @Param("agentName") String agentName);
 }

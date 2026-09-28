@@ -99,4 +99,18 @@ public interface PolicyMapper {
     @Select("SELECT id, trace_id, policy_id, version, stage, decision, detail, created_at " +
             "FROM mas_policy_exec_log WHERE trace_id = #{traceId} ORDER BY id")
     List<Map<String, Object>> listExecLogs(@Param("traceId") String traceId);
+
+    /**
+     * 运行时策略快照：只取已发布策略，并带出其当前版本的规则内容。
+     * 【改造背景】管线此前从不读取策略，mas_policy_exec_log 永远为空。
+     */
+    @Select("SELECT p.policy_id, p.name, p.category, p.scope, p.current_version, v.content_json " +
+            "FROM mas_policy p " +
+            "JOIN mas_policy_version v ON v.policy_id = p.policy_id AND v.version = p.current_version " +
+            "WHERE p.status = 'PUBLISHED' " +
+            "ORDER BY p.updated_at DESC")
+    List<Map<String, Object>> listPublishedWithContent();
+
+    @Select("SELECT COUNT(*) FROM mas_policy_exec_log")
+    int countExecLogs();
 }

@@ -1,20 +1,32 @@
 package com.sunyard.llm.mas.service;
 
+import com.sunyard.llm.mas.entity.AggregationGroupEntity;
 import com.sunyard.llm.mas.entity.CallLogEntity;
+import com.sunyard.llm.mas.entity.ElasticSwitchEntity;
+import com.sunyard.llm.mas.entity.RoutingEngineEntity;
 import com.sunyard.llm.mas.entity.RoutingRuleEntity;
+import com.sunyard.llm.mas.entity.RoutingRuleSetEntity;
+import com.sunyard.llm.mas.mapper.AggregationGroupMapper;
 import com.sunyard.llm.mas.mapper.CallLogMapper;
+import com.sunyard.llm.mas.mapper.ElasticSwitchMapper;
+import com.sunyard.llm.mas.mapper.RoutingEngineMapper;
 import com.sunyard.llm.mas.mapper.RoutingRuleMapper;
+import com.sunyard.llm.mas.mapper.RoutingRuleSetMapper;
 import com.sunyard.llm.mas.util.ReactiveDbAdapter;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.*;
 
 /**
- * 路由配置服务：限流规则从 DB 查询，路由日志从 call_log 查询
+ * 路由配置服务：限流规则、路由引擎、场景路由规则集、聚合组、弹性切换均从 DB 读写；
+ * 路由日志从 call_log 查询。
+ * <p>
+ * 【改造背景】路由引擎配置 / 场景路由规则集 / 聚合组 / 弹性切换 四个端点的写操作
+ * 此前只返回一条操作留痕（opRecord），不产生任何 UPDATE/INSERT，页面刷新即回原值。
  */
 @Service
 public class RoutingService {
@@ -22,16 +34,107 @@ public class RoutingService {
     private final RoutingRuleMapper routingRuleMapper;
     private final CallLogMapper callLogMapper;
     private final OpLogService opLogService;
+    private final RoutingEngineMapper routingEngineMapper;
+    private final RoutingRuleSetMapper routingRuleSetMapper;
+    private final AggregationGroupMapper aggregationGroupMapper;
+    private final ElasticSwitchMapper elasticSwitchMapper;
 
     public RoutingService(RoutingRuleMapper routingRuleMapper, CallLogMapper callLogMapper,
-                          OpLogService opLogService) {
+                          OpLogService opLogService, RoutingEngineMapper routingEngineMapper,
+                          RoutingRuleSetMapper routingRuleSetMapper,
+                          AggregationGroupMapper aggregationGroupMapper,
+                          ElasticSwitchMapper elasticSwitchMapper) {
         this.routingRuleMapper = routingRuleMapper;
         this.callLogMapper = callLogMapper;
         this.opLogService = opLogService;
+        this.routingEngineMapper = routingEngineMapper;
+        this.routingRuleSetMapper = routingRuleSetMapper;
+        this.aggregationGroupMapper = aggregationGroupMapper;
+        this.elasticSwitchMapper = elasticSwitchMapper;
     }
 
-    /** 路由引擎配置（系统配置，保持） */
+    // ---------------- 路由引擎配置（真实落库 mas_routing_engine） ----------------
+
+    /** 路由引擎四维权重与策略开关：优先读库，无记录时回落到内置默认值 */
     public Mono<Map<String, Object>> getRoutingEngine() {
+        return ReactiveDbAdapter.mono(() -> {
+            RoutingEngineEntity e = routingEngineMapper.selectById(1);
+            Map<String, Object> config = new LinkedHashMap<>();
+            Map<String, Object> weights = new LinkedHashMap<>();
+            if (e == null) {
+                weights.put("latency", 30.0);
+                weights.put("cost", 25.0);
+                weights.put("risk", 25.0);
+                weights.put("load", 20.0);
+                config.put("cache_first", true);
+                config.put("budget_guard", true);
+                config.put("sla_priority", true);
+                config.put("auto_fallback", true);
+                config.put("openai_compat", true);
+            } else {
+                weights.put("latency", dbl(e.getWeightLatency(), 30.0));
+                weights.put("cost", dbl(e.getWeightCost(), 25.0));
+                weights.put("risk", dbl(e.getWeightRisk(), 25.0));
+                weights.put("load", dbl(e.getWeightLoad(), 20.0));
+                config.put("cache_first", e.getCacheFirst() != null && e.getCacheFirst() == 1);
+                config.put("budget_guard", e.getBudgetGuard() != null && e.getBudgetGuard() == 1);
+                config.put("sla_priority", e.getSlaPriority() != null && e.getSlaPriority() == 1);
+                config.put("auto_fallback", e.getAutoFallback() != null && e.getAutoFallback() == 1);
+                config.put("openai_compat", e.getOpenaiCompat() != null && e.getOpenaiCompat() == 1);
+            }
+            config.put("weights", weights);
+            return config;
+        }).onErrorResume(e -> Mono.just(defaultEngineConfig()));
+    }
+
+    /** 保存路由引擎配置：真实 UPSERT mas_routing_engine 并落操作审计 */
+    public Mono<Map<String, Object>> saveRoutingEngine(Map<String, Object> body) {
+        return saveRoutingEngine(body, null);
+    }
+
+    public Mono<Map<String, Object>> saveRoutingEngine(Map<String, Object> body, String operator) {
+        return ReactiveDbAdapter.mono(() -> {
+            RoutingEngineEntity e = routingEngineMapper.selectById(1);
+            boolean insert = e == null;
+            if (insert) {
+                e = new RoutingEngineEntity();
+                e.setId(1);
+            }
+            Object weights = body.get("weights");
+            if (weights instanceof Map<?, ?> w) {
+                e.setWeightLatency(dec(w.get("latency"), e.getWeightLatency(), 30.0));
+                e.setWeightCost(dec(w.get("cost"), e.getWeightCost(), 25.0));
+                e.setWeightRisk(dec(w.get("risk"), e.getWeightRisk(), 25.0));
+                e.setWeightLoad(dec(w.get("load"), e.getWeightLoad(), 20.0));
+            }
+            // 四维权重自动归一到 100，避免权重口径失真
+            BigDecimal sum = nz(e.getWeightLatency()).add(nz(e.getWeightCost()))
+                    .add(nz(e.getWeightRisk())).add(nz(e.getWeightLoad()));
+            if (sum.compareTo(BigDecimal.ZERO) > 0 && sum.compareTo(new BigDecimal("100")) != 0) {
+                BigDecimal factor = new BigDecimal("100").divide(sum, 6, java.math.RoundingMode.HALF_UP);
+                e.setWeightLatency(nz(e.getWeightLatency()).multiply(factor).setScale(2, java.math.RoundingMode.HALF_UP));
+                e.setWeightCost(nz(e.getWeightCost()).multiply(factor).setScale(2, java.math.RoundingMode.HALF_UP));
+                e.setWeightRisk(nz(e.getWeightRisk()).multiply(factor).setScale(2, java.math.RoundingMode.HALF_UP));
+                e.setWeightLoad(nz(e.getWeightLoad()).multiply(factor).setScale(2, java.math.RoundingMode.HALF_UP));
+            }
+            e.setCacheFirst(flag(body.get("cache_first"), e.getCacheFirst(), 1));
+            e.setBudgetGuard(flag(body.get("budget_guard"), e.getBudgetGuard(), 1));
+            e.setSlaPriority(flag(body.get("sla_priority"), e.getSlaPriority(), 1));
+            e.setAutoFallback(flag(body.get("auto_fallback"), e.getAutoFallback(), 1));
+            e.setOpenaiCompat(flag(body.get("openai_compat"), e.getOpenaiCompat(), 1));
+            e.setUpdatedBy(operator);
+            if (insert) {
+                routingEngineMapper.insert(e);
+            } else {
+                routingEngineMapper.updateById(e);
+            }
+            return e.getWeightLatency() + "/" + e.getWeightCost() + "/"
+                    + e.getWeightRisk() + "/" + e.getWeightLoad();
+        }).flatMap(w -> opLogService.record("routing", "保存路由引擎配置", operator, "ROUTING-ENGINE",
+                "四维权重已更新为 " + w));
+    }
+
+    private static Map<String, Object> defaultEngineConfig() {
         Map<String, Object> config = new LinkedHashMap<>();
         Map<String, Object> weights = new LinkedHashMap<>();
         weights.put("latency", 30.0);
@@ -44,11 +147,7 @@ public class RoutingService {
         config.put("sla_priority", true);
         config.put("auto_fallback", true);
         config.put("openai_compat", true);
-        return Mono.just(config);
-    }
-
-    public Mono<Map<String, Object>> saveRoutingEngine(Map<String, Object> body) {
-        return opRecord("保存路由引擎配置", "ROUTING-ENGINE", "权重配置已更新");
+        return config;
     }
 
     /** 限流规则列表（从 mas_routing_rule 查询） */
@@ -180,66 +279,188 @@ public class RoutingService {
         return deleteRateLimitRule(ruleId, null);
     }
 
-    /** 场景路由规则集（配置数据，保持） */
+    // ---------------- 场景路由规则集（真实落库 mas_routing_rule_set） ----------------
+
+    /** 场景路由规则集：从 DB 读取，无数据时回落到内置三场景默认值 */
     public Mono<List<Map<String, Object>>> listRoutingRuleSets() {
-        List<Map<String, Object>> list = new ArrayList<>();
-        Map<String, Object> rs1 = new LinkedHashMap<>();
-        rs1.put("scene_key", "CREDIT"); rs1.put("scene_name", "信贷审批"); rs1.put("priority", "P0");
-        rs1.put("allowed_models", List.of("qwen-72b", "qwen-lite"));
-        rs1.put("fallback_model", "qwen-lite"); rs1.put("latency_ceil_ms", 1200);
-        rs1.put("policy_id", "POL-ROUTING-001");
-        list.add(rs1);
-        Map<String, Object> rs2 = new LinkedHashMap<>();
-        rs2.put("scene_key", "RISK"); rs2.put("scene_name", "风控反欺诈"); rs2.put("priority", "P0");
-        rs2.put("allowed_models", List.of("qwen-lite", "qwen-72b"));
-        rs2.put("fallback_model", "qwen-72b"); rs2.put("latency_ceil_ms", 800);
-        rs2.put("policy_id", null);
-        list.add(rs2);
-        Map<String, Object> rs3 = new LinkedHashMap<>();
-        rs3.put("scene_key", "SERVICE"); rs3.put("scene_name", "客服问答"); rs3.put("priority", "P1");
-        rs3.put("allowed_models", List.of("qwen-lite", "qwen2.5:0.5b"));
-        rs3.put("fallback_model", "qwen2.5:0.5b"); rs3.put("latency_ceil_ms", 1500);
-        rs3.put("policy_id", null);
-        list.add(rs3);
-        return Mono.just(list);
+        return ReactiveDbAdapter.mono(() -> {
+            List<RoutingRuleSetEntity> rows = routingRuleSetMapper.selectList(null);
+            List<Map<String, Object>> list = new ArrayList<>();
+            for (RoutingRuleSetEntity r : rows) {
+                Map<String, Object> m = new LinkedHashMap<>();
+                m.put("scene_key", r.getSceneKey());
+                m.put("scene_name", r.getSceneName());
+                m.put("priority", r.getPriority());
+                m.put("allowed_models", splitList(r.getAllowedModels()));
+                m.put("fallback_model", r.getFallbackModel());
+                m.put("latency_ceil_ms", r.getLatencyCeilMs());
+                m.put("policy_id", r.getPolicyId());
+                list.add(m);
+            }
+            return list;
+        }).defaultIfEmpty(List.of());
     }
 
+    /** 保存场景路由规则集：真实 UPSERT mas_routing_rule_set，并生成/复用控制面策略号 */
     public Mono<Map<String, Object>> saveRoutingRuleSet(Map<String, Object> body) {
-        return opRecord("保存场景路由规则",
-                body.getOrDefault("scene_key", "").toString(),
-                body.getOrDefault("scene_name", "").toString());
+        return saveRoutingRuleSet(body, null);
     }
 
-    /** 聚合组（配置数据，保持） */
+    public Mono<Map<String, Object>> saveRoutingRuleSet(Map<String, Object> body, String operator) {
+        return ReactiveDbAdapter.mono(() -> {
+            String sceneKey = str(body.getOrDefault("scene_key", body.get("sceneKey")));
+            if (sceneKey.isEmpty()) throw new IllegalArgumentException("scene_key 必填");
+            RoutingRuleSetEntity e = routingRuleSetMapper.selectById(sceneKey);
+            boolean insert = e == null;
+            if (insert) {
+                e = new RoutingRuleSetEntity();
+                e.setSceneKey(sceneKey);
+            }
+            e.setSceneName(str(body.getOrDefault("scene_name", body.getOrDefault("sceneName", sceneKey))));
+            e.setPriority(str(body.getOrDefault("priority", e.getPriority() == null ? "P1" : e.getPriority())));
+            e.setAllowedModels(joinList(body.getOrDefault("allowed_models", body.get("allowedModels"))));
+            e.setFallbackModel(str(body.getOrDefault("fallback_model", body.get("fallbackModel"))));
+            e.setLatencyCeilMs(intVal(body.getOrDefault("latency_ceil_ms", body.get("latencyCeilMs")),
+                    e.getLatencyCeilMs() == null ? 1200 : e.getLatencyCeilMs()));
+            // 场景路由保存即生成控制面策略号（前端 Toast 会提示"已提交控制面审批"）
+            String policyId = str(body.getOrDefault("policy_id", body.get("policyId")));
+            if (policyId.isEmpty()) {
+                policyId = e.getPolicyId() == null || e.getPolicyId().isBlank()
+                        ? "POL-ROUTING-" + sceneKey.toUpperCase() : e.getPolicyId();
+            }
+            e.setPolicyId(policyId);
+            e.setUpdatedBy(operator);
+            if (insert) {
+                routingRuleSetMapper.insert(e);
+            } else {
+                routingRuleSetMapper.updateById(e);
+            }
+            return new String[]{sceneKey, policyId};
+        }).flatMap(arr -> opLogService.record("routing", "保存场景路由规则", operator, arr[0],
+                "场景 " + arr[0] + " 规则已落库，关联策略 " + arr[1]));
+    }
+
+    public Mono<Map<String, Object>> deleteRoutingRuleSet(String sceneKey, String operator) {
+        return ReactiveDbAdapter.mono(() -> {
+            int n = routingRuleSetMapper.deleteById(sceneKey);
+            if (n == 0) throw new IllegalArgumentException("场景路由规则不存在：" + sceneKey);
+            return sceneKey;
+        }).flatMap(k -> opLogService.record("routing", "删除场景路由规则", operator, k, "场景路由规则已删除"));
+    }
+
+    // ---------------- 聚合组（真实落库 mas_aggregation_group） ----------------
+
     public Mono<List<Map<String, Object>>> listAggregationGroups() {
-        List<Map<String, Object>> list = new ArrayList<>();
-        list.add(Map.of("group_id", "AGG-001", "name", "客服问答聚合组",
-                "members", List.of("qwen-lite", "qwen2.5:0.5b"),
-                "strategy", "WEIGHTED", "auto_skip_fault", true, "health_check_sec", 30, "fault_members", List.of()));
-        list.add(Map.of("group_id", "AGG-002", "name", "复杂推理聚合组",
-                "members", List.of("qwen-72b", "qwen-lite"),
-                "strategy", "LATENCY", "auto_skip_fault", true, "health_check_sec", 15,
-                "fault_members", List.of()));
-        return Mono.just(list);
+        return ReactiveDbAdapter.mono(() -> {
+            List<AggregationGroupEntity> rows = aggregationGroupMapper.selectList(null);
+            List<Map<String, Object>> list = new ArrayList<>();
+            for (AggregationGroupEntity g : rows) {
+                Map<String, Object> m = new LinkedHashMap<>();
+                m.put("group_id", g.getGroupId());
+                m.put("name", g.getName());
+                m.put("members", splitList(g.getMembers()));
+                m.put("strategy", g.getStrategy());
+                m.put("auto_skip_fault", g.getAutoSkipFault() != null && g.getAutoSkipFault() == 1);
+                m.put("health_check_sec", g.getHealthCheckSec());
+                m.put("fault_members", List.of());
+                list.add(m);
+            }
+            return list;
+        }).defaultIfEmpty(List.of());
     }
 
     public Mono<Map<String, Object>> createAggregationGroup(Map<String, Object> body) {
-        return opRecord("新建聚合组", "AGG-NEW", body.getOrDefault("name", "").toString());
+        return createAggregationGroup(body, null);
     }
 
-    /** 弹性切换配置（系统配置，保持） */
+    public Mono<Map<String, Object>> createAggregationGroup(Map<String, Object> body, String operator) {
+        return ReactiveDbAdapter.mono(() -> {
+            String groupId = str(body.getOrDefault("group_id", body.get("groupId")));
+            if (groupId.isEmpty()) groupId = "AGG-" + System.currentTimeMillis();
+            AggregationGroupEntity e = aggregationGroupMapper.selectById(groupId);
+            boolean insert = e == null;
+            if (insert) {
+                e = new AggregationGroupEntity();
+                e.setGroupId(groupId);
+            }
+            e.setName(str(body.getOrDefault("name", groupId)));
+            e.setMembers(joinList(body.get("members")));
+            e.setStrategy(str(body.getOrDefault("strategy", e.getStrategy() == null ? "WEIGHTED" : e.getStrategy())));
+            e.setAutoSkipFault(flag(body.get("auto_skip_fault"), e.getAutoSkipFault(), 1));
+            e.setHealthCheckSec(intVal(body.getOrDefault("health_check_sec", body.get("healthCheckSec")),
+                    e.getHealthCheckSec() == null ? 30 : e.getHealthCheckSec()));
+            e.setUpdatedBy(operator);
+            if (insert) {
+                aggregationGroupMapper.insert(e);
+            } else {
+                aggregationGroupMapper.updateById(e);
+            }
+            return groupId;
+        }).flatMap(id -> opLogService.record("routing", "保存聚合组", operator, id,
+                "聚合组 " + body.getOrDefault("name", id) + " 已落库"));
+    }
+
+    public Mono<Map<String, Object>> deleteAggregationGroup(String groupId, String operator) {
+        return ReactiveDbAdapter.mono(() -> {
+            int n = aggregationGroupMapper.deleteById(groupId);
+            if (n == 0) throw new IllegalArgumentException("聚合组不存在：" + groupId);
+            return groupId;
+        }).flatMap(id -> opLogService.record("routing", "删除聚合组", operator, id, "聚合组已删除"));
+    }
+
+    // ---------------- 弹性切换（真实落库 mas_elastic_switch） ----------------
+
     public Mono<Map<String, Object>> getElasticSwitch() {
-        Map<String, Object> config = new LinkedHashMap<>();
-        config.put("trigger_util", 85.0);
-        config.put("sustain_min", 5);
-        config.put("target", "RENTAL");
-        config.put("traffic_ratio", 30.0);
-        config.put("active", true);
-        return Mono.just(config);
+        return ReactiveDbAdapter.mono(() -> {
+            ElasticSwitchEntity e = elasticSwitchMapper.selectById(1);
+            Map<String, Object> config = new LinkedHashMap<>();
+            if (e == null) {
+                config.put("trigger_util", 85.0);
+                config.put("sustain_min", 5);
+                config.put("target", "RENTAL");
+                config.put("traffic_ratio", 30.0);
+                config.put("active", true);
+            } else {
+                config.put("trigger_util", dbl(e.getTriggerUtil(), 85.0));
+                config.put("sustain_min", e.getSustainMin());
+                config.put("target", e.getTarget());
+                config.put("traffic_ratio", dbl(e.getTrafficRatio(), 30.0));
+                config.put("active", e.getActive() != null && e.getActive() == 1);
+            }
+            return config;
+        }).onErrorResume(e -> Mono.just(Map.of("trigger_util", 85.0, "sustain_min", 5,
+                "target", "RENTAL", "traffic_ratio", 30.0, "active", true)));
     }
 
     public Mono<Map<String, Object>> saveElasticSwitch(Map<String, Object> body) {
-        return opRecord("保存弹性切换配置", "ELASTIC-SWITCH", "弹性切换配置已更新");
+        return saveElasticSwitch(body, null);
+    }
+
+    public Mono<Map<String, Object>> saveElasticSwitch(Map<String, Object> body, String operator) {
+        return ReactiveDbAdapter.mono(() -> {
+            ElasticSwitchEntity e = elasticSwitchMapper.selectById(1);
+            boolean insert = e == null;
+            if (insert) {
+                e = new ElasticSwitchEntity();
+                e.setId(1);
+            }
+            e.setTriggerUtil(dec(body.getOrDefault("trigger_util", body.get("triggerUtil")),
+                    e.getTriggerUtil(), 85.0));
+            e.setSustainMin(intVal(body.getOrDefault("sustain_min", body.get("sustainMin")),
+                    e.getSustainMin() == null ? 5 : e.getSustainMin()));
+            e.setTarget(str(body.getOrDefault("target", e.getTarget() == null ? "RENTAL" : e.getTarget())));
+            e.setTrafficRatio(dec(body.getOrDefault("traffic_ratio", body.get("trafficRatio")),
+                    e.getTrafficRatio(), 30.0));
+            e.setActive(flag(body.get("active"), e.getActive(), 1));
+            e.setUpdatedBy(operator);
+            if (insert) {
+                elasticSwitchMapper.insert(e);
+            } else {
+                elasticSwitchMapper.updateById(e);
+            }
+            return e.getTriggerUtil() + "%/" + e.getTarget() + "/" + e.getTrafficRatio() + "%";
+        }).flatMap(d -> opLogService.record("routing", "保存弹性切换配置", operator, "ELASTIC-SWITCH",
+                "弹性切换阈值与目标已更新为 " + d));
     }
 
     /** 路由日志（从 mas_call_log 查询真实路由记录） */
@@ -301,14 +522,37 @@ public class RoutingService {
     }
 
     // ---- helpers ----
-    private Mono<Map<String, Object>> opRecord(String opType, String targetId, String detail) {
-        Map<String, Object> record = new LinkedHashMap<>();
-        record.put("op_id", "OP-" + System.currentTimeMillis());
-        record.put("op_type", opType);
-        record.put("operator", "平台管理员");
-        record.put("target_id", targetId);
-        record.put("detail", detail);
-        record.put("created_at", Instant.now().toString());
-        return Mono.just(record);
+
+    private static BigDecimal nz(BigDecimal v) {
+        return v == null ? BigDecimal.ZERO : v;
+    }
+
+    private static double dbl(BigDecimal v, double def) {
+        return v == null ? def : v.doubleValue();
+    }
+
+    /** 取入参中的数值，缺省时沿用原值，仍无则取内置默认 */
+    private static BigDecimal dec(Object v, BigDecimal current, double def) {
+        if (v == null) return current == null ? BigDecimal.valueOf(def) : current;
+        if (v instanceof BigDecimal b) return b;
+        if (v instanceof Number n) return BigDecimal.valueOf(n.doubleValue());
+        try {
+            return new BigDecimal(v.toString());
+        } catch (Exception e) {
+            return current == null ? BigDecimal.valueOf(def) : current;
+        }
+    }
+
+    /** 取入参中的布尔值，缺省时沿用原值，仍无则取内置默认 */
+    private static Integer flag(Object v, Integer current, int def) {
+        boolean b;
+        if (v == null) {
+            b = current == null ? def == 1 : current == 1;
+        } else if (v instanceof Boolean bool) {
+            b = bool;
+        } else {
+            b = Boolean.parseBoolean(String.valueOf(v));
+        }
+        return b ? 1 : 0;
     }
 }

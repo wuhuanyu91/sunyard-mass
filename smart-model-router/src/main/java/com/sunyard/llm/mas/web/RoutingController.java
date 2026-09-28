@@ -25,8 +25,10 @@ public class RoutingController {
     }
 
     @PutMapping("/internal/routing/engine")
-    public Mono<Map<String, Object>> saveRoutingEngine(@RequestBody Map<String, Object> body) {
-        return routingService.saveRoutingEngine(body);
+    public Mono<Map<String, Object>> saveRoutingEngine(
+            @RequestBody Map<String, Object> body,
+            @RequestHeader(value = "X-Operator", required = false) String operator) {
+        return routingService.saveRoutingEngine(body, operator);
     }
 
     @GetMapping("/internal/routing/rate-limit-rules")
@@ -35,20 +37,25 @@ public class RoutingController {
     }
 
     @PostMapping("/internal/routing/rate-limit-rules")
-    public Mono<Map<String, Object>> createRateLimitRule(@RequestBody Map<String, Object> body) {
-        return routingService.createRateLimitRule(body);
+    public Mono<Map<String, Object>> createRateLimitRule(
+            @RequestBody Map<String, Object> body,
+            @RequestHeader(value = "X-Operator", required = false) String operator) {
+        return routingService.createRateLimitRule(body, operator);
     }
 
     @PutMapping("/internal/routing/rate-limit-rules/{ruleId}")
     public Mono<Map<String, Object>> updateRateLimitRule(
             @PathVariable("ruleId") String ruleId,
-            @RequestBody Map<String, Object> body) {
-        return routingService.updateRateLimitRule(ruleId, body);
+            @RequestBody Map<String, Object> body,
+            @RequestHeader(value = "X-Operator", required = false) String operator) {
+        return routingService.updateRateLimitRule(ruleId, body, operator);
     }
 
     @DeleteMapping("/internal/routing/rate-limit-rules/{ruleId}")
-    public Mono<Map<String, Object>> deleteRateLimitRule(@PathVariable("ruleId") String ruleId) {
-        return routingService.deleteRateLimitRule(ruleId);
+    public Mono<Map<String, Object>> deleteRateLimitRule(
+            @PathVariable("ruleId") String ruleId,
+            @RequestHeader(value = "X-Operator", required = false) String operator) {
+        return routingService.deleteRateLimitRule(ruleId, operator);
     }
 
     @GetMapping("/internal/routing/routing-rule-sets")
@@ -57,8 +64,17 @@ public class RoutingController {
     }
 
     @PostMapping("/internal/routing/routing-rule-sets")
-    public Mono<Map<String, Object>> saveRoutingRuleSet(@RequestBody Map<String, Object> body) {
-        return routingService.saveRoutingRuleSet(body);
+    public Mono<Map<String, Object>> saveRoutingRuleSet(
+            @RequestBody Map<String, Object> body,
+            @RequestHeader(value = "X-Operator", required = false) String operator) {
+        return routingService.saveRoutingRuleSet(body, operator);
+    }
+
+    @DeleteMapping("/internal/routing/routing-rule-sets/{sceneKey}")
+    public Mono<Map<String, Object>> deleteRoutingRuleSet(
+            @PathVariable("sceneKey") String sceneKey,
+            @RequestHeader(value = "X-Operator", required = false) String operator) {
+        return routingService.deleteRoutingRuleSet(sceneKey, operator);
     }
 
     @GetMapping("/internal/routing/aggregation-groups")
@@ -67,8 +83,17 @@ public class RoutingController {
     }
 
     @PostMapping("/internal/routing/aggregation-groups")
-    public Mono<Map<String, Object>> createAggregationGroup(@RequestBody Map<String, Object> body) {
-        return routingService.createAggregationGroup(body);
+    public Mono<Map<String, Object>> createAggregationGroup(
+            @RequestBody Map<String, Object> body,
+            @RequestHeader(value = "X-Operator", required = false) String operator) {
+        return routingService.createAggregationGroup(body, operator);
+    }
+
+    @DeleteMapping("/internal/routing/aggregation-groups/{groupId}")
+    public Mono<Map<String, Object>> deleteAggregationGroup(
+            @PathVariable("groupId") String groupId,
+            @RequestHeader(value = "X-Operator", required = false) String operator) {
+        return routingService.deleteAggregationGroup(groupId, operator);
     }
 
     @GetMapping("/internal/routing/elastic-switch")
@@ -77,8 +102,10 @@ public class RoutingController {
     }
 
     @PutMapping("/internal/routing/elastic-switch")
-    public Mono<Map<String, Object>> saveElasticSwitch(@RequestBody Map<String, Object> body) {
-        return routingService.saveElasticSwitch(body);
+    public Mono<Map<String, Object>> saveElasticSwitch(
+            @RequestBody Map<String, Object> body,
+            @RequestHeader(value = "X-Operator", required = false) String operator) {
+        return routingService.saveElasticSwitch(body, operator);
     }
 
     @GetMapping("/internal/routing/router-logs")

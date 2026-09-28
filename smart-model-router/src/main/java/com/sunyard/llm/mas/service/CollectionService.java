@@ -150,6 +150,27 @@ public class CollectionService {
         });
     }
 
+    /**
+     * 算力热区：按小时聚合的真实调用量（错峰调度依据）。
+     * 无数据则返回空列表 —— 不编造热度分布。
+     */
+    public List<Map<String, Object>> hourlyLoad() {
+        try {
+            return collectionMapper.hourlyLoad();
+        } catch (Exception e) {
+            return List.of();
+        }
+    }
+
+    /** 按厂商统计近 24h 上报过指标的节点数（异构算力自动发现用） */
+    public Integer countNodesByVendor(String vendorId) {
+        try {
+            return collectionMapper.countNodesByVendor(vendorId);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
     // ---------------- helpers ----------------
 
     private static String str(Object v) {

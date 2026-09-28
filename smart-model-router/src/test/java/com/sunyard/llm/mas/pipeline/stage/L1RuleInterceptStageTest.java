@@ -42,7 +42,9 @@ class L1RuleInterceptStageTest {
         rateLimit = mock(RateLimitService.class);
         apiKey = mock(ApiKeyService.class);
         props = new MasProperties();
-        stage = new L1RuleInterceptStage(blacklist, sensitive, rateLimit, apiKey, props);
+        // 限流规则运行时与控制面策略运行时未在单测中注入：L1 对这两个可选组件做了空值降级
+        // ruleRateLimit / policyRuntime / appProfile 传 null：走生产代码内的 null 降级分支（单测不依赖 DB）
+        stage = new L1RuleInterceptStage(blacklist, sensitive, rateLimit, apiKey, null, null, null, props);
 
         when(blacklist.isBlacklisted(anyString())).thenReturn(false);
         when(rateLimit.tryAcquire(anyString())).thenReturn(true);

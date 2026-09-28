@@ -227,10 +227,26 @@ public class MasProperties {
     public static class Governance {
         private boolean failClosed = false;
         private boolean deptQuotaEnabled = true;
+        /** 审计内容留存：请求/响应原文写入 mas_call_log（受数据分级策略二次控制） */
+        private boolean contentRetentionEnabled = true;
+        /** 数据分级差异化管控：按 data_level 限制可用部署形态与脱敏强度 */
+        private boolean dataLevelGuardEnabled = true;
+        /** 管理面限流规则是否真正接入请求链路（此前 mas_routing_rule 从不生效） */
+        private boolean ruleRateLimitEnabled = true;
+        /** 统一控制面策略运行时：管线各阶段匹配已发布策略并写执行留痕 */
+        private boolean policyRuntimeEnabled = true;
 
         public boolean isFailClosed() { return failClosed; }
         public void setFailClosed(boolean failClosed) { this.failClosed = failClosed; }
         public boolean isDeptQuotaEnabled() { return deptQuotaEnabled; }
         public void setDeptQuotaEnabled(boolean deptQuotaEnabled) { this.deptQuotaEnabled = deptQuotaEnabled; }
+        public boolean isContentRetentionEnabled() { return contentRetentionEnabled; }
+        public void setContentRetentionEnabled(boolean contentRetentionEnabled) { this.contentRetentionEnabled = contentRetentionEnabled; }
+        public boolean isDataLevelGuardEnabled() { return dataLevelGuardEnabled; }
+        public void setDataLevelGuardEnabled(boolean dataLevelGuardEnabled) { this.dataLevelGuardEnabled = dataLevelGuardEnabled; }
+        public boolean isRuleRateLimitEnabled() { return ruleRateLimitEnabled; }
+        public void setRuleRateLimitEnabled(boolean ruleRateLimitEnabled) { this.ruleRateLimitEnabled = ruleRateLimitEnabled; }
+        public boolean isPolicyRuntimeEnabled() { return policyRuntimeEnabled; }
+        public void setPolicyRuntimeEnabled(boolean policyRuntimeEnabled) { this.policyRuntimeEnabled = policyRuntimeEnabled; }
     }
 }

@@ -60,7 +60,15 @@ public class DatabaseConfig {
             "db/data.sql"
     };
 
-    /** 启动核验清单（41 张，与上述脚本的建表语句一一对应，单一来源核对） */
+    /**
+     * 启动核验清单（56 张，与上述脚本的建表语句一一对应，单一来源核对）。
+     * 2026-09-27 新增 15 张：路由配置面落库 4 张（mas_routing_engine / mas_routing_rule_set /
+     * mas_aggregation_group / mas_elastic_switch）、弹性算力编排与异构纳管 3 张
+     * （mas_compute_orchestration / mas_batch_task / mas_hetero_vendor）、
+     * 模型评测与归档 3 张（mas_model_eval / mas_model_archive / mas_archive_rule）、
+     * 数据分级管控 1 张（mas_data_level_policy）、限流命中流水 1 张（mas_rate_limit_hit）、
+     * 平台配置 KV 1 张（mas_platform_config）、行内底座对接 2 张（mas_base_integration / mas_integration_log）。
+     */
     private static final String[] EXPECTED_TABLES = {
             // schema.sql · 基础 8 表（模型配置/调用日志/配额/缓存/黑名单/密钥/限流）
             "mas_model_config", "mas_call_log", "mas_token_quota", "mas_exact_cache",
@@ -75,7 +83,19 @@ public class DatabaseConfig {
             "mas_security_rule", "mas_op_log", "mas_policy", "mas_policy_version",
             "mas_policy_exec_log", "mas_model_version", "mas_model_lineage", "mas_model_release",
             "mas_collection_source", "mas_collection_batch", "mas_compute_metric",
-            "mas_guardrail_config", "mas_guardrail_policy", "mas_model_connection", "mas_admin_token"
+            "mas_guardrail_config", "mas_guardrail_policy", "mas_model_connection", "mas_admin_token",
+            // 2026-09-27 补齐 · 路由配置面落库（此前 4 个端点假写不落库）
+            "mas_routing_engine", "mas_routing_rule_set", "mas_aggregation_group", "mas_elastic_switch",
+            // 2026-09-27 补齐 · 弹性算力编排与异构纳管
+            "mas_compute_orchestration", "mas_batch_task", "mas_hetero_vendor",
+            // 2026-09-27 补齐 · 模型评测与归档
+            "mas_model_eval", "mas_model_archive", "mas_archive_rule",
+            // 2026-09-27 补齐 · 数据分级差异化管控 + 限流命中流水
+            "mas_data_level_policy", "mas_rate_limit_hit",
+            // 2026-09-27 补齐 · 平台配置 KV（系统参数 / 安全基线 / 成本预警真实落库）
+            "mas_platform_config",
+            // 2026-09-27 补齐 · 兼容适配#2 行内底座对接（IAM/4A/监控/告警/工单）
+            "mas_base_integration", "mas_integration_log"
     };
 
     @Bean

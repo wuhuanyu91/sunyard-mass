@@ -29,12 +29,15 @@ public class ChatService {
     private final RoutingPipeline pipeline;
     private final ForwardService forwardService;
     private final CallLogService callLog;
+    private final RuleRateLimitService ruleRateLimitService;
     private final ObjectMapper mapper = new ObjectMapper();
 
-    public ChatService(RoutingPipeline pipeline, ForwardService forwardService, CallLogService callLog) {
+    public ChatService(RoutingPipeline pipeline, ForwardService forwardService, CallLogService callLog,
+                       RuleRateLimitService ruleRateLimitService) {
         this.pipeline = pipeline;
         this.forwardService = forwardService;
         this.callLog = callLog;
+        this.ruleRateLimitService = ruleRateLimitService;
     }
 
     /** 非流式 */
@@ -45,7 +48,9 @@ public class ChatService {
                         return Mono.just(buildCachedResponse(ctx));
                     }
                     return forwardService.forwardNonStream(ctx);
-                }));
+                }))
+                // 无论成功失败都归还限流规则的并发额度
+                .doFinally(signal -> ruleRateLimitService.release(ctx));
     }
 
     /** 流式 */
@@ -56,7 +61,8 @@ public class ChatService {
                         return replayCachedStream(ctx);
                     }
                     return forwardService.forwardStream(ctx);
-                }));
+                }))
+                .doFinally(signal -> ruleRateLimitService.release(ctx));
     }
 
     // ---------------- 缓存命中路径 ----------------
@@ -69,7 +75,7 @@ public class ChatService {
             root.put("id", newCompletionId());
             root.put("created", Instant.now().getEpochSecond());
             root.putPOJO("x-mas-meta", ctx.getMeta());
-            callLog.logAsync(ctx, 0, 0, 0, ctx.elapsedMs(), true);
+            callLog.logAsync(ctx, 0, 0, 0, ctx.elapsedMs(), true, ctx.getCachedResponse());
             return mapper.writeValueAsString(root);
         } catch (Exception e) {
             log.warn("Cached response corrupted, fallback to forward: {}", e.getMessage());
@@ -102,7 +108,7 @@ public class ChatService {
 
         Flux<String> chunks = Flux.fromIterable(parts).map(part -> "data: " + chunkJson(id, created, model, part, false) + "\n\n");
         return chunks.concatWith(Flux.defer(() -> {
-            callLog.logAsync(ctx, 0, 0, 0, ctx.elapsedMs(), true);
+            callLog.logAsync(ctx, 0, 0, 0, ctx.elapsedMs(), true, ctx.getCachedResponse());
             // meta 帧构造为合法 chunk（严格 SDK 可解析），x-mas-meta 作为附加字段嵌入
             ObjectNode metaChunk = mapper.createObjectNode();
             metaChunk.put("id", id);

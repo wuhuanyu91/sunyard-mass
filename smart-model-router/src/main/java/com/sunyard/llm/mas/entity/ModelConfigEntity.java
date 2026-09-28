@@ -31,6 +31,9 @@ public class ModelConfigEntity {
 
     private Integer maxContextTokens;
 
+    /** 部署形态：LOCAL 本地自建 / CLOUD 云端 / RENTAL 外部租赁 */
+    private String deployType;
+
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;
@@ -105,6 +108,14 @@ public class ModelConfigEntity {
 
     public void setMaxContextTokens(Integer maxContextTokens) {
         this.maxContextTokens = maxContextTokens;
+    }
+
+    public String getDeployType() {
+        return deployType;
+    }
+
+    public void setDeployType(String deployType) {
+        this.deployType = deployType;
     }
 
     public LocalDateTime getCreatedAt() {

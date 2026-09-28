@@ -71,7 +71,8 @@ public class ModelRouter {
                 e.getIntentType(),
                 e.getWeight() != null ? e.getWeight() : 0,
                 e.getStatus() != null ? e.getStatus() : 0,
-                e.getMaxContextTokens());
+                e.getMaxContextTokens(),
+                e.getDeployType());
     }
 
     /** 按 model_id 精确查找（含未启用，由调用方判断状态） */

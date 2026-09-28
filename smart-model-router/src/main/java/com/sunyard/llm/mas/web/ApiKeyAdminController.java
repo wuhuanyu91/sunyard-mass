@@ -4,6 +4,7 @@ import com.sunyard.llm.mas.service.ApiKeyService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -122,6 +123,27 @@ public class ApiKeyAdminController {
                     }
                     return apiKeyService.getUsage(userId);
                 });
+    }
+
+    /** 启用/禁用：按 prefix 切换 status，返回切换后的新状态 */
+    @PutMapping("/internal/api-keys/{prefix}/status")
+    public Mono<Map<String, Object>> toggleStatus(@PathVariable("prefix") String prefix) {
+        // 单条查询翻转（此前为全表 listKeys 再 Java 过滤，且有 (Integer) 强转隐患）
+        return apiKeyService.toggleStatus(prefix);
+    }
+
+    /** 编辑元数据：更新归属/描述/可用模型 */
+    @PutMapping("/internal/api-keys/{prefix}")
+    public Mono<Map<String, Object>> updateMeta(
+            @PathVariable("prefix") String prefix,
+            @RequestBody(required = false) Map<String, Object> body) {
+        String teamName = body == null ? null : strOrNull(body, "teamName");
+        String purpose = body == null ? null : strOrNull(body, "purpose");
+        String appId = body == null ? null : strOrNull(body, "appId");
+        String agentName = body == null ? null : strOrNull(body, "agentName");
+        return apiKeyService.updateMeta(prefix, teamName, purpose, appId, agentName)
+                .map(updated -> Map.<String, Object>of(
+                        "keyPrefix", prefix, "updated", updated));
     }
 
     // ---- 工具方法 ----

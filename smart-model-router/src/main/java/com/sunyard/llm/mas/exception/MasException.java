@@ -58,6 +58,15 @@ public class MasException extends RuntimeException {
                 "Model not registered: " + model);
     }
 
+    /**
+     * 数据分级管控拒绝：目标模型的部署形态不允许承载当前应用的数据等级（如 L3 敏感数据禁止走云端/租赁算力）。
+     * 403 —— 属策略拒绝，不是参数错误，调用方应能据此区分并留痕。
+     */
+    public static MasException dataLevelDenied(String model, String deployType, String dataLevel) {
+        return new MasException(HttpStatus.FORBIDDEN, "policy_error", "data_level_denied",
+                "Model " + model + " (" + deployType + ") is not allowed to serve data level " + dataLevel);
+    }
+
     public static MasException quotaExceeded() {
         return new MasException(HttpStatus.PAYMENT_REQUIRED, "quota_error", "quota_exceeded",
                 "Token quota exceeded");

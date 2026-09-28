@@ -150,12 +150,20 @@ public class MeteringService {
                 row.put("month_cost", costOfTenant(tenantId));
                 row.put("over_limit_stop", q.getOverLimitStop());
                 row.put("warn_threshold", q.getWarnThreshold());
-                row.put("notify_channels", List.of("SITE", "MAIL"));
-                // 根据用量比例判断状态
+                // 通知渠道：库里有就用库里的，否则回落默认站内+邮件
+                String channels = (q.getNotifyChannels() == null || q.getNotifyChannels().isEmpty())
+                        ? "SITE,MAIL" : q.getNotifyChannels();
+                row.put("notify_channels", Arrays.asList(channels.split(",")));
+                // 状态按「用量比例 × 停发开关」共同判定：over_limit_stop 是"超限后是否停发"的策略开关
+                // （DeptQuotaService 据此决定放行/拒绝），不是"当前已停发"的运行态；
+                // 只有真超限且开关开启时才是 STOPPED，超限但未开停发仍是放行状态 → WARNING
                 double ratio = q.getMonthTokenQuota() > 0 ? (double) realUsed / q.getMonthTokenQuota() : 0;
-                String status = ratio > 1.0 ? "STOPPED" : ratio > 0.8 ? "WARNING" : "NORMAL";
+                String status = ratio > 1.0
+                        ? (Boolean.TRUE.equals(q.getOverLimitStop()) ? "STOPPED" : "WARNING")
+                        : ratio > 0.8 ? "WARNING" : "NORMAL";
                 row.put("status", status);
-                row.put("resume_pending", "STOPPED".equals(status));
+                row.put("resume_pending", Integer.valueOf(1).equals(q.getResumePending()));
+                row.put("resume_reason", q.getResumeReason());
                 list.add(row);
             }
             return list;
@@ -179,6 +187,9 @@ public class MeteringService {
                 entity.setOverLimitStop(boolVal(body.get("overLimitStop"), boolVal(body.get("over_limit_stop"), false)));
                 entity.setWarnThreshold(intVal(body.get("warnThreshold"), intVal(body.get("warn_threshold"), 80)));
                 entity.setStatus("NORMAL");
+                entity.setNotifyChannels(str(body.getOrDefault("notifyChannels",
+                        body.getOrDefault("notify_channels", "SITE,MAIL"))));
+                entity.setResumePending(0);
                 deptQuotaMapper.insert(entity);
             } else {
                 if (body.get("monthTokenQuota") != null || body.get("month_token_quota") != null) {
@@ -191,6 +202,10 @@ public class MeteringService {
                 if (body.get("warnThreshold") != null || body.get("warn_threshold") != null) {
                     entity.setWarnThreshold(intVal(body.get("warnThreshold"), intVal(body.get("warn_threshold"), 80)));
                 }
+                if (body.get("notifyChannels") != null || body.get("notify_channels") != null) {
+                    entity.setNotifyChannels(str(body.getOrDefault("notifyChannels",
+                            body.getOrDefault("notify_channels", "SITE,MAIL"))));
+                }
                 deptQuotaMapper.updateById(entity);
             }
             return new String[]{deptId, before, String.valueOf(entity.getMonthTokenQuota())};
@@ -201,6 +216,39 @@ public class MeteringService {
     /** 兼容旧签名（无操作人） */
     public Mono<Map<String, Object>> setQuota(String deptId, Map<String, Object> body) {
         return setQuota(deptId, body, null);
+    }
+
+    /**
+     * 超限停发后申请恢复配额（此前只在前端内存置一个 resumePending 标记，刷新即丢失）。
+     * 真实落 mas_dept_quota.resume_pending，等待统一控制面审批。
+     */
+    public Mono<Map<String, Object>> requestQuotaResume(String deptId, String reason, String operator) {
+        return ReactiveDbAdapter.mono(() -> {
+            DeptQuotaEntity entity = deptQuotaMapper.selectById(deptId);
+            if (entity == null) throw new IllegalArgumentException("部门配额不存在：" + deptId);
+            entity.setResumePending(1);
+            entity.setResumeReason(reason);
+            deptQuotaMapper.updateById(entity);
+            return deptId;
+        }).flatMap(id -> opLogService.record("metering", "申请恢复配额", operator, id,
+                "超限停发恢复申请已提交审批（理由：" + reason + "）"));
+    }
+
+    /** 审批通过/驳回配额恢复申请（恢复即解除停发） */
+    public Mono<Map<String, Object>> approveQuotaResume(String deptId, boolean approved,
+                                                        String opinion, String operator) {
+        return ReactiveDbAdapter.mono(() -> {
+            DeptQuotaEntity entity = deptQuotaMapper.selectById(deptId);
+            if (entity == null) throw new IllegalArgumentException("部门配额不存在：" + deptId);
+            if (approved) {
+                entity.setOverLimitStop(false);
+                entity.setStatus("NORMAL");
+            }
+            entity.setResumePending(0);
+            deptQuotaMapper.updateById(entity);
+            return deptId;
+        }).flatMap(id -> opLogService.record("metering", approved ? "配额恢复审批通过" : "配额恢复审批驳回",
+                operator, id, approved ? "已解除超限停发" : ("驳回，意见：" + opinion)));
     }
 
     /** 月度账单（从 call_log 按月份 + 租户聚合） */

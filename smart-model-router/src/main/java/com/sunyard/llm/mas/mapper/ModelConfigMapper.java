@@ -13,6 +13,6 @@ import java.util.List;
 @Mapper
 public interface ModelConfigMapper extends BaseMapper<ModelConfigEntity> {
 
-    @Select("SELECT model_id, model_name, provider, endpoint_url, intent_type, weight, status, max_context_tokens FROM mas_model_config")
+    @Select("SELECT model_id, model_name, provider, endpoint_url, intent_type, weight, status, max_context_tokens, deploy_type FROM mas_model_config")
     List<ModelConfigEntity> selectAll();
 }

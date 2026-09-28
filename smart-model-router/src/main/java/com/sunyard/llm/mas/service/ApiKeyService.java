@@ -191,6 +191,31 @@ public class ApiKeyService {
         return ReactiveDbAdapter.mono(() -> mapper.batchRevoke(teamName, userId));
     }
 
+    /** 启用/禁用：按 prefix 切换 status（1=active, 0=revoked），返回切换后的新状态 */
+    public Mono<Integer> setStatus(String prefix, int status) {
+        return ReactiveDbAdapter.mono(() -> mapper.setStatusByPrefix(prefix, status))
+                .map(updated -> updated > 0 ? status : 0);
+    }
+
+    /** 状态翻转：按 prefix 读取当前状态后取反，Key 不存在时报 400 */
+    public Mono<Map<String, Object>> toggleStatus(String prefix) {
+        return ReactiveDbAdapter.mono(() -> {
+            Integer cur = mapper.selectStatusByPrefix(prefix);
+            if (cur == null) throw new IllegalArgumentException("API Key 不存在：" + prefix);
+            int next = cur == 0 ? 1 : 0;
+            int n = mapper.setStatusByPrefix(prefix, next);
+            return Map.<String, Object>of("keyPrefix", prefix, "status", n > 0 ? next : cur);
+        });
+    }
+
+    /** 编辑元数据：按 prefix 更新归属/描述/可用模型 */
+    public Mono<Boolean> updateMeta(String prefix, String teamName, String purpose,
+                                    String appId, String agentName) {
+        return ReactiveDbAdapter.mono(() ->
+                mapper.updateMetaByPrefix(prefix, teamName, purpose, appId, agentName))
+                .map(updated -> updated > 0);
+    }
+
     /** §1.4 用量查询：返回今日/本周/本月的 token 消耗、调用次数、缓存命中率 */
     public Mono<Map<String, Object>> getUsage(String userId) {
         return ReactiveDbAdapter.mono(() -> {

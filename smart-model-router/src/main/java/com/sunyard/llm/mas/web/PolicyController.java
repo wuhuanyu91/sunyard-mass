@@ -32,6 +32,21 @@ public class PolicyController {
         return policyService.createPolicy(body, operator);
     }
 
+    /** 编辑策略：更新元数据并生成新草稿版本 */
+    @PutMapping("/internal/policies/{policyId}")
+    public Mono<Map<String, Object>> updatePolicy(@PathVariable("policyId") String policyId,
+                                                  @RequestBody Map<String, Object> body,
+                                                  @RequestHeader(value = "X-Operator", required = false) String operator) {
+        return policyService.updatePolicy(policyId, body, operator);
+    }
+
+    /** 启用/停用策略：按当前状态翻转 */
+    @PutMapping("/internal/policies/{policyId}/status")
+    public Mono<Map<String, Object>> toggleStatus(@PathVariable("policyId") String policyId,
+                                                  @RequestHeader(value = "X-Operator", required = false) String operator) {
+        return policyService.toggleStatus(policyId, operator);
+    }
+
     @GetMapping("/internal/policies/{policyId}/versions")
     public Mono<List<Map<String, Object>>> listVersions(@PathVariable("policyId") String policyId) {
         return policyService.listVersions(policyId);

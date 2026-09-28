@@ -17,6 +17,12 @@ public class DeptQuotaEntity {
     private Boolean overLimitStop;
     private Integer warnThreshold;
     private String status;
+    /** 预警通知渠道：SITE / MAIL / SMS / WECOM，逗号分隔 */
+    private String notifyChannels;
+    /** 是否有待审批的"超限停发恢复"申请：0 无 / 1 有 */
+    private Integer resumePending;
+    /** 恢复申请理由 */
+    private String resumeReason;
     private LocalDateTime createdAt;
 
     public String getDeptId() { return deptId; }
@@ -35,6 +41,12 @@ public class DeptQuotaEntity {
     public void setWarnThreshold(Integer warnThreshold) { this.warnThreshold = warnThreshold; }
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
+    public String getNotifyChannels() { return notifyChannels; }
+    public void setNotifyChannels(String notifyChannels) { this.notifyChannels = notifyChannels; }
+    public Integer getResumePending() { return resumePending; }
+    public void setResumePending(Integer resumePending) { this.resumePending = resumePending; }
+    public String getResumeReason() { return resumeReason; }
+    public void setResumeReason(String resumeReason) { this.resumeReason = resumeReason; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 }

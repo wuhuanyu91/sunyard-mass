@@ -60,6 +60,14 @@ public interface ModelLifecycleMapper {
             "operator FROM mas_model_release WHERE release_id = #{releaseId}")
     Map<String, Object> selectRelease(@Param("releaseId") String releaseId);
 
+    /**
+     * 运行时灰度快照：只取仍在进行中（GRAYING）或已全量（FULL）的发布单。
+     * ROLLBACK / ROLLING_BACK / ABORTED 不在此列 —— 撤回立即在运行时生效。
+     */
+    @Select("SELECT release_id, model_id, from_version, to_version, gray_percent, gray_scope, status " +
+            "FROM mas_model_release WHERE status IN ('GRAYING','FULL') ORDER BY created_at DESC")
+    List<Map<String, Object>> listActiveReleases();
+
     @Insert("INSERT INTO mas_model_release (release_id, model_id, from_version, to_version, gray_percent, " +
             "gray_scope, status, operator, sla_rollback_ms) " +
             "VALUES (#{releaseId}, #{modelId}, #{fromVersion}, #{toVersion}, COALESCE(#{grayPercent},0), " +

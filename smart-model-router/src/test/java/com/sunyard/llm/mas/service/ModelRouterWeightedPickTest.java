@@ -20,7 +20,7 @@ class ModelRouterWeightedPickTest {
     private final ModelRouter router = new ModelRouter(null, null, null);
 
     private static ModelConfig model(String id, int weight) {
-        return new ModelConfig(id, id, "ollama", "http://localhost:11434/v1", "chat", weight, 1, null);
+        return new ModelConfig(id, id, "ollama", "http://localhost:11434/v1", "chat", weight, 1, null, "LOCAL");
     }
 
     @Test
@@ -69,7 +69,7 @@ class ModelRouterWeightedPickTest {
     @Test
     void modelConfigActiveAndFallback() {
         assertTrue(model("a", 10).active());
-        assertFalse(new ModelConfig("b", "b", "ollama", "http://x", "chat", 10, 0, null).active());
+        assertFalse(new ModelConfig("b", "b", "ollama", "http://x", "chat", 10, 0, null, "LOCAL").active());
         ModelConfig fb = ModelConfig.fallback("qwen-72b", "http://localhost:11434/v1");
         assertEquals("qwen-72b", fb.modelId());
         assertEquals("fallback", fb.provider());

@@ -48,6 +48,29 @@ public class MeteringController {
         return meteringService.setQuota(deptId, body, operator);
     }
 
+    /** 超限停发后申请恢复配额（提交到统一控制面待审批） */
+    @PostMapping("/internal/metering/quotas/{deptId}/resume")
+    public Mono<Map<String, Object>> requestQuotaResume(
+            @PathVariable("deptId") String deptId,
+            @RequestBody(required = false) Map<String, Object> body,
+            @RequestHeader(value = "X-Operator", required = false) String operator) {
+        String reason = body == null ? null :
+                String.valueOf(body.getOrDefault("reason", body.getOrDefault("resume_reason", "")));
+        return meteringService.requestQuotaResume(deptId, reason, operator);
+    }
+
+    /** 审批配额恢复申请（通过则解除停发） */
+    @PostMapping("/internal/metering/quotas/{deptId}/resume/approve")
+    public Mono<Map<String, Object>> approveQuotaResume(
+            @PathVariable("deptId") String deptId,
+            @RequestBody(required = false) Map<String, Object> body,
+            @RequestHeader(value = "X-Operator", required = false) String operator) {
+        boolean approved = body != null && Boolean.parseBoolean(
+                String.valueOf(body.getOrDefault("approved", true)));
+        String opinion = body == null ? null : String.valueOf(body.getOrDefault("opinion", ""));
+        return meteringService.approveQuotaResume(deptId, approved, opinion, operator);
+    }
+
     @GetMapping("/internal/metering/monthly-bills")
     public Mono<List<Map<String, Object>>> listMonthlyBills(
             @RequestParam(value = "month", required = false) String month,

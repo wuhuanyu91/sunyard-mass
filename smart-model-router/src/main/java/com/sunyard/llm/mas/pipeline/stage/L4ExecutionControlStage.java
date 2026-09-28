@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.sunyard.llm.mas.config.MasProperties;
 import com.sunyard.llm.mas.pipeline.PipelineContext;
 import com.sunyard.llm.mas.service.DeptQuotaService;
+import com.sunyard.llm.mas.service.PolicyRuntimeService;
 import com.sunyard.llm.mas.service.QuotaService;
 import com.sunyard.llm.mas.service.TokenCounter;
 import org.springframework.stereotype.Component;
@@ -21,12 +22,14 @@ public class L4ExecutionControlStage {
 
     private final QuotaService quotaService;
     private final DeptQuotaService deptQuotaService;
+    private final PolicyRuntimeService policyRuntime;
     private final MasProperties props;
 
     public L4ExecutionControlStage(QuotaService quotaService, DeptQuotaService deptQuotaService,
-                                   MasProperties props) {
+                                   PolicyRuntimeService policyRuntime, MasProperties props) {
         this.quotaService = quotaService;
         this.deptQuotaService = deptQuotaService;
+        this.policyRuntime = policyRuntime;
         this.props = props;
     }
 
@@ -37,6 +40,12 @@ public class L4ExecutionControlStage {
         int maxTokens = ctx.getRequest().path("max_tokens").isInt()
                 ? ctx.getRequest().path("max_tokens").asInt()
                 : 1024;
+        // 统一控制面：计量类策略的 Token 上限在预扣之前生效
+        int policyCeiling = policyRuntime.evaluateL4(ctx);
+        if (policyCeiling > 0 && promptTokens + maxTokens > policyCeiling) {
+            maxTokens = Math.max(1, policyCeiling - promptTokens);
+            ((ObjectNode) ctx.getRequest()).put("max_tokens", maxTokens);
+        }
         int reserved = promptTokens + maxTokens;
         // 部门/租户级配额闸口（over_limit_stop 在此真正生效），随后才是用户级配额预扣
         return deptQuotaService.check(ctx.getAppId(), reserved)

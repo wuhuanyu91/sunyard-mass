@@ -32,6 +32,15 @@ public class PipelineContext {
     private int promptTokens;
     private int reservedTokens;
 
+    /** 命中的限流规则（响应结束后据此归还并发额度） */
+    private String rateLimitRuleId;
+    /** 限流降级标记：命中 DOWNGRADE 动作时置位，L3 据此改用低成本模型 */
+    private boolean downgraded;
+    /** SLA 等级（P0-P3，来自应用画像）：P0 关键业务在资源紧张时优先保障 */
+    private String slaLevel;
+    /** 命中的灰度发布单号（写入 x-mas-meta 便于追溯） */
+    private String grayReleaseId;
+
     private final MasMeta meta = new MasMeta();
 
     public long elapsedMs() {
@@ -67,5 +76,13 @@ public class PipelineContext {
     public void setPromptTokens(int promptTokens) { this.promptTokens = promptTokens; }
     public int getReservedTokens() { return reservedTokens; }
     public void setReservedTokens(int reservedTokens) { this.reservedTokens = reservedTokens; }
+    public String getRateLimitRuleId() { return rateLimitRuleId; }
+    public void setRateLimitRuleId(String rateLimitRuleId) { this.rateLimitRuleId = rateLimitRuleId; }
+    public boolean isDowngraded() { return downgraded; }
+    public void setDowngraded(boolean downgraded) { this.downgraded = downgraded; }
+    public String getSlaLevel() { return slaLevel; }
+    public void setSlaLevel(String slaLevel) { this.slaLevel = slaLevel; }
+    public String getGrayReleaseId() { return grayReleaseId; }
+    public void setGrayReleaseId(String grayReleaseId) { this.grayReleaseId = grayReleaseId; }
     public MasMeta getMeta() { return meta; }
 }

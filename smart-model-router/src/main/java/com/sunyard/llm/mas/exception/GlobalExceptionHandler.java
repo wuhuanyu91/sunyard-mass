@@ -3,6 +3,7 @@ package com.sunyard.llm.mas.exception;
 import com.sunyard.llm.mas.exception.MasException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -54,6 +55,28 @@ public class GlobalExceptionHandler {
         log.error("Unexpected error", e);
         MasException mapped = MasException.internal("Internal error");
         return Mono.just(ResponseEntity.status(mapped.getStatus()).body(errorBody(mapped)));
+    }
+
+    /**
+     * 客户端入参校验失败：Service 层抛 IllegalArgumentException（如「app_name is required」「ruleCode 必填」）
+     * 应归一为 400，而非被兜底 handler 误判为 500（此前联调测试实测：此类错误一律返回 500）。
+     */
+    @ExceptionHandler(IllegalArgumentException.class)
+    public Mono<ResponseEntity<Map<String, Object>>> handleIllegalArgument(IllegalArgumentException e) {
+        log.warn("Invalid argument: {}", e.getMessage());
+        return Mono.just(ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(errorBody(MasException.invalidParam(e.getMessage()))));
+    }
+
+    /**
+     * 资源/状态不存在：Service 层抛 IllegalStateException（如「app not found」「模型接入不存在」「账单不存在」）
+     * 应归一为 404；此前被兜底 handler 误判为 500。
+     */
+    @ExceptionHandler(IllegalStateException.class)
+    public Mono<ResponseEntity<Map<String, Object>>> handleIllegalState(IllegalStateException e) {
+        log.warn("Illegal state: {}", e.getMessage());
+        MasException mapped = new MasException(HttpStatus.NOT_FOUND, "invalid_request_error", "not_found", e.getMessage());
+        return Mono.just(ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorBody(mapped)));
     }
 
     private Map<String, Object> errorBody(MasException e) {

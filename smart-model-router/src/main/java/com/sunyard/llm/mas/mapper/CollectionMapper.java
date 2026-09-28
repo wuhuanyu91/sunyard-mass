@@ -107,4 +107,24 @@ public interface CollectionMapper {
     @Select("SELECT COALESCE(SUM(gpu_hours),0) AS total_gpu_hours, COALESCE(AVG(gpu_util),0) AS avg_gpu_util " +
             "FROM mas_compute_metric WHERE metric_time >= #{since}")
     Map<String, Object> computeSummary(@Param("since") LocalDateTime since);
+
+    /**
+     * 算力热区：按小时聚合调用量，为错峰调度提供真实依据
+     * （此前"热区建议"是前端硬编码文案，无任何数据支撑）。
+     */
+    @Select("""
+            SELECT EXTRACT(HOUR FROM created_at)::int AS hour,
+                   COUNT(*)                            AS calls,
+                   COALESCE(SUM(total_tokens), 0)      AS tokens
+            FROM mas_call_log
+            WHERE created_at >= CURRENT_TIMESTAMP - INTERVAL '24 hours'
+            GROUP BY EXTRACT(HOUR FROM created_at)
+            ORDER BY hour
+            """)
+    List<Map<String, Object>> hourlyLoad();
+
+    /** 按厂商统计已上报节点数（异构算力自动发现） */
+    @Select("SELECT COUNT(DISTINCT node_id) FROM mas_compute_metric " +
+            "WHERE source = #{vendorId} AND metric_time >= CURRENT_TIMESTAMP - INTERVAL '24 hours'")
+    Integer countNodesByVendor(@Param("vendorId") String vendorId);
 }

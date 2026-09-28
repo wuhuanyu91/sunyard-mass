@@ -6,10 +6,15 @@ import com.sunyard.llm.mas.pipeline.stage.L3IntentRoutingStage;
 import com.sunyard.llm.mas.pipeline.stage.L4ExecutionControlStage;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 /**
  * 流水线编排器（§2.2 请求处理流程）：
  * L1 规则拦截 → L2 多级缓存（命中即短路）→ L3 意图路由 → L4 执行管控。
+ * <p>
+ * 各阶段为同步检查体，其中 AppProfile / RuleRateLimit / PolicyRuntime / GrayRelease
+ * 在 TTL 过期时会做阻塞数据库重载 —— 头部统一 subscribeOn(boundedElastic)，
+ * 保证这些阻塞读永远不落在 Netty 事件循环线程上。
  */
 @Component
 public class RoutingPipeline {
@@ -38,6 +43,8 @@ public class RoutingPipeline {
                         return Mono.empty();
                     }
                     return l3.route(ctx).then(Mono.defer(() -> l4.control(ctx)));
-                }));
+                }))
+                // 同步阶段体（含 TTL 过期时的阻塞 DB 重载）调度到弹性线程池执行
+                .subscribeOn(Schedulers.boundedElastic());
     }
 }
