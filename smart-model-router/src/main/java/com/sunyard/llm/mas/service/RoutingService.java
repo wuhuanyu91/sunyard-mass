@@ -14,6 +14,9 @@ import com.sunyard.llm.mas.mapper.RoutingRuleMapper;
 import com.sunyard.llm.mas.mapper.RoutingRuleSetMapper;
 import com.sunyard.llm.mas.util.ReactiveDbAdapter;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
@@ -31,6 +34,8 @@ import java.util.*;
 @Service
 public class RoutingService {
 
+    private static final Logger log = LoggerFactory.getLogger(RoutingService.class);
+
     private final RoutingRuleMapper routingRuleMapper;
     private final CallLogMapper callLogMapper;
     private final OpLogService opLogService;
@@ -38,12 +43,14 @@ public class RoutingService {
     private final RoutingRuleSetMapper routingRuleSetMapper;
     private final AggregationGroupMapper aggregationGroupMapper;
     private final ElasticSwitchMapper elasticSwitchMapper;
+    private final ObjectProvider<RuleRateLimitService> ruleRateLimitProvider;
 
     public RoutingService(RoutingRuleMapper routingRuleMapper, CallLogMapper callLogMapper,
                           OpLogService opLogService, RoutingEngineMapper routingEngineMapper,
                           RoutingRuleSetMapper routingRuleSetMapper,
                           AggregationGroupMapper aggregationGroupMapper,
-                          ElasticSwitchMapper elasticSwitchMapper) {
+                          ElasticSwitchMapper elasticSwitchMapper,
+                          ObjectProvider<RuleRateLimitService> ruleRateLimitProvider) {
         this.routingRuleMapper = routingRuleMapper;
         this.callLogMapper = callLogMapper;
         this.opLogService = opLogService;
@@ -51,6 +58,16 @@ public class RoutingService {
         this.routingRuleSetMapper = routingRuleSetMapper;
         this.aggregationGroupMapper = aggregationGroupMapper;
         this.elasticSwitchMapper = elasticSwitchMapper;
+        this.ruleRateLimitProvider = ruleRateLimitProvider;
+    }
+
+    /** 限流规则变更后立即刷新 L1 运行时规则缓存（此前仅靠 60s TTL，新规则生效滞后） */
+    private void refreshRuleRuntime() {
+        try {
+            ruleRateLimitProvider.ifAvailable(RuleRateLimitService::refreshNow);
+        } catch (Exception e) {
+            log.warn("rule rate-limit runtime refresh failed (fallback to TTL reload): {}", e.getMessage());
+        }
     }
 
     // ---------------- 路由引擎配置（真实落库 mas_routing_engine） ----------------
@@ -197,7 +214,9 @@ public class RoutingService {
             routingRuleMapper.insert(e);
             return e.getRuleId();
         }).flatMap(id -> opLogService.record("routing", "新建限流规则", operator, id,
-                "限流规则 " + body.getOrDefault("name", id) + " 已创建并落库"));
+                "限流规则 " + body.getOrDefault("name", id) + " 已创建并落库")
+                .doOnSuccess(v -> refreshRuleRuntime())
+                .thenReturn(Map.of("ruleId", id)));
     }
 
     public Mono<Map<String, Object>> updateRateLimitRule(String ruleId, Map<String, Object> body, String operator) {
@@ -219,7 +238,9 @@ public class RoutingService {
             routingRuleMapper.updateById(e);
             return new String[]{ruleId, before, e.getName() + "/" + e.getQpsLimit()};
         }).flatMap(arr -> opLogService.record("routing", "更新限流规则", operator, arr[0],
-                "限流规则由 " + arr[1] + " 更新为 " + arr[2], arr[1], arr[2], null));
+                "限流规则由 " + arr[1] + " 更新为 " + arr[2], arr[1], arr[2], null)
+                .doOnSuccess(v -> refreshRuleRuntime())
+                .thenReturn(Map.of("ruleId", arr[0])));
     }
 
     public Mono<Map<String, Object>> deleteRateLimitRule(String ruleId, String operator) {
@@ -227,7 +248,9 @@ public class RoutingService {
             int n = routingRuleMapper.deleteById(ruleId);
             if (n == 0) throw new IllegalArgumentException("限流规则不存在：" + ruleId);
             return ruleId;
-        }).flatMap(id -> opLogService.record("routing", "删除限流规则", operator, id, "限流规则已删除"));
+        }).flatMap(id -> opLogService.record("routing", "删除限流规则", operator, id, "限流规则已删除")
+                .doOnSuccess(v -> refreshRuleRuntime())
+                .thenReturn(Map.of("ruleId", id)));
     }
 
     // ---- helpers ----

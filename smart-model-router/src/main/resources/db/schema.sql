@@ -539,13 +539,15 @@ CREATE TABLE IF NOT EXISTS mas_guardrail_policy (
     stage           VARCHAR(16)  NOT NULL DEFAULT 'INPUT',  -- INPUT/OUTPUT/BOTH
     action          VARCHAR(16)  NOT NULL DEFAULT 'MASK',   -- MASK/BLOCK/ALERT
     lib_type        VARCHAR(16)  NOT NULL DEFAULT 'SYSTEM', -- SYSTEM/CUSTOM
-    keyword_lib     VARCHAR(64),
+    keyword_lib     TEXT,                                     -- 词库 ID 或内联词表（逗号/换行分隔，运行时并入敏感词 AC 自动机）
     enabled         SMALLINT     NOT NULL DEFAULT 1,
-    hit_count       BIGINT       NOT NULL DEFAULT 0,
+    hit_count       BIGINT      NOT NULL DEFAULT 0,
     updated_by      VARCHAR(64),
     created_at      TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at      TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+-- 存量库升级：词库列拓宽为 TEXT 以支持内联词表（此前 VARCHAR(64) 只能存词库 ID）
+ALTER TABLE mas_guardrail_policy ALTER COLUMN keyword_lib TYPE TEXT;
 
 CREATE TABLE IF NOT EXISTS mas_model_connection (
     id              BIGSERIAL PRIMARY KEY,
@@ -847,7 +849,7 @@ CREATE TABLE IF NOT EXISTS mas_platform_config (
 
 -- -----------------------------------------------------------------------------
 -- 21. 行内底座/运营管理体系对接适配器（兼容适配#2：IAM / 4A / 统一监控 / 告警平台 / 工单系统）
---     mas_base_integration 存对接配置；mas_integration_log 存同步/转发事件。
+--     mas_base_integration 存对接配置（含 GATEWAY 网关系统）；mas_integration_log 存同步/转发事件。
 --     外部行内系统对接为配置门控：未配置 endpoint 或 enabled=false 时不发起真实外呼，
 --     适配器以本地闭环（IAM 同步取本地账号、监控快照取本地指标、告警转本地工单）保证演示可跑通。
 -- -----------------------------------------------------------------------------
@@ -883,5 +885,6 @@ VALUES
   ('FOUR_A',  '4A 运维审计',      'FOUR_A',  NULL, 0, 'PENDING', '演示环境未配置 4A 地址'),
   ('MONITOR', '统一监控平台',      'MONITOR', NULL, 0, 'PENDING', '演示环境未配置监控平台地址'),
   ('ALERT',   '告警平台',          'ALERT',   NULL, 0, 'PENDING', '演示环境未配置告警平台地址'),
-  ('TICKET',  '工单系统',          'TICKET',  NULL, 0, 'PENDING', '演示环境未配置工单系统地址')
+  ('TICKET',  '工单系统',          'TICKET',  NULL, 0, 'PENDING', '演示环境未配置工单系统地址'),
+  ('GATEWAY', '行内 API 网关',     'GATEWAY', NULL, 0, 'PENDING', '演示环境未配置网关地址（公告三-1 网关系统衔接）')
 ON CONFLICT (code) DO NOTHING;

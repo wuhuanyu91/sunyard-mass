@@ -41,9 +41,11 @@ public class RateLimitService {
             int affected = mapper.tryAcquire(userId, windowKey, qps, windowEnd);
             return affected > 0;
         } catch (Exception e) {
-            // DB 异常时 fail-open 放行（与 L1 降级策略一致）
-            log.warn("Rate limit check degraded (fail-open): {}", e.getMessage());
-            return true;
+            // 限流组件异常时的降级方向由 mas.governance.fail-closed 决定：
+            // 默认 fail-open 放行（可用性优先）；fail-closed=true 时拒绝（安全优先，银行高敏场景建议开启）
+            boolean failClosed = props.getGovernance() != null && props.getGovernance().isFailClosed();
+            log.warn("Rate limit check degraded ({}): {}", failClosed ? "fail-closed" : "fail-open", e.getMessage());
+            return !failClosed;
         }
     }
 

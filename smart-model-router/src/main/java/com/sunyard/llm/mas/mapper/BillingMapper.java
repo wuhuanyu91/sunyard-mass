@@ -107,11 +107,12 @@ public interface BillingMapper {
                          @Param("operator") String operator);
 
     @Select({"<script>",
-            "SELECT id, bill_no, bill_month, tenant_id, dept_id, total_calls, total_tokens, total_amount,",
-            "  status, locked_at, locked_by, created_at FROM mas_bill WHERE 1=1",
-            "<if test='billMonth != null'> AND bill_month = #{billMonth}</if>",
-            "<if test='tenantId != null'> AND tenant_id = #{tenantId}</if>",
-            "ORDER BY bill_month DESC, tenant_id",
+            "SELECT b.id, b.bill_no, b.bill_month, b.tenant_id, b.dept_id, d.dept_name,",
+            "  b.total_calls, b.total_tokens, b.total_amount, b.status, b.locked_at, b.locked_by, b.created_at",
+            "FROM mas_bill b LEFT JOIN mas_dept_tenant d ON d.dept_id = b.dept_id WHERE 1=1",
+            "<if test='billMonth != null'> AND b.bill_month = #{billMonth}</if>",
+            "<if test='tenantId != null'> AND b.tenant_id = #{tenantId}</if>",
+            "ORDER BY b.bill_month DESC, b.tenant_id",
             "</script>"})
     List<Map<String, Object>> listBills(@Param("billMonth") String billMonth,
                                         @Param("tenantId") String tenantId);

@@ -49,7 +49,8 @@ class FrontendApiContractTest {
     private WebTestClient client;
     private WebTestClient anon;
 
-    private static final String TOKEN = "mat-demo-admin-token";
+    /** 测试专用引导令牌：经 mas.admin-token 显式配置播种（生产默认不播种任何令牌） */
+    private static final String TOKEN = "mat-test-contract-token";
 
     @AfterAll
     static void stopPg() throws Exception {
@@ -78,6 +79,8 @@ class FrontendApiContractTest {
         registry.add("MAS_DB_USERNAME", () -> "postgres");
         registry.add("MAS_DB_PASSWORD", () -> "postgres");
         registry.add("mas.backend.default-endpoint", () -> "http://127.0.0.1:9/disabled");
+        registry.add("mas.admin-token", () -> TOKEN);
+        registry.add("mas.security.scan-interval-ms", () -> "3600000");
         registry.add("mas.auth.enabled", () -> "true");
         registry.add("mas.governance.fail-closed", () -> "false");
     }
@@ -230,6 +233,7 @@ class FrontendApiContractTest {
                 new Spec("POST", "/internal/security/alerts/__ID__/handle", true),
                 new Spec("GET", "/internal/security/guardrail", false),
                 new Spec("PUT", "/internal/security/guardrail", true),
+                new Spec("POST", "/internal/security/guardrail/test", false),
                 new Spec("GET", "/internal/security/guardrail/policies", false),
                 new Spec("POST", "/internal/security/guardrail/policies", true),
                 new Spec("PUT", "/internal/security/guardrail/policies/__ID__", true),

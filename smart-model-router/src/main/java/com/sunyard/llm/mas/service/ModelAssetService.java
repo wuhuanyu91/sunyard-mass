@@ -169,7 +169,8 @@ public class ModelAssetService {
                         "model_id as asset_id",
                         "COUNT(DISTINCT app_id) as active_apps",
                         "COUNT(DISTINCT user_id) as user_scale",
-                        "COALESCE(SUM(total_tokens),0)::numeric * 0.0016 as month_cost",
+                        // 优先取计价引擎写入的单笔成本（差异化计价），仅存量无 cost_amount 的行按 0.0016 回退（与 BillingMapper 对账口径一致）
+                        "COALESCE(SUM(COALESCE(cost_amount, total_tokens::numeric * 0.0016)), 0) as month_cost",
                         "CASE WHEN COUNT(*)>0 THEN COALESCE(SUM(total_tokens),0)::numeric / COUNT(*) ELSE 0 END as unit_cost",
                         "100.0 as adopt_rate",
                         "CASE WHEN COUNT(*)>0 THEN (COUNT(*) - COUNT(CASE WHEN status != 0 THEN 1 END))::numeric / COUNT(*)::numeric * 100 ELSE 0 END as success_rate",

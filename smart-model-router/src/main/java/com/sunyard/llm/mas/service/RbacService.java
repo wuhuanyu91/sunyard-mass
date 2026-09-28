@@ -1,5 +1,6 @@
 package com.sunyard.llm.mas.service;
 
+import com.sunyard.llm.mas.exception.MasException;
 import com.sunyard.llm.mas.mapper.RbacMapper;
 import com.sunyard.llm.mas.util.ReactiveDbAdapter;
 import org.slf4j.Logger;
@@ -124,7 +125,8 @@ public class RbacService {
     public Mono<Map<String, Object>> deleteRole(String roleCode, String operator) {
         return ReactiveDbAdapter.mono(() -> {
             int n = rbacMapper.deleteRole(roleCode);
-            if (n == 0) throw new IllegalStateException("内置角色不可删除：" + roleCode);
+            // 不存在或内置不可删均属业务冲突（409），不得抛 ISE 走 500 崩溃路径
+            if (n == 0) throw MasException.conflict("角色不存在或内置角色不可删除：" + roleCode);
             return roleCode;
         }).flatMap(code -> opLogService.record(MODULE, "删除角色", operator, code, "删除角色 " + code));
     }
@@ -212,6 +214,85 @@ public class RbacService {
             return userCode + (revoke ? "-" : "+") + roleCode;
         }).flatMap(t -> opLogService.record(MODULE, "角色分配", operator, str(body.get("userCode")),
                 "调整角色 " + t));
+    }
+
+    // ---------------- 登录认证（公告二-2 身份认证） ----------------
+
+    private static final int MAX_FAIL_BEFORE_LOCK = 5;
+
+    /**
+     * 登录：验证用户名+密码（SHA-256 比对），通过后签发管理令牌。
+     * fail-closed：用户不存在/停用/锁定/密码错误一律拒绝；连续失败 5 次自动锁定。
+     */
+    public Mono<Map<String, Object>> login(String userCode, String password, AdminAuthService adminAuthService) {
+        return ReactiveDbAdapter.mono(() -> {
+            if (userCode == null || userCode.isBlank() || password == null || password.isBlank()) {
+                throw new IllegalArgumentException("用户名与密码必填");
+            }
+            Map<String, Object> row = rbacMapper.selectAuthRow(userCode.trim());
+            if (row == null) throw new IllegalArgumentException("用户名或密码错误");
+            if (intVal(row.get("status"), 0) != 1) throw new IllegalArgumentException("账号已停用，请联系管理员");
+            if (intVal(row.get("locked"), 0) == 1) throw new IllegalArgumentException("账号已锁定（连续登录失败），请联系管理员解锁");
+            if (!sha256(password).equals(String.valueOf(row.get("pwd_hash")))) {
+                rbacMapper.recordLoginFailure(userCode.trim());
+                int fails = intVal(row.get("fail_count"), 0) + 1;
+                throw new IllegalArgumentException(fails >= MAX_FAIL_BEFORE_LOCK
+                        ? "用户名或密码错误（账号已锁定，请联系管理员解锁）"
+                        : "用户名或密码错误（剩余尝试次数 " + (MAX_FAIL_BEFORE_LOCK - fails) + "）");
+            }
+            rbacMapper.recordLoginSuccess(userCode.trim());
+            List<String> roles = rbacMapper.listRolesOfUser(userCode.trim());
+            // 令牌角色取用户实际最高角色（ADMIN 优先），不采信调用方自报值
+            String topRole = roles.contains("ADMIN") ? "ADMIN" : (roles.isEmpty() ? "VIEWER" : roles.get(0));
+            Map<String, Object> res = adminAuthService.issueTokenFor(userCode.trim(), topRole, 1);
+            res.put("userName", String.valueOf(row.get("user_name")));
+            res.put("tenantId", row.get("tenant_id"));
+            res.put("roles", roles);
+            res.put("pwdMustChange", intVal(row.get("pwd_must_change"), 0));
+            return res;
+        }).flatMap(res -> opLogService.record(MODULE, "用户登录", String.valueOf(res.get("user_code")),
+                String.valueOf(res.get("user_code")), "登录成功，签发访问令牌（有效期 1 天）")
+                .thenReturn(res));
+    }
+
+    /** 修改密码：验证旧密码 → 更新新密码并清除强制改密标记 */
+    public Mono<Map<String, Object>> changePassword(String userCode, String oldPassword, String newPassword, String operator) {
+        return ReactiveDbAdapter.mono(() -> {
+            if (newPassword == null || newPassword.length() < 10 || !newPassword.matches(".*[A-Za-z].*") || !newPassword.matches(".*\\d.*")) {
+                throw new IllegalArgumentException("新密码须≥10位且同时包含字母与数字");
+            }
+            Map<String, Object> row = rbacMapper.selectAuthRow(userCode);
+            if (row == null) throw new IllegalStateException("用户不存在：" + userCode);
+            if (!sha256(String.valueOf(oldPassword == null ? "" : oldPassword)).equals(String.valueOf(row.get("pwd_hash")))) {
+                throw new IllegalArgumentException("旧密码不正确");
+            }
+            rbacMapper.updateUserState(userCode, null, null, null, sha256(newPassword), 0, null);
+            return userCode;
+        }).flatMap(code -> opLogService.record(MODULE, "修改密码", operator, code, "用户修改登录密码，强制改密标记已清除").thenReturn(Map.of("userCode", code)));
+    }
+
+    /** 当前用户对各模块的实际权限级别（/me 用，单次 DB 往返） */
+    public Mono<Map<String, String>> permissionsOf(String userCode) {
+        return ReactiveDbAdapter.mono(() -> {
+            Map<String, String> m = new LinkedHashMap<>();
+            for (String mod : MODULES) {
+                String level = rbacMapper.resolvePermission(userCode, mod);
+                m.put(mod, level == null ? "DENY" : level);
+            }
+            return m;
+        });
+    }
+
+    /**
+     * 用户租户归属（数据面租户隔离用）：无归属/用户不存在时返回空 Mono，
+     * 调用方须以 defaultIfEmpty 哨兵值做 fail-closed 处理。
+     */
+    public Mono<String> tenantOf(String userCode) {
+        return ReactiveDbAdapter.mono(() -> {
+            Map<String, Object> row = rbacMapper.selectAuthRow(userCode);
+            Object tid = row == null ? null : row.get("tenant_id");
+            return tid == null || String.valueOf(tid).isBlank() ? null : String.valueOf(tid);
+        }).onErrorResume(e -> Mono.empty());
     }
 
     // ---------------- 鉴权判定（供管理端点过滤器使用） ----------------

@@ -4,7 +4,6 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sunyard.llm.mas.entity.BaseIntegrationEntity;
 import com.sunyard.llm.mas.entity.IntegrationLogEntity;
-import com.sunyard.llm.mas.entity.SecurityEventEntity;
 import com.sunyard.llm.mas.mapper.BaseIntegrationMapper;
 import com.sunyard.llm.mas.mapper.IntegrationLogMapper;
 import com.sunyard.llm.mas.mapper.RbacMapper;
@@ -28,7 +27,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 行内底座/运营管理体系对接适配器（兼容适配#2：IAM / 4A / 统一监控 / 告警平台 / 工单系统）。
+ * 行内底座/运营管理体系对接适配器（兼容适配#2：IAM / 4A / 统一监控 / 告警平台 / 工单系统 / 网关系统）。
  * <p>
  * 设计原则：外部行内系统对接为<b>配置门控</b>——未配置 endpoint 或 enabled=false 时不发起真实外呼，
  * 适配器以本地闭环保证演示可跑通（IAM 同步取本地账号、监控快照取本地指标、告警转本地工单）。
@@ -228,12 +227,22 @@ public class BaseIntegrationService {
 
     public Mono<Map<String, Object>> forwardAlert(String alertId, String operator) {
         return ReactiveDbAdapter.mono(() -> {
-            SecurityEventEntity ev = securityEventMapper.selectById(alertId);
+            // ALT-<hash12> 与 SEC-<hash16> 同源（同一 sha256 的不同长度前缀）：
+            // 此前用告警主键直接 selectById 事件表必然落空（明细恒为空），现按哈希前缀反查；
+            // 同时兼容直接传入事件主键（SEC-*）的调用方式，优先精确直查
+            Map<String, Object> ev = null;
+            if (alertId != null && !alertId.isBlank()) {
+                ev = securityEventMapper.selectDetailByEventId(alertId);
+                if (ev == null && alertId.startsWith("ALT-") && alertId.length() > 4) {
+                    ev = securityEventMapper.selectByAlertHashPrefix(alertId.substring(4));
+                }
+            }
             String title = "行内告警平台转发：安全事件 " + alertId;
             String content = ev == null
                     ? "安全事件 " + alertId + "（本地无明细，已按对接规范转发至行内告警/工单系统）"
-                    : String.format("事件类型=%s；等级=%s；规则=%s；原因=%s",
-                            ev.getEventType(), ev.getEventLevel(), ev.getRuleName(), ev.getReasonText());
+                    : String.format("事件类型=%s；等级=%s；规则=%s；原因=%s；用户=%s；应用=%s",
+                            ev.get("event_type"), ev.get("event_level"), ev.get("rule_name"),
+                            ev.get("reason_text"), ev.get("user_id"), ev.get("app_id"));
             Map<String, Object> ticket = buildTicket("PROBLEM", title, content, "告警平台", "信息科技部");
             integrationMapper.updateStatus("ALERT", "PENDING");
             writeLog("ALERT", "FORWARD_ALERT", "OK", "转发告警 " + alertId + " 为工单 " + ticket.get("ticketId"), null, operator);
@@ -256,6 +265,44 @@ public class BaseIntegrationService {
             writeLog("TICKET", "CREATE_TICKET", "OK", "下发工单 " + ticket.get("ticketId") + "：" + title, null, operator);
             return ticket;
         }).flatMap(t -> configService.appendArrayItem(TICKETS_KEY, t, operator).thenReturn(t));
+    }
+
+    /* ============ 网关系统衔接（公告三-1：与行内网关系统的注册/路由对接） ============ */
+
+    /**
+     * 向行内 API 网关注册本模块服务与路由（本地闭环：注册明细落 mas_platform_config KV，
+     * 外部启用时把同一 payload 经行内网关管理 API 真实下发——调用点已标注）。
+     * payload：{serviceId, routes:[{path, method, upstream}]}，缺省注册本模块对外契约端点。
+     */
+    public Mono<Map<String, Object>> registerGatewayRoutes(Map<String, Object> body, String operator) {
+        return ReactiveDbAdapter.mono(() -> {
+            BaseIntegrationEntity gw = integrationMapper.selectByCode("GATEWAY");
+            if (gw == null) gw = seedOne("GATEWAY", "行内 API 网关", "GATEWAY");
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> routes = body.get("routes") instanceof List<?> l && !l.isEmpty()
+                    ? (List<Map<String, Object>>) l : defaultGatewayRoutes();
+            String serviceId = String.valueOf(body.getOrDefault("serviceId", "smart-model-router"));
+            Map<String, Object> registration = new LinkedHashMap<>();
+            registration.put("serviceId", serviceId);
+            registration.put("routes", routes);
+            registration.put("registeredAt", LocalDateTime.now().toString());
+            gw.setLastSyncAt(LocalDateTime.now());
+            gw.setStatus(gw.getEnabled() != null && gw.getEnabled() == 1 ? "CONNECTED" : "PENDING");
+            integrationMapper.upsert(gw);
+            writeLog("GATEWAY", "REGISTER_ROUTE", "OK",
+                    "注册服务 " + serviceId + "，路由 " + routes.size() + " 条", null, operator);
+            // 外部启用时在此调用行内网关管理 API 下发路由注册（带行内鉴权），当前落本地 KV 闭环
+            return registration;
+        }).flatMap(reg -> configService.appendArrayItem("GATEWAY_ROUTES", reg, operator).thenReturn(reg));
+    }
+
+    /** 本模块对外契约端点（与 docs/API.md 外部 API 章节保持一致） */
+    private List<Map<String, Object>> defaultGatewayRoutes() {
+        List<Map<String, Object>> routes = new ArrayList<>();
+        routes.add(Map.of("path", "/smart-router/v1/chat/completions", "method", "POST", "upstream", "model-gateway"));
+        routes.add(Map.of("path", "/smart-router/v1/models", "method", "GET", "upstream", "model-gateway"));
+        routes.add(Map.of("path", "/smart-router/internal/collection/ingest", "method", "POST", "upstream", "collection"));
+        return routes;
     }
 
     /* ============ 对接事件日志 ============ */

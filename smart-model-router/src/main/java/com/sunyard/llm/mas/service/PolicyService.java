@@ -4,6 +4,7 @@ import com.sunyard.llm.mas.mapper.PolicyMapper;
 import com.sunyard.llm.mas.util.ReactiveDbAdapter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
@@ -17,6 +18,8 @@ import java.util.Map;
  * 同时提供"单次请求执行了哪些策略"的执行留痕写入与查询（POC 第 11 问）。
  * <p>
  * 【改造背景】此前前端 control/index.tsx 608 行策略中心为纯内存操作，后端零代码。
+ * 发布/停用/回滚后立即刷新策略运行时快照（此前仅靠 30s TTL，变更生效滞后）；
+ * PolicyRuntimeService 构造期依赖本服务，故以 ObjectProvider 延迟解析避免循环依赖。
  */
 @Service
 public class PolicyService {
@@ -26,10 +29,25 @@ public class PolicyService {
 
     private final PolicyMapper policyMapper;
     private final OpLogService opLogService;
+    private final ObjectProvider<PolicyRuntimeService> runtimeProvider;
 
-    public PolicyService(PolicyMapper policyMapper, OpLogService opLogService) {
+    public PolicyService(PolicyMapper policyMapper, OpLogService opLogService,
+                         ObjectProvider<PolicyRuntimeService> runtimeProvider) {
         this.policyMapper = policyMapper;
         this.opLogService = opLogService;
+        this.runtimeProvider = runtimeProvider;
+    }
+
+    /** 策略生效节点（发布/停用/回滚）后立即刷新运行时快照，避免最长 30s 的生效滞后 */
+    private void refreshRuntime() {
+        try {
+            runtimeProvider.ifAvailable(svc -> {
+                svc.refreshNow();
+                log.info("policy runtime snapshot refreshed on change");
+            });
+        } catch (Exception e) {
+            log.warn("policy runtime refresh failed (fallback to TTL reload): {}", e.getMessage());
+        }
     }
 
     // ---------------- 策略 ----------------
@@ -95,14 +113,22 @@ public class PolicyService {
     public Mono<Map<String, Object>> toggleStatus(String policyId, String operator) {
         return ReactiveDbAdapter.mono(() -> {
             Map<String, Object> cur = policyMapper.selectPolicy(policyId);
-            if (cur == null) return Map.of("policyId", policyId, "status", "UNKNOWN");
+            Map<String, Object> res = new LinkedHashMap<>();
+            res.put("policyId", policyId);
+            if (cur == null) {
+                res.put("status", "UNKNOWN");
+                return res;
+            }
             boolean active = !"ACTIVE".equals(String.valueOf(cur.get("status")));
             String status = active ? "ACTIVE" : "INACTIVE";
             policyMapper.updatePolicy(policyId, null, null, null, status, null);
-            return Map.of("policyId", policyId, "status", status);
+            res.put("status", status);
+            return res;
         }).flatMap(t -> opLogService.record(MODULE,
                 "ACTIVE".equals(String.valueOf(t.get("status"))) ? "启用策略" : "停用策略",
-                operator, policyId, "策略状态=" + t.get("status")));
+                operator, policyId, "策略状态=" + t.get("status"))
+                .doOnSuccess(v -> refreshRuntime())
+                .thenReturn(t));
     }
 
     /** 审批（PENDING → PUBLISHED / 驳回回 DRAFT） */
@@ -117,9 +143,15 @@ public class PolicyService {
                 policyMapper.updatePolicy(policyId, null, null, null, "DRAFT", null);
             }
             log.info("policy {} v{} approved={} by {}", policyId, version, approved, operator);
-            return policyId + "#v" + version;
+            Map<String, Object> res = new LinkedHashMap<>();
+            res.put("policyId", policyId);
+            res.put("version", version);
+            res.put("status", approved ? "PUBLISHED" : "DRAFT");
+            return res;
         }).flatMap(t -> opLogService.record(MODULE, approved ? "审批通过" : "审批驳回", operator, policyId,
-                t + (comment == null ? "" : "，意见：" + comment)));
+                "v" + t.get("version") + (comment == null ? "" : "，意见：" + comment))
+                .doOnSuccess(v -> refreshRuntime())
+                .thenReturn(t));
     }
 
     /** 回滚：将当前版本标记 ROLLED_BACK，策略回退到上一已发布版本 */
@@ -136,8 +168,15 @@ public class PolicyService {
             }
             policyMapper.updatePolicy(policyId, null, null, null,
                     fallback == null ? "DRAFT" : "PUBLISHED", fallback == null ? 0 : fallback);
-            return policyId + "#rollback v" + version + " -> v" + fallback;
-        }).flatMap(t -> opLogService.record(MODULE, "策略回滚", operator, policyId, t));
+            Map<String, Object> res = new LinkedHashMap<>();
+            res.put("policyId", policyId);
+            res.put("rolledBackVersion", version);
+            res.put("restoredVersion", fallback);
+            return res;
+        }).flatMap(t -> opLogService.record(MODULE, "策略回滚", operator, policyId,
+                "v" + t.get("rolledBackVersion") + " -> v" + t.get("restoredVersion"))
+                .doOnSuccess(v -> refreshRuntime())
+                .thenReturn(t));
     }
 
     public Mono<List<Map<String, Object>>> listVersions(String policyId) {

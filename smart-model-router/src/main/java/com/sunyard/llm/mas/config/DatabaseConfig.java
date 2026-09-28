@@ -45,8 +45,6 @@ public class DatabaseConfig {
 
     private static final Logger log = LoggerFactory.getLogger(DatabaseConfig.class);
 
-    private static final String DEMO_ADMIN_TOKEN = "mat-demo-admin-token";
-
     private final Environment environment;
 
     public DatabaseConfig(Environment environment) {
@@ -133,31 +131,29 @@ public class DatabaseConfig {
     }
 
     /**
-     * 管理端点令牌启动期播种（替代原 data.sql 中写死的演示令牌哈希）：
-     * 优先取环境变量 {@code MAS_ADMIN_TOKEN}，其次取配置 {@code mas.admin-token}，
-     * 二者均未设置时回退到演示令牌（仅限本地开发，启动日志会打印醒目安全告警）。
-     * 哈希口径与 AdminAuthService.sha256 完全一致（SHA-256 小写十六进制），确保前后端一致。
+     * 管理端点引导令牌启动期播种（安全基线：不再有默认演示令牌）：
+     * 仅当显式配置环境变量 {@code MAS_ADMIN_TOKEN} 或配置项 {@code mas.admin-token} 时播种；
+     * 均未配置时不播种任何令牌——管理端日常访问一律走 POST /internal/auth/login
+     * （种子账号 admin/operator/auditor，登录失败 5 次自动锁定）签发短时效令牌。
+     * 哈希口径与 AdminAuthService.sha256 完全一致（SHA-256 小写十六进制）。
      */
     private void seedAdminToken(DataSource dataSource) throws SQLException {
         String raw = environment.getProperty("mas.admin-token");
         if (raw == null || raw.isBlank()) {
             raw = System.getenv("MAS_ADMIN_TOKEN");
         }
-        boolean demo = (raw == null || raw.isBlank());
-        if (demo) {
-            raw = DEMO_ADMIN_TOKEN;
-            log.warn("==================================================================");
-            log.warn("SECURITY: admin token seeded with DEFAULT DEMO value '{}'.", DEMO_ADMIN_TOKEN);
-            log.warn("          For any non-local deployment set env MAS_ADMIN_TOKEN (or mas.admin-token).");
-            log.warn("==================================================================");
-        } else {
-            log.info("admin token seeded from environment (MAS_ADMIN_TOKEN / mas.admin-token).");
+        if (raw == null || raw.isBlank()) {
+            log.info("no bootstrap admin token configured (MAS_ADMIN_TOKEN / mas.admin-token); "
+                    + "admin access via POST /internal/auth/login (seed users: admin/operator/auditor, "
+                    + "initial password Mas@123456, forced change on first login).");
+            return;
         }
+        log.info("admin token seeded from environment (MAS_ADMIN_TOKEN / mas.admin-token).");
         final String tokenHash = sha256Hex(raw.trim());
         try (Connection conn = dataSource.getConnection();
              Statement st = conn.createStatement()) {
             st.execute("INSERT INTO mas_admin_token (token_hash, user_code, role_code, status, expire_at) "
-                    + "VALUES ('" + tokenHash + "', 'admin', 'ADMIN', 1, now() + interval '365 days') "
+                    + "VALUES ('" + tokenHash + "', 'admin', 'ADMIN', 1, now() + interval '90 days') "
                     + "ON CONFLICT (token_hash) DO NOTHING");
         }
     }

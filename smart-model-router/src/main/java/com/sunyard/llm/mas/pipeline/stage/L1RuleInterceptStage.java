@@ -10,6 +10,7 @@ import com.sunyard.llm.mas.service.BlacklistService;
 import com.sunyard.llm.mas.service.PolicyRuntimeService;
 import com.sunyard.llm.mas.service.RateLimitService;
 import com.sunyard.llm.mas.service.RuleRateLimitService;
+import com.sunyard.llm.mas.service.SecurityEventService;
 import com.sunyard.llm.mas.service.SensitiveWordFilter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,6 +22,7 @@ import reactor.core.publisher.Mono;
  * Bearer 校验（G.1，mas.auth.enabled=false 时跳过）→ 黑名单 → 敏感词 AC 匹配 → 频率限制 → 参数校验。
  * 规则组件自身异常时 fail-open 放行。
  * §8 已知限制消除：鉴权从“仅校验非空”升级为 API Key 验证体系。
+ * 安全拦截（黑名单/敏感词/限流/策略/鉴权失败）实时写 mas_security_event（fire-and-forget）。
  */
 @Component
 public class L1RuleInterceptStage {
@@ -37,6 +39,7 @@ public class L1RuleInterceptStage {
     private final RuleRateLimitService ruleRateLimitService;
     private final PolicyRuntimeService policyRuntime;
     private final AppProfileService appProfile;
+    private final SecurityEventService securityEventService;
     private final MasProperties props;
 
     public L1RuleInterceptStage(BlacklistService blacklistService,
@@ -46,6 +49,7 @@ public class L1RuleInterceptStage {
                                 RuleRateLimitService ruleRateLimitService,
                                 PolicyRuntimeService policyRuntime,
                                 AppProfileService appProfile,
+                                SecurityEventService securityEventService,
                                 MasProperties props) {
         this.blacklistService = blacklistService;
         this.sensitiveWordFilter = sensitiveWordFilter;
@@ -54,7 +58,17 @@ public class L1RuleInterceptStage {
         this.ruleRateLimitService = ruleRateLimitService;
         this.policyRuntime = policyRuntime;
         this.appProfile = appProfile;
+        this.securityEventService = securityEventService;
         this.props = props;
+    }
+
+    /** 拦截实时落安全事件（异步，不阻塞、不影响拦截本身） */
+    private void securityEvent(PipelineContext ctx, String eventType, String severity,
+                               String reasonCode, String reasonText) {
+        if (securityEventService != null) {
+            securityEventService.recordPipelineEvent(ctx.getTraceId(), ctx.getAppId(), ctx.getUserId(),
+                    ctx.getRequestedModel(), "L1", eventType, severity, reasonCode, reasonText);
+        }
     }
 
     public Mono<Void> check(PipelineContext ctx) {
@@ -67,10 +81,20 @@ public class L1RuleInterceptStage {
                     ctx.getMeta().setSlaLevel(sla);
                     boolean critical = "P0".equalsIgnoreCase(sla);
                     if (blacklistService.isBlacklisted(ctx.getUserId())) {
+                        securityEvent(ctx, "BLACKLIST", "HIGH", "blacklisted",
+                                "用户在黑名单中：" + ctx.getUserId());
                         throw MasException.blacklisted(ctx.getUserId());
                     }
-                    checkSensitiveWords(ctx.getRequest());
+                    try {
+                        checkSensitiveWords(ctx.getRequest());
+                    } catch (MasException e) {
+                        securityEvent(ctx, "SENSITIVE_LEAK", "HIGH", "input_blocked",
+                                "请求命中敏感词拦截（AC 自动机匹配）");
+                        throw e;
+                    }
                     if (!rateLimitService.tryAcquire(ctx.getUserId())) {
+                        securityEvent(ctx, "RATE_ABUSE", "MEDIUM", "rate_limited",
+                                "用户级频率限制触发：" + ctx.getUserId());
                         throw MasException.rateLimited(ctx.getUserId());
                     }
                     // 管理面配置的限流规则（按部门/应用/Key/模型维度）：此前从不生效
@@ -78,6 +102,8 @@ public class L1RuleInterceptStage {
                     if (ruleRateLimitService != null) {
                         decision = ruleRateLimitService.check(ctx);
                         if (decision.rejected()) {
+                            securityEvent(ctx, "RATE_ABUSE", "MEDIUM", "rate_limited",
+                                    "规则限流触发：" + decision.reason());
                             throw MasException.rateLimited(ctx.getUserId() + " / " + decision.reason());
                         }
                         if (decision.action() == RuleRateLimitService.Action.DOWNGRADE && !critical) {
@@ -89,6 +115,7 @@ public class L1RuleInterceptStage {
                     if (policyRuntime != null) {
                         String blocked = policyRuntime.evaluateL1(ctx);
                         if (blocked != null) {
+                            securityEvent(ctx, "POLICY_BLOCK", "HIGH", "policy_blocked", blocked);
                             throw MasException.invalidParam(blocked);
                         }
                     }
@@ -122,16 +149,12 @@ public class L1RuleInterceptStage {
             return Mono.empty();
         }
         String auth = ctx.getAuthorization();
-        if (auth == null || auth.isBlank()) {
-            return Mono.error(MasException.unauthorized());
-        }
-        if (!auth.startsWith("Bearer ")) {
+        if (auth == null || auth.isBlank() || !auth.startsWith("Bearer ") || auth.substring(7).trim().isEmpty()) {
+            securityEvent(ctx, "AUTH_FAILURE", "MEDIUM", "invalid_api_key",
+                    "缺少或格式非法的 Authorization Bearer 凭证");
             return Mono.error(MasException.unauthorized());
         }
         String token = auth.substring(7).trim();
-        if (token.isEmpty()) {
-            return Mono.error(MasException.unauthorized());
-        }
         return apiKeyService.validate(token)
                 // fail-closed：validate 未发出任何信号（空完成）一律拒绝，杜绝静默放行
                 .switchIfEmpty(Mono.error(new IllegalStateException("api key validation returned empty")))
@@ -144,6 +167,8 @@ public class L1RuleInterceptStage {
                 })
                 .onErrorResume(e -> {
                     log.debug("API Key validation failed: {}", e.getMessage());
+                    securityEvent(ctx, "AUTH_FAILURE", "MEDIUM", "invalid_api_key",
+                            "API Key 校验失败：" + e.getMessage());
                     return Mono.error(MasException.unauthorized());
                 })
                 .then();
@@ -164,7 +189,13 @@ public class L1RuleInterceptStage {
         } catch (MasException e) {
             throw e;
         } catch (Exception e) {
-            log.warn("Sensitive word check degraded (fail-open): {}", e.getMessage());
+            // 敏感词组件异常时的降级方向由 mas.governance.fail-closed 决定：
+            // 默认 fail-open 放行；fail-closed=true 时按内容拦截拒绝（安全优先）
+            boolean failClosed = props.getGovernance() != null && props.getGovernance().isFailClosed();
+            log.warn("Sensitive word check degraded ({}): {}", failClosed ? "fail-closed" : "fail-open", e.getMessage());
+            if (failClosed) {
+                throw MasException.inputBlocked("");
+            }
         }
     }
 

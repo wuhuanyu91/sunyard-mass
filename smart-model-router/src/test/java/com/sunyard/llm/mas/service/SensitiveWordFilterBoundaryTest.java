@@ -18,7 +18,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class SensitiveWordFilterBoundaryTest {
 
     private SensitiveWordFilter newFilter(List<String> words) {
-        SensitiveWordFilter filter = new SensitiveWordFilter(new MasProperties());
+        // DB 词库刷新组件在单测不注入（null）：仅测资源文件词表 + AC 匹配本身
+        SensitiveWordFilter filter = new SensitiveWordFilter(new MasProperties(), null, null);
         filter.rebuild(words);
         return filter;
     }

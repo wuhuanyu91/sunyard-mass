@@ -71,12 +71,22 @@ public class GlobalExceptionHandler {
     /**
      * 资源/状态不存在：Service 层抛 IllegalStateException（如「app not found」「模型接入不存在」「账单不存在」）
      * 应归一为 404；此前被兜底 handler 误判为 500。
+     * <p>
+     * 仅"不存在"语义的 ISE 映射 404；其余（空信号哨兵、内部状态 bug 等）按 500 处理并 ERROR 留栈，
+     * 避免真实服务端错误被伪装成 404 误导排障。
      */
     @ExceptionHandler(IllegalStateException.class)
     public Mono<ResponseEntity<Map<String, Object>>> handleIllegalState(IllegalStateException e) {
-        log.warn("Illegal state: {}", e.getMessage());
-        MasException mapped = new MasException(HttpStatus.NOT_FOUND, "invalid_request_error", "not_found", e.getMessage());
-        return Mono.just(ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorBody(mapped)));
+        String msg = e.getMessage() == null ? "" : e.getMessage();
+        boolean notFound = msg.contains("不存在") || msg.toLowerCase().contains("not found");
+        if (notFound) {
+            log.warn("Resource not found: {}", msg);
+            MasException mapped = new MasException(HttpStatus.NOT_FOUND, "invalid_request_error", "not_found", msg);
+            return Mono.just(ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorBody(mapped)));
+        }
+        log.error("Illegal state (internal bug, mapped to 500)", e);
+        MasException mapped = MasException.internal(msg.isEmpty() ? "Internal error" : msg);
+        return Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorBody(mapped)));
     }
 
     private Map<String, Object> errorBody(MasException e) {

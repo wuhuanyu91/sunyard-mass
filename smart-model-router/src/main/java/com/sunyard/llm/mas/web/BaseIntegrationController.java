@@ -66,6 +66,14 @@ public class BaseIntegrationController {
         return integrationService.createExternalTicket(body, operator);
     }
 
+    /** 网关系统衔接（公告三-1）：向行内 API 网关注册本模块服务与路由 */
+    @PostMapping("/gateway/register")
+    public Mono<Map<String, Object>> registerGateway(
+            @RequestBody(required = false) Map<String, Object> body,
+            @RequestHeader(value = "X-Operator", required = false) String operator) {
+        return integrationService.registerGatewayRoutes(body == null ? Map.of() : body, operator);
+    }
+
     @GetMapping("/logs")
     public Mono<List<Map<String, Object>>> logs() {
         return integrationService.getLogs();

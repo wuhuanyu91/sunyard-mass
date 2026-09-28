@@ -20,6 +20,11 @@ public interface ModelEvalArchiveMapper {
 
     // ---------------- 评测 ----------------
 
+    /** 评测价值聚合（ROI 投入产出分析用）：次数/均分/通过数 */
+    @Select("SELECT COUNT(*) AS eval_count, COALESCE(AVG(score),0) AS avg_score, " +
+            "COUNT(CASE WHEN conclusion='PASS' THEN 1 END) AS pass_count FROM mas_model_eval")
+    Map<String, Object> evalAggregate();
+
     @Insert("""
             INSERT INTO mas_model_eval
               (eval_id, model_id, version, eval_type, dataset, accuracy, task_success_rate,

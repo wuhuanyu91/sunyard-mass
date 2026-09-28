@@ -1,6 +1,7 @@
 package com.sunyard.llm.mas.web;
 
 import com.sunyard.llm.mas.service.MeteringService;
+import com.sunyard.llm.mas.service.RbacService;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
 
@@ -14,20 +15,37 @@ import java.util.Map;
 public class MeteringController {
 
     private final MeteringService meteringService;
+    private final RbacService rbacService;
 
-    public MeteringController(MeteringService meteringService) {
+    public MeteringController(MeteringService meteringService, RbacService rbacService) {
         this.meteringService = meteringService;
+        this.rbacService = rbacService;
     }
 
+    /**
+     * 调用日志列表（数据面租户隔离，公告二-1）：非 ADMIN 用户强制只看本租户数据，
+     * 请求参数中的租户条件仅对 ADMIN 生效；租户归属缺失时 fail-closed 返回空集。
+     */
     @GetMapping("/internal/metering/call-logs")
     public Mono<Map<String, Object>> listCallLogs(
             @RequestParam(value = "user_id", required = false) String userId,
             @RequestParam(value = "app_id", required = false) String appId,
             @RequestParam(value = "model", required = false) String model,
             @RequestParam(value = "status", required = false) String status,
+            @RequestParam(value = "tenant_id", required = false) String tenantId,
             @RequestParam(value = "page", defaultValue = "1") Integer page,
-            @RequestParam(value = "size", defaultValue = "20") Integer size) {
-        return meteringService.listCallLogs(userId, appId, model, status, page, size);
+            @RequestParam(value = "size", defaultValue = "20") Integer size,
+            @RequestHeader(value = "X-Operator", required = false) String operator) {
+        return rbacService.hasPermission(operator, "metering", "ADMIN")
+                .flatMap(isAdmin -> {
+                    if (Boolean.TRUE.equals(isAdmin)) {
+                        return meteringService.listCallLogs(userId, appId, model, status, tenantId, page, size);
+                    }
+                    // 非 ADMIN：强制按调用者本人租户过滤（无租户归属则按哨兵值返回空集）
+                    return rbacService.tenantOf(operator)
+                            .defaultIfEmpty("__NO_TENANT__")
+                            .flatMap(tid -> meteringService.listCallLogs(userId, appId, model, status, tid, page, size));
+                });
     }
 
     @GetMapping("/internal/metering/model-stats")

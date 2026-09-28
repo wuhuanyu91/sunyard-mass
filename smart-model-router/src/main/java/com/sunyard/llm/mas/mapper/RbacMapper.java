@@ -22,12 +22,14 @@ public interface RbacMapper extends BaseMapper<SysUserEntity> {
     // ---------------- 用户 ----------------
 
     @Select({"<script>",
-            "SELECT id, user_code, user_name, dept_id, tenant_id, email, phone, status, locked,",
-            "  fail_count, pwd_must_change, mfa_enabled, last_login_at, created_at, updated_at",
-            "FROM mas_sys_user WHERE 1=1",
-            "<if test='keyword != null and keyword != \"\"'> AND (user_code ILIKE CONCAT('%',#{keyword},'%') OR user_name ILIKE CONCAT('%',#{keyword},'%'))</if>",
-            "<if test='status != null'> AND status = #{status}</if>",
-            "ORDER BY created_at DESC",
+            "SELECT u.id, u.user_code, u.user_name, u.dept_id, u.tenant_id, u.email, u.phone, u.status, u.locked,",
+            "  u.fail_count, u.pwd_must_change, u.mfa_enabled, u.last_login_at, u.created_at, u.updated_at,",
+            "  d.dept_name,",
+            "  COALESCE((SELECT string_agg(ur.role_code, ',') FROM mas_sys_user_role ur WHERE ur.user_code = u.user_code), '') AS roles",
+            "FROM mas_sys_user u LEFT JOIN mas_dept_tenant d ON d.dept_id = u.dept_id WHERE 1=1",
+            "<if test='keyword != null and keyword != \"\"'> AND (u.user_code ILIKE CONCAT('%',#{keyword},'%') OR u.user_name ILIKE CONCAT('%',#{keyword},'%'))</if>",
+            "<if test='status != null'> AND u.status = #{status}</if>",
+            "ORDER BY u.created_at DESC",
             "</script>"})
     List<Map<String, Object>> listUsers(@Param("keyword") String keyword,
                                         @Param("status") Integer status);
@@ -35,6 +37,26 @@ public interface RbacMapper extends BaseMapper<SysUserEntity> {
     @Select("SELECT id, user_code, user_name, dept_id, tenant_id, email, phone, status, locked, " +
             "fail_count, pwd_must_change, mfa_enabled, last_login_at FROM mas_sys_user WHERE user_code = #{userCode}")
     Map<String, Object> selectUser(@Param("userCode") String userCode);
+
+    /** 登录认证行（含密码哈希，仅供认证链路使用，不进列表/详情接口） */
+    @Select("SELECT user_code, user_name, tenant_id, pwd_hash, status, locked, fail_count, " +
+            "pwd_must_change, mfa_enabled, last_login_at FROM mas_sys_user WHERE user_code = #{userCode}")
+    Map<String, Object> selectAuthRow(@Param("userCode") String userCode);
+
+    /** 登录成功：刷新 last_login_at 并清零失败计数 */
+    @Update("UPDATE mas_sys_user SET last_login_at = CURRENT_TIMESTAMP, fail_count = 0, " +
+            "updated_at = CURRENT_TIMESTAMP WHERE user_code = #{userCode}")
+    int recordLoginSuccess(@Param("userCode") String userCode);
+
+    /** 登录失败：失败计数 +1，连续 5 次自动锁定（原子 SQL，避免 check-then-update 竞态） */
+    @Update("UPDATE mas_sys_user SET fail_count = COALESCE(fail_count,0) + 1, " +
+            "locked = CASE WHEN COALESCE(fail_count,0) + 1 >= 5 THEN 1 ELSE locked END, " +
+            "updated_at = CURRENT_TIMESTAMP WHERE user_code = #{userCode}")
+    int recordLoginFailure(@Param("userCode") String userCode);
+
+    /** 用户拥有的角色（用于登录时取最高角色签发令牌） */
+    @Select("SELECT role_code FROM mas_sys_user_role WHERE user_code = #{userCode} ORDER BY role_code")
+    List<String> listRolesOfUser(@Param("userCode") String userCode);
 
     @Insert("INSERT INTO mas_sys_user (user_code, user_name, dept_id, tenant_id, email, phone, status, locked, " +
             "fail_count, pwd_hash, pwd_must_change, mfa_enabled) " +

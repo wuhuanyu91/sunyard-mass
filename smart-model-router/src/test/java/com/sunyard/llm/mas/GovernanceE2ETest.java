@@ -46,7 +46,8 @@ class GovernanceE2ETest {
     @Autowired
     private DataSource dataSource;
 
-    private static final String TOKEN = "mat-demo-admin-token";
+    /** 测试专用引导令牌：经 mas.admin-token 显式配置播种（生产默认不播种任何令牌） */
+    private static final String TOKEN = "mat-test-governance-token";
 
     @AfterAll
     static void stopPg() throws Exception {
@@ -77,6 +78,8 @@ class GovernanceE2ETest {
         registry.add("MAS_DB_PASSWORD", () -> "postgres");
         // 关闭外部模型端点依赖，避免测试期联调模型服务
         registry.add("mas.backend.default-endpoint", () -> "http://127.0.0.1:9/disabled");
+        registry.add("mas.admin-token", () -> TOKEN);
+        registry.add("mas.security.scan-interval-ms", () -> "3600000");
         registry.add("mas.auth.enabled", () -> "true");
         registry.add("mas.governance.fail-closed", () -> "false");
     }
@@ -340,20 +343,32 @@ class GovernanceE2ETest {
 
     @Test
     void t14_token_lifecycle_issue_use_revoke() {
+        // 新语义：令牌有效性按用户在 RBAC 中的实时角色归属判定（撤销授权立即生效），
+        // 因此必须用真实存在的 ADMIN 用户签发；不存在的用户签出的令牌无任何权限（403）
         Map issued = client.post().uri("/internal/admin-auth/tokens")
-                .bodyValue(Map.of("userCode", "e2e-op-" + suffix()))
+                .bodyValue(Map.of("userCode", "admin"))
                 .exchange().expectStatus().isOk()
                 .expectBody(Map.class).returnResult().getResponseBody();
         String issuedToken = String.valueOf(issued.get("token"));
         WebTestClient ops = WebTestClient.bindToServer()
                 .baseUrl("http://localhost:" + port + "/smart-router")
                 .defaultHeader("X-Admin-Token", issuedToken).build();
-        // 签发后可正常访问
+        // 签发后可正常访问（admin 用户在 mas_sys_user_role 中归属 ADMIN）
         ops.get().uri("/internal/rbac/users").exchange().expectStatus().isOk();
         // 吊销后必须立即失效（DB status=0 且缓存已失效），否则等于吊销形同虚设
         client.method(org.springframework.http.HttpMethod.DELETE).uri("/internal/admin-auth/tokens")
                 .bodyValue(Map.of("token", issuedToken)).exchange().expectStatus().isOk();
         ops.get().uri("/internal/rbac/users").exchange().expectStatus().isUnauthorized();
+
+        // 反例：为不存在的用户签发令牌，签发成功但无任何模块权限（RBAC enforcement 生效）
+        Map ghost = client.post().uri("/internal/admin-auth/tokens")
+                .bodyValue(Map.of("userCode", "e2e-ghost-" + suffix()))
+                .exchange().expectStatus().isOk()
+                .expectBody(Map.class).returnResult().getResponseBody();
+        WebTestClient ghostOps = WebTestClient.bindToServer()
+                .baseUrl("http://localhost:" + port + "/smart-router")
+                .defaultHeader("X-Admin-Token", String.valueOf(ghost.get("token"))).build();
+        ghostOps.get().uri("/internal/rbac/users").exchange().expectStatus().isForbidden();
     }
 
     @Test

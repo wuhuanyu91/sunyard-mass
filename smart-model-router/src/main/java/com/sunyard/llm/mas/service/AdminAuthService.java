@@ -46,22 +46,32 @@ public class AdminAuthService {
             String userCode = String.valueOf(body.getOrDefault("userCode", "admin"));
             String roleCode = String.valueOf(body.getOrDefault("roleCode", "ADMIN"));
             int days = body.get("days") == null ? 90 : Integer.parseInt(String.valueOf(body.get("days")));
-            byte[] raw = new byte[32];
-            RANDOM.nextBytes(raw);
-            String token = "mat-" + Base64.getUrlEncoder().withoutPadding().encodeToString(raw);
-            adminTokenMapper.insert(sha256(token), userCode, roleCode, LocalDateTime.now().plusDays(days));
-            Map<String, Object> res = new LinkedHashMap<>();
-            res.put("token", token);
-            res.put("user_code", userCode);
-            res.put("role_code", roleCode);
-            res.put("expire_at", LocalDateTime.now().plusDays(days).toString());
-            log.info("admin token issued for {}", userCode);
-            return res;
+            return issueTokenFor(userCode, roleCode, days);
         }).flatMap(res -> opLogService.record("system", "签发管理令牌", operator,
                 String.valueOf(res.get("user_code")), "签发管理端点访问令牌")
                 // 必须回传签发结果：明文令牌仅在本次响应出现一次，若被留痕回执替换，
                 // 调用方将永远拿不到令牌，等价于无法签发任何管理令牌
                 .thenReturn(res));
+    }
+
+    /**
+     * 为已通过凭据校验的用户签发令牌（登录链路专用，阻塞方法，须在 ReactiveDbAdapter 内调用）。
+     * 此前任意 userCode+roleCode 即可换令牌（可自封 ADMIN），现仅登录验证通过后由服务端内部调用，
+     * 角色取用户实际最高角色，不再采信调用方自报值。
+     */
+    public Map<String, Object> issueTokenFor(String userCode, String roleCode, int days) {
+        byte[] raw = new byte[32];
+        RANDOM.nextBytes(raw);
+        String token = "mat-" + Base64.getUrlEncoder().withoutPadding().encodeToString(raw);
+        LocalDateTime expireAt = LocalDateTime.now().plusDays(days);
+        adminTokenMapper.insert(sha256(token), userCode, roleCode, expireAt);
+        Map<String, Object> res = new LinkedHashMap<>();
+        res.put("token", token);
+        res.put("user_code", userCode);
+        res.put("role_code", roleCode);
+        res.put("expire_at", expireAt.toString());
+        log.info("admin token issued for {} (role={}, via=login)", userCode, roleCode);
+        return res;
     }
 
     /** 校验令牌，返回 user_code；无效返回 null（fail-closed） */

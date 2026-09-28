@@ -119,6 +119,21 @@ public interface SecurityEventMapper extends BaseMapper<SecurityEventEntity> {
     String existsEvent(@Param("traceId") String traceId,
                        @Param("ruleId") String ruleId);
 
+    /**
+     * 按告警 ID（ALT-<hash12>）反查对应安全事件（SEC-<hash16>）：
+     * 两者的哈希同源（同一 sha256(base) 的 12/16 位前缀），此前 forwardAlert 用
+     * ALT- 主键直接 selectById 事件表必然落空（告警明细恒为空），现改为前缀匹配。
+     */
+    @Select("SELECT event_id, event_type, event_level, rule_name, reason_text, user_id, app_id, tenant_id " +
+            "FROM mas_security_event WHERE event_id LIKE 'SEC-' || #{hashPrefix} || '%' " +
+            "ORDER BY created_at DESC LIMIT 1")
+    Map<String, Object> selectByAlertHashPrefix(@Param("hashPrefix") String hashPrefix);
+
+    /** 按事件主键直查明细（forwardAlert 兼容直接传入 SEC-* 事件 ID 的调用方式） */
+    @Select("SELECT event_id, event_type, event_level, rule_name, reason_text, user_id, app_id, tenant_id " +
+            "FROM mas_security_event WHERE event_id = #{eventId} LIMIT 1")
+    Map<String, Object> selectDetailByEventId(@Param("eventId") String eventId);
+
     // ---------------- 检测输入：窗口聚合 mas_call_log ----------------
 
     @Select("""

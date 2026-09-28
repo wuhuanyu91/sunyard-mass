@@ -38,12 +38,14 @@ public class MeteringService {
 
     /** 调用日志列表（分页 + 筛选） */
     public Mono<Map<String, Object>> listCallLogs(String userId, String appId, String model,
-                                                    String status, Integer page, Integer size) {
+                                                    String status, String tenantId, Integer page, Integer size) {
         return ReactiveDbAdapter.mono(() -> {
             LambdaQueryWrapper<CallLogEntity> wrapper = new LambdaQueryWrapper<>();
             if (userId != null && !userId.isBlank()) wrapper.eq(CallLogEntity::getUserId, userId);
             if (appId != null && !appId.isBlank()) wrapper.eq(CallLogEntity::getAppId, appId);
             if (model != null && !model.isBlank()) wrapper.eq(CallLogEntity::getModelId, model);
+            // 数据面租户隔离（公告二-1）：由 Controller 按调用者角色强制传入
+            if (tenantId != null && !tenantId.isBlank()) wrapper.eq(CallLogEntity::getTenantId, tenantId);
             wrapper.orderByDesc(CallLogEntity::getCreatedAt);
             int offset = (page != null ? page : 1) - 1;
             int limit = size != null ? size : 20;

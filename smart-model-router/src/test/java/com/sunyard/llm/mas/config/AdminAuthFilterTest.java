@@ -1,6 +1,7 @@
 package com.sunyard.llm.mas.config;
 
 import com.sunyard.llm.mas.service.AdminAuthService;
+import com.sunyard.llm.mas.service.RbacService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpHeaders;
@@ -23,19 +24,22 @@ import static org.mockito.Mockito.when;
 /**
  * AdminAuthFilter 安全语义专项测试（银行放款前必测）：
  * <p>
- * 覆盖三类风险：
+ * 覆盖五类风险：
  * <ol>
  *   <li>context-path 绕过 —— 生产以 spring.webflux.base-path=/smart-router 部署，
  *       若用 request.getPath().value()（含 context-path）判断前缀，则 /internal/** 鉴权被整体绕过。
  *       此处模拟真实部署拓扑断言必须 401。</li>
  *   <li>fail-closed —— 令牌缺失/空白/无效/校验服务异常，一律不放行。</li>
  *   <li>放行边界 —— 业务端点（/v1/**）不受管理令牌约束，避免误伤正常流量。</li>
+ *   <li>RBAC enforcement —— 有效令牌但权限不足必须 403（公告二-4）。</li>
+ *   <li>白名单 —— 登录端点免令牌可达。</li>
  * </ol>
  */
 class AdminAuthFilterTest {
 
     private final AdminAuthService adminAuthService = mock(AdminAuthService.class);
-    private final AdminAuthFilter filter = new AdminAuthFilter(adminAuthService);
+    private final RbacService rbacService = mock(RbacService.class);
+    private final AdminAuthFilter filter = new AdminAuthFilter(adminAuthService, rbacService);
 
     /** 执行过滤器，返回 chain 是否被调用（true=放行） */
     private static MockServerWebExchange exchange(String path) {
@@ -80,16 +84,58 @@ class AdminAuthFilterTest {
     }
 
     @Test
-    @DisplayName("有效令牌 -> 放行并注入 X-Operator 供留痕")
+    @DisplayName("有效令牌 + 权限足够 -> 放行并注入 X-Operator 供留痕")
     void validTokenPassesAndInjectsOperator() {
         when(adminAuthService.resolve("good-token")).thenReturn("admin");
+        when(rbacService.hasPermission("admin", "system", "ADMIN")).thenReturn(Mono.just(true));
         MockServerWebExchange ex = MockServerWebExchange.from(
                 MockServerHttpRequest.get("/internal/rbac/users")
                         .header("X-Admin-Token", "good-token")
                         .build());
         Outcome o = run(ex);
-        assertTrue(o.chainInvoked(), "有效令牌应放行");
+        assertTrue(o.chainInvoked(), "有效令牌且权限足够应放行");
         assertEquals("admin", ex.getRequest().getHeaders().getFirst("X-Operator"));
+    }
+
+    @Test
+    @DisplayName("[RBAC enforcement 回归] 有效令牌但权限不足 -> 403 且不放行（公告二-4）")
+    void validTokenWithoutPermissionIs403() {
+        when(adminAuthService.resolve("weak-token")).thenReturn("auditor");
+        when(rbacService.hasPermission("auditor", "system", "ADMIN")).thenReturn(Mono.just(false));
+        MockServerWebExchange ex = MockServerWebExchange.from(
+                MockServerHttpRequest.get("/internal/rbac/users")
+                        .header("X-Admin-Token", "weak-token")
+                        .build());
+        Outcome o = run(ex);
+        assertEquals(HttpStatus.FORBIDDEN.value(), o.status());
+        assertFalse(o.chainInvoked(), "权限不足不得放行（此前任何有效令牌可访问全部 /internal/*）");
+    }
+
+    @Test
+    @DisplayName("权限判定服务异常 -> fail-closed，返回 403 不放行")
+    void permissionCheckFailureIsFailClosed() {
+        when(adminAuthService.resolve("ops-token")).thenReturn("operator");
+        when(rbacService.hasPermission(anyString(), anyString(), anyString()))
+                .thenReturn(Mono.error(new IllegalStateException("db down")));
+        MockServerWebExchange ex = MockServerWebExchange.from(
+                MockServerHttpRequest.get("/internal/tenants")
+                        .header("X-Admin-Token", "ops-token")
+                        .build());
+        Outcome o = run(ex);
+        assertFalse(o.chainInvoked(), "权限判定异常必须 fail-closed");
+        assertTrue(o.status() == 403 || o.status() == 500, "异常时不得返回 200");
+    }
+
+    @Test
+    @DisplayName("登录端点免令牌可达（令牌签发入口本身）")
+    void loginEndpointIsWhitelisted() {
+        assertTrue(run(exchange("/internal/auth/login")).chainInvoked());
+    }
+
+    @Test
+    @DisplayName("采集 ingest 端点免管理令牌（走独立的 X-Push-Token 源级鉴权）")
+    void collectionIngestIsWhitelisted() {
+        assertTrue(run(exchange("/internal/collection/ingest")).chainInvoked());
     }
 
     @Test
@@ -122,6 +168,7 @@ class AdminAuthFilterTest {
     @DisplayName("Authorization: Bearer 形式的令牌同样被校验")
     void bearerTokenIsValidated() {
         when(adminAuthService.resolve("bearer-token")).thenReturn("ops");
+        when(rbacService.hasPermission("ops", "tenant", "READ")).thenReturn(Mono.just(true));
         MockServerWebExchange ex = MockServerWebExchange.from(
                 MockServerHttpRequest.get("/internal/tenants")
                         .header(HttpHeaders.AUTHORIZATION, "Bearer bearer-token")

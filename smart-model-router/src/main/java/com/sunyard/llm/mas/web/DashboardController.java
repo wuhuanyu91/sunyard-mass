@@ -1,6 +1,7 @@
 package com.sunyard.llm.mas.web;
 
 import com.sunyard.llm.mas.service.DashboardService;
+import com.sunyard.llm.mas.service.RoiService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -16,14 +17,22 @@ import java.util.Map;
 public class DashboardController {
 
     private final DashboardService dashboardService;
+    private final RoiService roiService;
 
-    public DashboardController(DashboardService dashboardService) {
+    public DashboardController(DashboardService dashboardService, RoiService roiService) {
         this.dashboardService = dashboardService;
+        this.roiService = roiService;
     }
 
     @GetMapping("/internal/dashboard/summary")
     public Mono<Map<String, Object>> getSummary() {
         return dashboardService.getSummary();
+    }
+
+    /** 投入产出（ROI）综合分析（公告一-4）：真实成本投入 vs 模型价值/落地节省 */
+    @GetMapping("/internal/dashboard/roi")
+    public Mono<Map<String, Object>> getRoi() {
+        return roiService.getRoi();
     }
 
     @GetMapping("/internal/dashboard/token-series")

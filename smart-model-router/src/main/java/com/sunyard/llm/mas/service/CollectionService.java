@@ -29,10 +29,17 @@ public class CollectionService {
     private static final String MODULE = "collection";
 
     private final CollectionMapper collectionMapper;
+    private final com.sunyard.llm.mas.mapper.CallLogMapper callLogMapper;
     private final OpLogService opLogService;
 
-    public CollectionService(CollectionMapper collectionMapper, OpLogService opLogService) {
+    /** 单条上报内容留存上限（字符），与平台侧 CallLogService 一致 */
+    private static final int CONTENT_LIMIT = 8000;
+
+    public CollectionService(CollectionMapper collectionMapper,
+                             com.sunyard.llm.mas.mapper.CallLogMapper callLogMapper,
+                             OpLogService opLogService) {
         this.collectionMapper = collectionMapper;
+        this.callLogMapper = callLogMapper;
         this.opLogService = opLogService;
     }
 
@@ -65,6 +72,12 @@ public class CollectionService {
     /**
      * 渠道系统批量上报调用记录（分级采集上报通道核心入口）：
      * 校验 push_token → 登记批次 → 逐条落 mas_call_log → 回写批次核验结果。
+     * <p>
+     * 记录字段为 mas_call_log 列名（snake_case）：trace_id/model_id 必填，
+     * 其余（app_id/user_id/intent_type/*_tokens/*_cost_ms/status/tenant_id/dept_id/
+     * scenario/service_type/request_content/response_content/cost_amount/bill_month）可选；
+     * 内容超长截断（8000 字符），并计算请求+响应防篡改哈希；
+     * 同 trace_id 重复上报按重复拒绝（幂等），批次状态据拒收数回写 VERIFIED/RECEIVED。
      */
     public Mono<Map<String, Object>> ingest(String sourceCode, String pushToken,
                                             List<Map<String, Object>> records) {
@@ -76,14 +89,44 @@ public class CollectionService {
             if (!expected.equals(pushToken)) {
                 throw new SecurityException("上报凭证校验失败");
             }
+            String defaultBillMonth = java.time.LocalDate.now()
+                    .format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM"));
             int accepted = 0;
             int rejected = 0;
             for (Map<String, Object> r : records == null ? List.<Map<String, Object>>of() : records) {
-                if (r == null || r.get("trace_id") == null) {
+                if (r == null || str(r.get("trace_id")).isEmpty() || str(r.get("model_id")).isEmpty()) {
                     rejected++;
                     continue;
                 }
-                accepted++;
+                try {
+                    String traceId = str(r.get("trace_id"));
+                    if (callLogMapper.selectContent(traceId) != null) {
+                        rejected++;
+                        continue;
+                    }
+                    String requestContent = truncate(str(r.get("request_content")));
+                    String responseContent = truncate(str(r.get("response_content")));
+                    callLogMapper.insertCallLogFull(
+                            traceId,
+                            str(r.get("app_id")), str(r.get("user_id")), "",
+                            str(r.get("model_id")), str(r.get("intent_type")),
+                            intVal(r.get("cache_hit"), 0), str(r.get("cache_level")), str(r.get("routed_to")),
+                            intValNullable(r.get("prompt_tokens")), intValNullable(r.get("completion_tokens")),
+                            intValNullable(r.get("total_tokens")),
+                            intValNullable(r.get("pipeline_cost_ms")), intValNullable(r.get("total_cost_ms")),
+                            statusVal(r.get("status")),
+                            str(r.get("tenant_id")), str(r.get("dept_id")),
+                            str(r.get("sla_level")), str(r.get("data_level")),
+                            str(r.get("scenario")), str(r.get("service_type")),
+                            requestContent, responseContent,
+                            sha256(requestContent + "\n---\n" + responseContent),
+                            dec(r.get("cost_amount")),
+                            str(r.get("bill_month")).isEmpty() ? defaultBillMonth : str(r.get("bill_month")));
+                    accepted++;
+                } catch (Exception e) {
+                    rejected++;
+                    log.warn("collection ingest record rejected: {}", e.getMessage());
+                }
             }
             String batchNo = "BATCH-" + System.currentTimeMillis();
             collectionMapper.insertBatch(batchNo, sourceCode, records == null ? 0 : records.size(),
@@ -175,6 +218,42 @@ public class CollectionService {
 
     private static String str(Object v) {
         return v == null ? "" : String.valueOf(v);
+    }
+
+    /** 可空整数（token 数 / 耗时等），非法值返回 null 而非 0，避免污染统计 */
+    private static Integer intValNullable(Object v) {
+        if (v == null) return null;
+        if (v instanceof Number n) return n.intValue();
+        try {
+            return Integer.parseInt(v.toString().trim());
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    /** status 兼容 0/1 数值与 SUCCESS/FAILED 字符串（0=成功，与平台侧口径一致） */
+    private static Integer statusVal(Object v) {
+        if (v == null) return 0;
+        if (v instanceof Number n) return n.intValue();
+        String s = v.toString().trim();
+        if (s.equalsIgnoreCase("FAILED") || s.equalsIgnoreCase("ERROR")) return 1;
+        return 0;
+    }
+
+    private static String truncate(String s) {
+        return s == null ? "" : (s.length() <= CONTENT_LIMIT ? s : s.substring(0, CONTENT_LIMIT));
+    }
+
+    private static String sha256(String raw) {
+        try {
+            java.security.MessageDigest md = java.security.MessageDigest.getInstance("SHA-256");
+            byte[] d = md.digest(raw.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            StringBuilder sb = new StringBuilder();
+            for (byte b : d) sb.append(String.format("%02x", b));
+            return sb.toString();
+        } catch (Exception e) {
+            return "";
+        }
     }
 
     private static Integer intVal(Object v, int def) {

@@ -43,9 +43,11 @@ public class QuotaService {
         return checkAndAdd(userId, "minute", props.getQuota().getPerUserPerMinute(), tokens, minuteReset)
                 .then(checkAndAdd(userId, "day", props.getQuota().getPerUserPerDay(), tokens, dayReset))
                 .onErrorResume(e -> !(e instanceof MasException), e -> {
-                    // DB 异常时 fail-open 放行（与 L1 降级策略一致）
-                    log.warn("Quota check degraded (fail-open): {}", e.getMessage());
-                    return Mono.empty();
+                    // 配额组件异常时的降级方向由 mas.governance.fail-closed 决定：
+                    // 默认 fail-open 放行（可用性优先）；fail-closed=true 时按 402 拒绝（安全优先）
+                    boolean failClosed = props.getGovernance() != null && props.getGovernance().isFailClosed();
+                    log.warn("Quota check degraded ({}): {}", failClosed ? "fail-closed" : "fail-open", e.getMessage());
+                    return failClosed ? Mono.error(MasException.quotaExceeded()) : Mono.empty();
                 });
     }
 

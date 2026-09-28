@@ -20,13 +20,16 @@ public class DataLevelGuardService {
     private final DataLevelPolicyService policyService;
     private final AppProfileService appProfileService;
     private final ModelRouter modelRouter;
+    private final SecurityEventService securityEventService;
     private final MasProperties props;
 
     public DataLevelGuardService(DataLevelPolicyService policyService, AppProfileService appProfileService,
-                                 ModelRouter modelRouter, MasProperties props) {
+                                 ModelRouter modelRouter, SecurityEventService securityEventService,
+                                 MasProperties props) {
         this.policyService = policyService;
         this.appProfileService = appProfileService;
         this.modelRouter = modelRouter;
+        this.securityEventService = securityEventService;
         this.props = props;
     }
 
@@ -61,6 +64,11 @@ public class DataLevelGuardService {
         ModelConfig replacement = findCompliant(intent, dataLevel);
         if (replacement != null) {
             return replacement;
+        }
+        if (securityEventService != null) {
+            securityEventService.recordPipelineEvent(null, appId, null, target.modelId(), "L3",
+                    "DATA_LEVEL_DENIED", "HIGH", "data_level_denied",
+                    "模型 " + target.modelId() + "（" + deployType + "）不允许承载 " + dataLevel + " 级数据，且无合规替代模型");
         }
         throw MasException.dataLevelDenied(target.modelId(), deployType, dataLevel);
     }

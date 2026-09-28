@@ -7,6 +7,7 @@ import com.sunyard.llm.mas.mapper.SecurityEventMapper;
 import com.sunyard.llm.mas.util.ReactiveDbAdapter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
@@ -25,8 +26,10 @@ import java.util.Map;
  * 【改造背景】此前 mas_security_event 全项目无任何 INSERT 路径，页面数据 100% 来自迁移脚本种子，
  * 且大盘告警数在 DashboardService 里写死为常量。现提供：
  * 1. 检测规则在线维护（mas_security_rule）；
- * 2. 基于 mas_call_log 的实时异常检测与事件落库（高频调用 / Token 突增 / 非工作时段 / 被拦截请求）；
- * 3. 告警处置闭环（确认 → 开始处置 → 关闭，含处置意见留痕）。
+ * 2. 基于 mas_call_log 的异常检测（高频调用 / Token 突增 / 非工作时段 / 被拦截请求），
+ *    由 @Scheduled 定时执行（默认 5 分钟，可用 mas.security.scan-interval-ms 调整），也可手动触发；
+ * 3. 管线拦截实时落事件（黑名单/敏感词/限流/策略/鉴权失败，fire-and-forget 不影响主链路）；
+ * 4. 告警处置闭环（确认 → 开始处置 → 关闭，含处置意见留痕）。
  */
 @Service
 public class SecurityEventService {
@@ -38,12 +41,14 @@ public class SecurityEventService {
     private final SecurityEventMapper eventMapper;
     private final AlertMapper alertMapper;
     private final OpLogService opLogService;
+    private final TenantService tenantService;
 
     public SecurityEventService(SecurityEventMapper eventMapper, AlertMapper alertMapper,
-                                OpLogService opLogService) {
+                                OpLogService opLogService, TenantService tenantService) {
         this.eventMapper = eventMapper;
         this.alertMapper = alertMapper;
         this.opLogService = opLogService;
+        this.tenantService = tenantService;
     }
 
     // ---------------- 检测规则 ----------------
@@ -89,6 +94,27 @@ public class SecurityEventService {
      * @return 本轮新增事件数、告警数
      */
     public Mono<Map<String, Object>> scan(String operator) {
+        return scanCore().flatMap(res -> opLogService.record(MODULE, "安全检测扫描", operator, null,
+                "新增事件 " + res.get("events_created") + " 条").thenReturn(res));
+    }
+
+    /**
+     * 定时检测（公告二-7 实时性要求）：默认每 5 分钟一轮，间隔可用 mas.security.scan-interval-ms 调整。
+     * 有新增事件时才留操作日志，避免空转刷屏。
+     */
+    @Scheduled(fixedDelayString = "${mas.security.scan-interval-ms:300000}",
+            initialDelayString = "${mas.security.scan-initial-delay-ms:60000}")
+    public void scheduledScan() {
+        scanCore()
+                .flatMap(res -> Integer.parseInt(String.valueOf(res.get("events_created"))) > 0
+                        ? opLogService.record(MODULE, "定时安全检测", "SYSTEM", null,
+                        "自动扫描新增事件 " + res.get("events_created") + " 条").thenReturn(res)
+                        : Mono.just(res))
+                .subscribe(res -> log.debug("scheduled security scan: events={}", res.get("events_created")),
+                        e -> log.warn("scheduled security scan failed: {}", e.getMessage()));
+    }
+
+    private Mono<Map<String, Object>> scanCore() {
         return ReactiveDbAdapter.mono(() -> {
             List<Map<String, Object>> rules = eventMapper.listRules();
             int events = 0;
@@ -128,7 +154,8 @@ public class SecurityEventService {
                         events++;
                         if (isHigh(severity)) {
                             String alertId = "ALT-" + sha256(ruleCode + subject + day).substring(0, 12);
-                            alertMapper.updateAlertStatus(alertId, "OPEN", null);
+                            openAlert(alertId, severity, detail,
+                                    String.valueOf(rule.get("rule_name")), null);
                             alerts++;
                         }
                     }
@@ -140,8 +167,54 @@ public class SecurityEventService {
             res.put("scanned_at", LocalDateTime.now().toString());
             log.info("security scan done: events={}, alerts={}", events, alerts);
             return res;
-        }).flatMap(res -> opLogService.record(MODULE, "安全检测扫描", operator, null,
-                "新增事件 " + res.get("events_created") + " 条"));
+        });
+    }
+
+    // ---------------- 管线拦截实时落事件 ----------------
+
+    /**
+     * 管线拦截即时写入安全事件（fire-and-forget：异步落库，失败仅告警，绝不影响主链路）：
+     * L1/L3 拦截（黑名单 / 敏感词 / 限流 / 策略 / 鉴权失败 / 数据分级拒绝）发生时调用，
+     * 高危级别自动开告警；同 (事件类型 + 主体 + 日) 幂等去重（ON CONFLICT DO NOTHING）。
+     */
+    public void recordPipelineEvent(String traceId, String appId, String userId, String modelId,
+                                    String guardrailStage, String eventType, String severity,
+                                    String reasonCode, String reasonText) {
+        ReactiveDbAdapter.monoVoid(() -> {
+            String subject = userId != null && !userId.isBlank() ? userId
+                    : (appId != null && !appId.isBlank() ? appId : "unknown");
+            String day = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+            String eventId = "SEC-" + sha256(eventType + subject + day).substring(0, 16);
+            String tenantId = tenantOfApp(appId);
+            int n = eventMapper.insertEvent(eventId, traceId, tenantId,
+                    strOrNull(userId), strOrNull(appId), modelId,
+                    eventType, severity, guardrailStage, null, null, false, true,
+                    reasonCode, reasonText, "FULL", sha256(eventId + reasonText), LocalDateTime.now());
+            if (n > 0) {
+                log.info("pipeline security event recorded: type={}, subject={}, stage={}",
+                        eventType, subject, guardrailStage);
+                if (isHigh(severity)) {
+                    String alertId = "ALT-" + sha256(eventType + subject + day).substring(0, 12);
+                    openAlert(alertId, severity, reasonText, guardrailStage + " 管线拦截", traceId);
+                }
+            }
+        }).subscribe(null, e -> log.warn("pipeline security event write failed: {}", e.getMessage()));
+    }
+
+    /** 开告警（幂等插入；同 ID 已存在说明告警未关闭，不覆盖处置进度） */
+    private void openAlert(String alertId, String severity, String detail, String source, String traceId) {
+        try {
+            alertMapper.insertAlertIfAbsent(alertId, severity,
+                    "[" + severity + "] 安全告警：" + source, detail, traceId);
+        } catch (Exception e) {
+            log.warn("open alert failed ({}): {}", alertId, e.getMessage());
+        }
+    }
+
+    private String tenantOfApp(String appId) {
+        if (appId == null || appId.isBlank() || tenantService == null) return null;
+        String tenant = tenantService.resolveTenantByApp(appId);
+        return "UNKNOWN".equals(tenant) ? null : tenant;
     }
 
     // ---------------- 事件查询 ----------------
