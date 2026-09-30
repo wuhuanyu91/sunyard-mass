@@ -49,7 +49,7 @@ public class RbacService {
         return ReactiveDbAdapter.mono(() -> {
             String userCode = str(body.get("userCode"));
             if (userCode.isEmpty()) throw new IllegalArgumentException("userCode 必填");
-            String pwd = str(body.getOrDefault("password", "Sunyard@123"));
+            String pwd = str(body.getOrDefault("password", "Mas@123456"));
             rbacMapper.insertUser(userCode,
                     str(body.getOrDefault("userName", userCode)),
                     str(body.get("deptId")),

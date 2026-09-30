@@ -145,7 +145,7 @@ public class DatabaseConfig {
         if (raw == null || raw.isBlank()) {
             log.info("no bootstrap admin token configured (MAS_ADMIN_TOKEN / mas.admin-token); "
                     + "admin access via POST /internal/auth/login (seed users: admin/operator/auditor, "
-                    + "initial password Sunyard@123, forced change on first login).");
+                    + "initial password Mas@123456, forced change on first login).");
             return;
         }
         log.info("admin token seeded from environment (MAS_ADMIN_TOKEN / mas.admin-token).");

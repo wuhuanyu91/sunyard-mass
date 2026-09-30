@@ -162,6 +162,6 @@
 ## 4. 部署初始化说明
 
 1. 依赖：PostgreSQL 12+；建库后由应用启动脚本自动执行 `db/schema.sql → db/migration-real-data.sql → db/data.sql`（幂等）。
-2. 种子账号：`admin / operator / auditor`，初始密码 `Sunyard@123`（SHA-256 落库），**首次登录后必须修改**。
+2. 种子账号：`admin / operator / auditor`，初始密码 `Mas@123456`（SHA-256 落库），**首次登录后必须修改**。
 3. 管理令牌引导：应用启动时从环境变量 `MAS_ADMIN_TOKEN`（或 `mas.admin-token`）读取引导令牌写入 `mas_admin_token`（user=admin, role=ADMIN）；未配置时写入演示令牌 `mat-demo-admin-token` 并输出安全告警——**任何非本地部署必须配置强令牌**。后续应使用登录签发的令牌，引导令牌可在「系统管理」中吊销。
 4. 建议流程：`MAS_ADMIN_TOKEN=<强随机值> 启动 → 用引导令牌调 POST /internal/auth/login 为管理员改密 → 吊销引导令牌 → 日常使用登录令牌`。

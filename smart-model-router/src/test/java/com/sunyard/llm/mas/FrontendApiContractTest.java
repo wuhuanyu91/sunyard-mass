@@ -131,7 +131,7 @@ class FrontendApiContractTest {
         WRITE_BODY.put("prefix", "ut");
         WRITE_BODY.put("key", "ut");
         WRITE_BODY.put("month", "2026-09");
-        WRITE_BODY.put("password", "Sunyard@123");
+        WRITE_BODY.put("password", "Mas@123456");
         WRITE_BODY.put("enabled", true);
         WRITE_BODY.put("status", "ON");
         WRITE_BODY.put("reason", "ut");

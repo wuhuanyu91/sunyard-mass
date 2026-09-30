@@ -122,11 +122,11 @@ INSERT INTO mas_sys_role_permission (role_code, module, perm_level) VALUES
 ('VIEWER','policy','DENY'), ('VIEWER','compute','DENY'), ('VIEWER','system','DENY')
 ON CONFLICT (role_code, module) DO UPDATE SET perm_level = EXCLUDED.perm_level;
 
--- 演示账号（密码默认 Sunyard@123，SHA-256 存储）
+-- 演示账号（密码默认 Mas@123456，SHA-256 存储）
 INSERT INTO mas_sys_user (user_code, user_name, dept_id, tenant_id, email, status, locked, pwd_hash, mfa_enabled) VALUES
-('admin',    '平台管理员', 'DEPT-TECH',   'TENANT-TECH',   'admin@nbbank.demo',   1, 0, '183e67234e8e39a9e9d51890d98ed635b1c612d2996a7403a1f6f593c7f864cc', 1),
-('operator', '运营人员',   'DEPT-RETAIL', 'TENANT-RETAIL', 'operator@nbbank.demo', 1, 0, '183e67234e8e39a9e9d51890d98ed635b1c612d2996a7403a1f6f593c7f864cc', 0),
-('auditor',  '审计员',     'DEPT-RISK',   'TENANT-RISK',   'auditor@nbbank.demo',  1, 0, '183e67234e8e39a9e9d51890d98ed635b1c612d2996a7403a1f6f593c7f864cc', 0)
+('admin',    '平台管理员', 'DEPT-TECH',   'TENANT-TECH',   'admin@nbbank.demo',   1, 0, '667dd250db14a39142bbf7aa316346d8082950c10b803fe37fdad643a1518147', 1),
+('operator', '运营人员',   'DEPT-RETAIL', 'TENANT-RETAIL', 'operator@nbbank.demo', 1, 0, '667dd250db14a39142bbf7aa316346d8082950c10b803fe37fdad643a1518147', 0),
+('auditor',  '审计员',     'DEPT-RISK',   'TENANT-RISK',   'auditor@nbbank.demo',  1, 0, '667dd250db14a39142bbf7aa316346d8082950c10b803fe37fdad643a1518147', 0)
 ON CONFLICT (user_code) DO NOTHING;
 
 INSERT INTO mas_sys_user_role (user_code, role_code) VALUES
