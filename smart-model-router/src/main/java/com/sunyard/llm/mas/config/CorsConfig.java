@@ -15,16 +15,22 @@ import java.util.List;
 @Configuration
 public class CorsConfig {
 
+    private final MasProperties properties;
+
+    public CorsConfig(MasProperties properties) {
+        this.properties = properties;
+    }
+
     @Bean
     public CorsWebFilter corsWebFilter() {
         CorsConfiguration config = new CorsConfiguration();
 
-        // 开发环境 + 生产环境允许的源
-        config.setAllowedOriginPatterns(List.of(
-                "http://localhost:*",   // Vite dev (5173) 及其他本地端口
-                "http://127.0.0.1:*",
-                "https://*.example.com" // 生产域名（按需替换）
-        ));
+        // 允许源走配置（mas.cors.allowed-origin-patterns / MAS_CORS_ALLOWED_ORIGINS），
+        // nginx 以容器名作 Host 转发，同源请求在后端视角仍是跨域，白名单必须覆盖实际访问入口
+        config.setAllowedOriginPatterns(java.util.Arrays.stream(properties.getCors().getAllowedOriginPatterns().split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .toList());
 
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));

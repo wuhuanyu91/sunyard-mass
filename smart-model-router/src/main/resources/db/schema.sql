@@ -510,11 +510,20 @@ CREATE TABLE IF NOT EXISTS mas_compute_metric (
     gpu_hours       NUMERIC(12,4),           -- 卡时
     requests        INT,
     tokens          BIGINT,
+    vram_total_gb   NUMERIC(8,2),            -- 显存总量（GB）
+    vram_used_gb    NUMERIC(8,2),            -- 显存占用（GB）
+    instance_count  INT,                     -- 承载推理实例数
+    queue_depth     INT,                     -- 当前排队任务数
     source          VARCHAR(32)  NOT NULL DEFAULT 'AGENT', -- AGENT/PROMETHEUS/MANUAL
     created_at      TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
     UNIQUE (node_id, metric_time)
 );
 CREATE INDEX IF NOT EXISTS idx_compute_metric_time ON mas_compute_metric (metric_time);
+-- 存量库升级：节点详情抽屉所需的显存/实例/队列维度（新建库已由上方 CREATE TABLE 带上）
+ALTER TABLE mas_compute_metric ADD COLUMN IF NOT EXISTS vram_total_gb  NUMERIC(8,2);
+ALTER TABLE mas_compute_metric ADD COLUMN IF NOT EXISTS vram_used_gb   NUMERIC(8,2);
+ALTER TABLE mas_compute_metric ADD COLUMN IF NOT EXISTS instance_count INT;
+ALTER TABLE mas_compute_metric ADD COLUMN IF NOT EXISTS queue_depth    INT;
 
 -- -----------------------------------------------------------------------------
 -- 11. 配置面持久化：限流规则补列 / 护栏配置与策略 / 模型接入

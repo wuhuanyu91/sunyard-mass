@@ -157,6 +157,8 @@ public class CollectionService {
                     body.get("metricTime") == null ? LocalDateTime.now() : LocalDateTime.parse(str(body.get("metricTime"))),
                     dec(body.get("gpuUtil")), dec(body.get("gpuMemUtil")), dec(body.get("gpuHours")),
                     intVal(body.get("requests"), 0), longVal(body.get("tokens")),
+                    dec(body.get("vramTotalGb")), dec(body.get("vramUsedGb")),
+                    intVal(body.get("instanceCount"), 0), intVal(body.get("queueDepth"), 0),
                     str(body.getOrDefault("source", "AGENT")));
             return nodeId;
         }).flatMap(n -> opLogService.record("compute", "上报算力指标", operator, n, "节点算力指标上报"));

@@ -95,3 +95,6 @@ mas:
     # 部门/租户级配额是否在 L4 运行时执行（over_limit_stop 真正生效）
     dept-quota-enabled: ${MAS_GOVERNANCE_DEPT_QUOTA:true}
     # /internal/* 管理端点鉴权为强制项（AdminAuthFilter 硬编码生效），不提供关闭开关
+  cors:
+    # 逗号分隔的 origin pattern；公网/域名部署时通过 MAS_CORS_ALLOWED_ORIGINS 追加实际访问入口
+    allowed-origin-patterns: ${MAS_CORS_ALLOWED_ORIGINS:http://localhost:*,http://127.0.0.1:*}

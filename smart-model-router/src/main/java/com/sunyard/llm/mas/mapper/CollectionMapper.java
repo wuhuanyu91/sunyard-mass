@@ -72,12 +72,16 @@ public interface CollectionMapper {
 
     @Insert("""
             INSERT INTO mas_compute_metric
-              (node_id, metric_time, gpu_util, gpu_mem_util, gpu_hours, requests, tokens, source)
+              (node_id, metric_time, gpu_util, gpu_mem_util, gpu_hours, requests, tokens,
+               vram_total_gb, vram_used_gb, instance_count, queue_depth, source)
             VALUES
-              (#{nodeId}, #{metricTime}, #{gpuUtil}, #{gpuMemUtil}, #{gpuHours}, #{requests}, #{tokens}, #{source})
+              (#{nodeId}, #{metricTime}, #{gpuUtil}, #{gpuMemUtil}, #{gpuHours}, #{requests}, #{tokens},
+               #{vramTotalGb}, #{vramUsedGb}, #{instanceCount}, #{queueDepth}, #{source})
             ON CONFLICT (node_id, metric_time) DO UPDATE SET
               gpu_util = EXCLUDED.gpu_util, gpu_mem_util = EXCLUDED.gpu_mem_util,
-              gpu_hours = EXCLUDED.gpu_hours, requests = EXCLUDED.requests, tokens = EXCLUDED.tokens
+              gpu_hours = EXCLUDED.gpu_hours, requests = EXCLUDED.requests, tokens = EXCLUDED.tokens,
+              vram_total_gb = EXCLUDED.vram_total_gb, vram_used_gb = EXCLUDED.vram_used_gb,
+              instance_count = EXCLUDED.instance_count, queue_depth = EXCLUDED.queue_depth
             """)
     int upsertComputeMetric(@Param("nodeId") String nodeId,
                             @Param("metricTime") LocalDateTime metricTime,
@@ -86,6 +90,10 @@ public interface CollectionMapper {
                             @Param("gpuHours") java.math.BigDecimal gpuHours,
                             @Param("requests") Integer requests,
                             @Param("tokens") Long tokens,
+                            @Param("vramTotalGb") java.math.BigDecimal vramTotalGb,
+                            @Param("vramUsedGb") java.math.BigDecimal vramUsedGb,
+                            @Param("instanceCount") Integer instanceCount,
+                            @Param("queueDepth") Integer queueDepth,
                             @Param("source") String source);
 
     /** 节点最新算力指标（替代请求量反推的模拟值） */
@@ -96,6 +104,10 @@ public interface CollectionMapper {
                    COALESCE(SUM(gpu_hours), 0)     AS gpu_hours,
                    COALESCE(SUM(requests), 0)      AS requests,
                    COALESCE(SUM(tokens), 0)        AS tokens,
+                   COALESCE(MAX(vram_total_gb), 0) AS vram_total_gb,
+                   COALESCE(MAX(vram_used_gb), 0)  AS vram_used_gb,
+                   COALESCE(MAX(instance_count), 0) AS instance_count,
+                   COALESCE((ARRAY_AGG(queue_depth ORDER BY metric_time DESC))[1], 0) AS queue_depth,
                    MAX(metric_time)                AS last_metric_time
             FROM mas_compute_metric
             WHERE metric_time >= #{since}

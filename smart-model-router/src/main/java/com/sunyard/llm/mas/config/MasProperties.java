@@ -27,6 +27,7 @@ public class MasProperties {
     private CircuitBreakerConfig circuitBreaker = new CircuitBreakerConfig();
     private Auth auth = new Auth();
     private Governance governance = new Governance();
+    private Cors cors = new Cors();
 
     public Backend getBackend() { return backend; }
     public void setBackend(Backend backend) { this.backend = backend; }
@@ -50,6 +51,15 @@ public class MasProperties {
     public void setAuth(Auth auth) { this.auth = auth; }
     public Governance getGovernance() { return governance; }
     public void setGovernance(Governance governance) { this.governance = governance; }
+    public Cors getCors() { return cors; }
+    public void setCors(Cors cors) { this.cors = cors; }
+
+    /** CORS 允许源（逗号分隔的 origin pattern）；公网部署需把访问域名/IP 加入，否则浏览器带 Origin 的请求会被 403 */
+    public static class Cors {
+        private String allowedOriginPatterns = "http://localhost:*,http://127.0.0.1:*";
+        public String getAllowedOriginPatterns() { return allowedOriginPatterns; }
+        public void setAllowedOriginPatterns(String allowedOriginPatterns) { this.allowedOriginPatterns = allowedOriginPatterns; }
+    }
 
     public static class Backend {
         /** 无模型配置时的兜底后端 */

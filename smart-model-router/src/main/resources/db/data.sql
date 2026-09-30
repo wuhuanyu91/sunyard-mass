@@ -200,3 +200,62 @@ ON CONFLICT (conn_id) DO NOTHING;
 ALTER TABLE mas_dept_quota ADD COLUMN IF NOT EXISTS notify_channels VARCHAR(32) DEFAULT 'SITE'; -- SITE/MAIL/SMS，逗号分隔
 ALTER TABLE mas_dept_quota ADD COLUMN IF NOT EXISTS resume_pending SMALLINT NOT NULL DEFAULT 0; -- 超限停发后是否待审批恢复
 ALTER TABLE mas_dept_quota ADD COLUMN IF NOT EXISTS resume_reason VARCHAR(256);
+
+-- -----------------------------------------------------------------------------
+-- 10. 演示数据扩充：算力指标（6 节点 × 近 24h 8 个时间点）与调用日志（24 条）
+--     算力指标锚定「当前整点」每 3h 一个点：重复启动落在同一整点时 ON CONFLICT 覆盖，
+--     跨整点启动仅追加历史点；同时清理 26h 前的演示节点数据避免无限增长。
+--     调用日志以固定 trace_id（DEMO-CL-%）整体守卫，存在即跳过，保证幂等。
+-- -----------------------------------------------------------------------------
+DELETE FROM mas_compute_metric
+ WHERE node_id IN ('GPU-NODE-01','GPU-NODE-02','GPU-NODE-03','GPU-NODE-04','NPU-NODE-01','CPU-NODE-01')
+   AND metric_time < CURRENT_TIMESTAMP - INTERVAL '26 hours';
+
+INSERT INTO mas_compute_metric
+  (node_id, metric_time, gpu_util, gpu_mem_util, gpu_hours, requests, tokens,
+   vram_total_gb, vram_used_gb, instance_count, queue_depth, source)
+SELECT n.node_id,
+       date_trunc('hour', CURRENT_TIMESTAMP) - o.ord * INTERVAL '3 hours',
+       ROUND(GREATEST(5, LEAST(97, n.gpu_util + (o.ord * 7) % 13 - 6))::numeric, 2),
+       ROUND(GREATEST(5, LEAST(97, n.gpu_mem_util + (o.ord * 5) % 11 - 5))::numeric, 2),
+       n.gpu_hours, n.requests, n.tokens,
+       n.vram_total_gb,
+       ROUND(GREATEST(0, LEAST(n.vram_total_gb, n.vram_used_gb + (o.ord * 3) % 7 - 3))::numeric, 2),
+       n.instance_count,
+       GREATEST(0, n.queue_depth + o.ord % 3 - 1),
+       'MANUAL'
+FROM (VALUES
+  ('GPU-NODE-01', 62.5, 71.2, 3.10, 300, 875000,  96.0, 68.2, 4, 3),
+  ('GPU-NODE-02', 45.8, 52.3, 2.45, 215, 525000,  96.0, 49.7, 3, 1),
+  ('GPU-NODE-03', 78.4, 83.6, 3.92, 410, 1230000, 96.0, 80.3, 4, 7),
+  ('GPU-NODE-04', 33.2, 41.5, 1.66, 150, 405000,  48.0, 19.9, 2, 0),
+  ('NPU-NODE-01', 57.6, 63.8, 2.88, 260, 690000,  64.0, 40.8, 3, 2),
+  ('CPU-NODE-01', 24.1, 35.0, 0.00,  90, 210000,   0.0,  0.0, 5, 4)
+) AS n(node_id, gpu_util, gpu_mem_util, gpu_hours, requests, tokens, vram_total_gb, vram_used_gb, instance_count, queue_depth)
+CROSS JOIN (VALUES (0),(1),(2),(3),(4),(5),(6),(7)) AS o(ord)
+ON CONFLICT (node_id, metric_time) DO UPDATE SET
+  gpu_util = EXCLUDED.gpu_util, gpu_mem_util = EXCLUDED.gpu_mem_util,
+  gpu_hours = EXCLUDED.gpu_hours, requests = EXCLUDED.requests, tokens = EXCLUDED.tokens,
+  vram_total_gb = EXCLUDED.vram_total_gb, vram_used_gb = EXCLUDED.vram_used_gb,
+  instance_count = EXCLUDED.instance_count, queue_depth = EXCLUDED.queue_depth;
+
+INSERT INTO mas_call_log
+  (trace_id, app_id, user_id, model_id, intent_type, cache_hit, cache_level, routed_to,
+   prompt_tokens, completion_tokens, total_tokens, pipeline_cost_ms, total_cost_ms, status, created_at)
+SELECT 'DEMO-CL-' || lpad(g::text, 3, '0'),
+       (ARRAY['APP-CSR','APP-AICODING','APP-CREDIT','APP-RISK'])[(g % 4) + 1],
+       (ARRAY['admin','operator','auditor'])[(g % 3) + 1],
+       (ARRAY['qwen-72b','qwen-lite','gpt-oss:20b','qwen2.5:0.5b','bge-m3'])[(g % 5) + 1],
+       (ARRAY['QA','CODE','REVIEW','EXTRACT','EMBED'])[(g % 5) + 1],
+       CASE WHEN g % 3 = 0 THEN 1 ELSE 0 END,
+       CASE WHEN g % 3 = 0 THEN (ARRAY['EXACT','SEMANTIC'])[(g % 2) + 1] ELSE NULL END,
+       (ARRAY['qwen-72b','qwen-lite','gpt-oss:20b','qwen2.5:0.5b','bge-m3'])[(g % 5) + 1] || '@row-cluster',
+       400 + (g * 37) % 900,
+       120 + (g * 53) % 480,
+       520 + (g * 37) % 900 + (g * 53) % 480,
+       8 + g % 5,
+       260 + (g * 29) % 900,
+       CASE WHEN g = 19 THEN 1 ELSE 0 END,
+       date_trunc('hour', CURRENT_TIMESTAMP) - (g - 1) * INTERVAL '1 hour' + INTERVAL '17 minutes'
+FROM generate_series(1, 24) g
+WHERE NOT EXISTS (SELECT 1 FROM mas_call_log WHERE trace_id LIKE 'DEMO-CL-%');
